@@ -1,5 +1,8 @@
 # Deployment preparation
 
+The executable, manual release workflow is documented in [RELEASE.md](RELEASE.md).
+It supports Cloudflare Pages and Cloud Run once hosting access is configured.
+
 **No deployment or cloud provisioning has been performed.** Commands here are for a
 future authorized release. The current foundation is suitable for public UI review;
 private business workflows and membership authorization remain incomplete.
@@ -35,7 +38,9 @@ No manifest/service worker exists because a PWA is not enabled.
 
 Build from the repository root with `infra/cloud-run/Dockerfile`. The container runs
 as a non-root user, binds the injected `PORT` (8080 default), and contains backend
-code only. The prepared Dockerfile has not been built in this session.
+runtime dependencies only. The Dockerfile has been built and its production health,
+authentication denial, non-root user and absence of test/lint packages were verified
+locally. This does not establish a live Cloud Run deployment.
 
 Use managed deployment settings for:
 

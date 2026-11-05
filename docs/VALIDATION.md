@@ -53,11 +53,38 @@ platform's approved execution allowance, not disabled application security.
 - SQL/RLS is an unapplied draft; no live database or private Storage tests ran.
 - Attendance/correction APIs, server idempotency and durable audit transactions
   are not implemented. Preview interactions are ephemeral synthetic state only.
-- The Dockerfile is prepared but has not been built. Cloudflare headers, Cloud Run
-  deployment/rollback, real canonical domain and GitHub-hosted CI execution remain
-  external validations. Local equivalent CI commands passed.
+- The Docker image is built and smoke-tested locally (see follow-up below).
+  Cloudflare edge headers, Cloud Run deployment/rollback, a real canonical domain
+  and GitHub-hosted CI execution remain external validations. Local equivalent CI
+  commands passed.
 - Axe checks and screenshots do not certify full accessibility or security compliance.
 
 The cloud environment `install_script` and `start_skill` fields were saved as a
 draft. Installation was executed; startup and representative requests were tested.
 Publication and restoration in a new task have **not** been performed or verified.
+
+## Deployment follow-up
+
+The foundation commit `ff502f8` was pushed to GitHub `main` and verified with
+`git ls-remote`. Nine additional Node deployment guardrail tests passed. They cover
+missing access, read-only project reuse, authenticated not-found creation, denial
+without writes, production-branch preservation, canonical ownership and exclusion
+of credentials/caches/unrelated files from Cloud Build uploads. Both GitHub workflows
+passed actionlint 1.7.12 after its official release checksum was verified; the Cloud
+Run script passed Bash syntax validation.
+
+The production container built using the managed Docker daemon with a mounted public
+proxy CA bundle and TLS verification enabled. Its running `/health` and
+`/api/v1/health` returned 200, `/api/v1/session` returned 401, and `/docs` returned 404.
+The runtime user was `appuser`; pytest and Ruff were absent. The test container was
+removed. Development requirements still install the pinned test tools separately.
+
+`wrangler whoami` confirmed no Cloudflare login. The Google identity manifest has no
+connections. GitHub API requests were forbidden by the current network policy,
+although native Git push worked; CI status could not be confirmed remotely.
+The environment draft now declares the missing Cloudflare API token, account and
+Google project/region metadata and requests `api.github.com`/`api.cloudflare.com`
+access. It stores requirements only, never credential values. Review/save the draft
+in environment settings and publish it to activate a reusable configuration.
+GitHub Actions needs its own secure settings as documented in `RELEASE.md`.
+No hosted website or Cloud Run service is claimed to exist.

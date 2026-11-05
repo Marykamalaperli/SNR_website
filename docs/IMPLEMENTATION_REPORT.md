@@ -2,8 +2,10 @@
 
 The repository was an empty, unborn `work` checkout of
 `Marykamalaperli/SNR_website`. No earlier files or architecture decisions were
-overwritten. All project files below were created locally; no push, deployment,
-cloud provisioning or live database migration was performed.
+overwritten. The initial files below were committed as `ff502f8` and subsequently
+pushed to GitHub `main` at the user's request. Deployment automation was added in a
+follow-up; see `RELEASE.md` and `VALIDATION.md`. No live deployment, cloud provisioning
+or database migration has been performed.
 
 ## Delivered
 
@@ -62,8 +64,9 @@ On the dev login page, choose Employee/Supervisor/HR to inspect synthetic previe
 Next: approve membership/team/site, shift/correction/privacy policies; configure an
 isolated Supabase project; test tenant RLS; implement the trusted membership adapter
 and a scoped read API. Then add transactional attendance/corrections and private
-documents. Production domain, Supabase integration, live RLS, Docker/deployment
+documents. Production domain, Supabase integration, live RLS, hosted deployment
 validation and licensing remain outstanding; none blocks the local UI foundation.
+The backend Docker image has now been built and smoke-tested locally.
 
 Saved cloud `install_script` and `start_skill` are ready for review/save in environment
 settings, followed by environment publication if desired. They have not been

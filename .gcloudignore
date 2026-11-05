@@ -1,0 +1,17 @@
+# Upload only the backend build inputs, never frontend files, credentials or caches.
+**
+!backend/
+!backend/app/
+!backend/app/**
+!backend/requirements-runtime.txt
+!backend/requirements.lock
+!infra/
+!infra/cloud-run/
+!infra/cloud-run/Dockerfile
+!infra/cloud-run/cloudbuild.yaml
+**/.env
+**/.env.*
+**/__pycache__/
+**/__pycache__/**
+**/*.pyc
+**/gha-creds-*.json

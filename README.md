@@ -135,6 +135,9 @@ Cloudflare uses `frontend/dist` with SPA fallback and security/noindex headers.
 Cloud Run uses `infra/cloud-run/Dockerfile`, managed secrets, exact CORS origins
 and `/health`. Nothing is deployed automatically. Review
 [deployment instructions](docs/DEPLOYMENT.md) and [runbook](docs/RUNBOOK.md).
+For the manual GitHub Actions release workflow and required hosting credentials,
+see [release setup](docs/RELEASE.md). It publishes only after an explicit workflow
+dispatch on `main`; pushes alone run checks.
 
 Sitemap generation includes only `/`, requires an actual `PUBLIC_SITE_URL`, and
 never invents a domain. Login, private routes and previews are noindex. Robots is
