@@ -6,7 +6,7 @@ import { useWorkspace } from '../../hooks/useWorkspace';
 export default function NotificationIndicator() {
   const [open, setOpen] = useState(false);
   const trigger = useRef(null);
-  const { data, base, role } = useWorkspace();
+  const { data, base, role, isPreview } = useWorkspace();
   const count = data?.corrections.filter((item) => item.status === 'Pending').length || 0;
   function close() {
     setOpen(false);
@@ -43,7 +43,9 @@ export default function NotificationIndicator() {
           <p>
             {count
               ? `${count} sample correction request${count === 1 ? '' : 's'} awaiting review.`
-              : 'You’re all caught up.'}
+              : isPreview
+                ? 'You’re all caught up.'
+                : 'Your updates will appear here when available.'}
           </p>
           {count > 0 && (
             <Link

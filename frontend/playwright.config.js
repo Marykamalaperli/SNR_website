@@ -15,6 +15,11 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'authentication',
+      testMatch: /authentication.spec.js/,
+      use: { baseURL: 'http://127.0.0.1:5174' },
+    },
+    {
       name: 'development',
       testMatch: /development.spec.js/,
       use: { baseURL: 'http://127.0.0.1:5173' },
@@ -26,6 +31,16 @@ export default defineConfig({
     },
   ],
   webServer: [
+    {
+      command: 'npm run dev -- --host 127.0.0.1 --port 5174 --strictPort',
+      url: 'http://127.0.0.1:5174',
+      reuseExistingServer: !process.env.CI,
+      env: {
+        VITE_SUPABASE_URL: 'https://auth.snr-nest.test',
+        VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_browser_fixture',
+        VITE_AUTH_SESSION_SOURCE: 'supabase',
+      },
+    },
     {
       command: 'npm run dev -- --host 127.0.0.1 --port 5173 --strictPort',
       url: 'http://127.0.0.1:5173',

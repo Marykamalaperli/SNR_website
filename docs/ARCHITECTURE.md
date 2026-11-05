@@ -4,8 +4,10 @@
 
 The public React site, login interface, isolated synthetic previews, and FastAPI
 health/session boundary run locally. Live workforce APIs and persistent business
-workflows are **not implemented**. The session boundary fails closed until a trusted
-membership repository is supplied. No API returns demo data. See `API_CONTRACTS.md`.
+workflows are **not implemented**. Authentication now uses Supabase Auth plus the
+RLS-protected `current_workspace()` RPC. The optional FastAPI membership adapter
+calls the same RPC using a verified caller JWT. Missing configuration or assignment
+is denied. Live activation awaits project setup. No API returns demo data.
 
 ```mermaid
 flowchart LR
@@ -17,9 +19,9 @@ flowchart LR
   API -->|Authorized short-lived URLs| Storage[Supabase private Storage]
 ```
 
-The frontend was reported live at `https://snr-nest.pages.dev`; Google Cloud Run
-and Supabase remain pending. Authentication integration is opt-in
-through configuration; there is no usable private session in an unconfigured install.
+The frontend was reported live at `https://snr-nest.pages.dev`. Google Cloud Run is
+paused; the selected Supabase project is `emvppphhkmbpgqduikup`. The authentication
+path can run without Cloud Run. An unconfigured/unassigned install grants no private session.
 Development `/preview/*` routes import synthetic fixtures only in Vite development
 mode. The production route table and bundle omit those imports. The normal `/me`,
 `/team`, and `/hr` routes always use the auth gate.
@@ -27,13 +29,22 @@ mode. The production route table and bundle omit those imports. The normal `/me`
 ## Request and authentication flow
 
 1. Supabase receives email/password directly over HTTPS. No password reaches our API.
-2. The browser obtains an access token and calls `/api/v1/session` with Bearer auth.
-3. FastAPI verifies an asymmetric JWT signature against the configured JWKS, issuer,
-   audience, expiry, and subject. Missing/invalid tokens are denied.
-4. A future server-owned membership adapter must resolve active organization, role,
-   employee, team and site assignments. User metadata is never trusted for privileges.
-5. Only a backend-confirmed workspace may be opened. Membership integration currently
-   returns a deliberate 503; the UI signs out and explains that access is unavailable.
+2. The SDK obtains an access token; Auth `getUser` verifies identity against Supabase.
+3. With the default `supabase` session source, `current_workspace()` executes in
+   PostgreSQL as the authenticated caller under RLS. It accepts no identity/role/org
+   arguments and returns only that user's active database assignment. Zero/multiple
+   active assignments are denied; no first-user promotion or tenant auto-selection.
+4. With explicit `api` source, FastAPI first verifies the asymmetric JWT's issuer,
+   audience, expiry and signature, then calls the same RPC with the user's token.
+   No service-role key or bypass of RLS is used. Returned user IDs must match.
+5. Only a server-confirmed workspace opens. The SDK stores credentials in tab-scoped
+   sessionStorage, rechecks membership on restoration/token refresh, and clears
+   local credentials on logout. User metadata never determines permissions.
+
+The default path is browser → Supabase Auth/PostgREST → PostgreSQL RLS. Supabase is
+the server enforcing authorization; UI state is not an authority. FastAPI remains
+the planned business API layer. This hosting-independent auth decision is recorded
+in `DECISIONS.md`; no sensitive workforce mutations were moved into browser code.
 
 No request accepts a browser-supplied organization or role as authority. Organization
 selection, if later needed, must be checked against memberships. Auditor and owner

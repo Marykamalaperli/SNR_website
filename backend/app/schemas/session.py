@@ -15,6 +15,8 @@ class Membership(BaseModel):
     model_config = ConfigDict(frozen=True)
     user_id: UUID
     organization_id: UUID
+    organization_name: str | None = None
+    display_name: str | None = None
     role: Literal["employee", "supervisor", "hr", "security_auditor", "system_owner"]
     employee_id: UUID | None = None
     team_ids: tuple[UUID, ...] = ()

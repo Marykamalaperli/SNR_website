@@ -51,3 +51,21 @@ Storage, scoped API queries, transactional punches/idempotency/concurrency and H
 decisions. Test overnight shifts and time-zone boundaries once policy is approved.
 Validate Cloudflare headers/CSP/CORS and Cloud Run deployment/rollback after approval.
 No zero-test suite, mocked-only database check or process PID establishes readiness.
+
+## Supabase authentication checks
+
+`npm run test` additionally tests project/key validation, prohibition/redaction of
+service-role keys, tab storage/fallback, Auth-server user verification, RPC errors,
+identity mismatch, role separation, API transport selection, sign-in/restore/refresh
+and logout races. The Playwright `authentication` project runs the real Supabase JS
+SDK against intercepted HTTP responses on an isolated Vite fixture server at port 5174. It verifies login, reload persistence, database-assigned roles, logout, revoked
+membership, wrong-password denial and the authenticated page's accessibility. These
+are contract tests, not a live Supabase account test.
+
+Run `bash scripts/test-supabase.sh` for an actual disposable PostgreSQL database.
+It applies both migrations, exercises owner-only provisioning helpers and nine
+authorization scenarios as anon/authenticated roles. The test-only Auth schema
+emulates PostgREST's trusted user-ID context; it does not test GoTrue or JWT signature
+verification. The container is private, accepts no live DB URL, and is removed after
+the run. Fixtures under `supabase/tests/` must never be applied to a real project.
+CI has a separate database job; standard frontend/API checks remain in place.

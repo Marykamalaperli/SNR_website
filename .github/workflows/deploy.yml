@@ -76,6 +76,7 @@ jobs:
       VITE_API_BASE_URL: ${{ needs.backend.outputs.url || vars.VITE_API_BASE_URL }}
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      VITE_AUTH_SESSION_SOURCE: ${{ vars.VITE_AUTH_SESSION_SOURCE || 'supabase' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

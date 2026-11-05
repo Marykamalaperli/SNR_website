@@ -5,6 +5,13 @@ on:
 permissions:
   contents: read
 jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify PostgreSQL tenant and role isolation
+        run: bash scripts/test-supabase.sh
   frontend:
     runs-on: ubuntu-latest
     defaults:

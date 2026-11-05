@@ -76,6 +76,12 @@ from deploying the application to Cloudflare or Google Cloud.
 
 ## Files created
 
+Subsequent Supabase authentication work is documented in `SUPABASE_SETUP.md` and
+`VALIDATION.md`. It adds server-enforced RPC authorization, a real SDK sign-in/session
+flow, optional FastAPI adapter, migration/provisioning queries and isolated database
+tests. The initial inventory below records the original foundation; later additions
+are visible in the Git history. Live Supabase activation remains an owner setup step.
+
 The complete source/configuration inventory follows. Dependencies, virtualenvs,
 build output, screenshots, logs and caches are ignored and are not source files.
 

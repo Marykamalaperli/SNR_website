@@ -103,3 +103,35 @@ CLI and do not establish live Google IAM correctness. The full repository check
 passed again: 30 frontend tests, 39 backend/setup tests, nine Node deployment tests,
 formatting/lint and the production build. Both workflow files passed actionlint.
 The bootstrap `--plan` command ran offline for `snr-nest` and `asia-south1`.
+
+## Supabase authentication follow-up
+
+Google Cloud work was paused by the owner. The selected Supabase origin is
+`https://emvppphhkmbpgqduikup.supabase.co`; its public key is configured only in ignored
+local frontend settings. The project has not been changed remotely. A read-only
+Auth settings request was blocked by this environment's proxy (403 tunnel denial),
+so actual project readiness and a live user login remain unverified.
+
+Final local results:
+
+- **66 frontend tests passed**, including key-class/redaction guards, verified-user
+  matching, RPC denials, exact role mapping, tab persistence/fallback and session races.
+- **55 backend tests passed**, including the existing setup tests and 16 new Supabase
+  adapter/configuration cases. One upstream Starlette/httpx deprecation warning remains.
+- **14 Chromium tests passed**. Three exercise the real Supabase JS SDK against
+  intercepted HTTP contracts (login, reload, logout, role metadata spoofing, revoked
+  membership and incorrect credentials). They are not live Supabase account tests.
+  Responsive, accessibility and production preview-protection checks also passed.
+- Both migrations applied successfully to a disposable PostgreSQL 16 database.
+  Owner-only administrator/employee setup queries passed; all **nine authorization
+  scenarios** passed as actual anon/authenticated database roles. Test Auth context
+  is emulated; no production data or Supabase secret was used. The container was removed.
+- An intentional Vite build with a fake secret-key sentinel failed before bundling
+  and did not reflect the value. The normal production build, formatting, ESLint,
+  Ruff, Bash syntax, actionlint and nine deployment guardrail tests passed.
+
+The browser pass corrected invalid definition-list nesting in existing dashboard
+summaries without changing their data or layout. Activation steps and limits are
+documented in `SUPABASE_SETUP.md`: project-owner migrations, a confirmed Auth account
+and explicit membership, public GitHub build variables, then a frontend-only release.
+No operational attendance, correction, employee-administration or storage API is claimed.

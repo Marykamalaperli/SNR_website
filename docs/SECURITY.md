@@ -22,14 +22,19 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
 
 ## Implemented controls
 
-- No private dataset is connected. Demo imports and routes exist only in development;
+- Real workforce operations remain unconnected. Demo imports/routes exist only in development;
   production bundle tests assert synthetic names and preview paths are absent.
-- Supabase client uses public publishable configuration only, memory-only sessions,
-  no password/token logging, and backend membership confirmation after sign-in.
-  A page reload requires signing in again; persistent sessions can be designed later.
+- Supabase uses only a public publishable/anon key. Build/server configuration rejects
+  service-role keys. No password/token logging. Auth `getUser` verifies identity;
+  the database RPC confirms roles under RLS. Session restoration rechecks assignment.
+- Session credentials persist only in tab-scoped sessionStorage, with memory fallback
+  when storage is unavailable. No localStorage persistence. Logout clears local
+  credentials even on network failure; normal token expiry/revocation remains a
+  Supabase concern. Stale restore/refresh responses cannot resurrect signed-out state.
 - JWT verification requires asymmetric signature (RS256/ES256), issuer, audience,
   subject, issued-at and expiry. JWKS is operator-configured HTTPS, never token `jku`.
-  The unconfigured membership repository deliberately denies access.
+  The optional FastAPI adapter forwards the verified user JWT plus publishable key
+  to the same RPC. Unconfigured membership resolution deliberately denies access.
 - API has validated CORS/hosts, bounded JWKS timeout, sanitized correlation IDs,
   no-store/noindex/security headers and generic validation/internal errors. JSON logs
   use route templates rather than raw paths or submitted personal data.
@@ -41,8 +46,12 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
 
 ## Before production private data
 
-Implement and adversarially test the trusted membership adapter, per-endpoint
-scopes and revocation, atomic business mutations, database least privilege, live RLS,
+Apply and validate the migrations against the real Supabase project; provision
+confirmed accounts/assignments with the project-owner setup queries. Keep public
+sign-ups disabled for this staff app. The queries never automatically grant HR and
+never overwrite existing memberships. Do not expose SQL Editor/admin credentials.
+
+Implement/test per-endpoint business scopes, atomic mutations, database least privilege, live RLS,
 rate limiting/WAF, credential rotation, monitoring and backup restore. Deploy exact
 CORS/host/CSP origins, HTTPS and managed secrets. Do not expose API docs in production.
 The API health endpoint is process liveness, not database readiness.

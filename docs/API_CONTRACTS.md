@@ -11,12 +11,21 @@ The API never returns synthetic workforce records.
 | `GET /api/v1/health`  | Public              | Same status/service plus `"version":"1"`                       |
 | `GET /api/v1/session` | Verified Bearer JWT | Trusted membership interface; **503 until adapter configured** |
 
-The session response model, available only from a future trusted adapter, contains
+The optional API session adapter is implemented and must be configured with the
+Supabase project origin and publishable key. Its response model contains
 `user_id`, `organization_id`, exact `role`, optional `employee_id`, `team_ids` and
 `site_ids`. Roles: `employee`, `supervisor`, `hr`, `security_auditor`, `system_owner`.
 The browser maps only the first three to workspaces. Missing token → 401; configured
 but invalid token → 401; auth/JWKS unavailable → 503; verified identity without a
-membership adapter → 503. A token is never itself workspace authorization.
+membership adapter → 503; no active assignment → 403; multiple organizations → 409.
+A token is never itself workspace authorization.
+
+The default frontend source is Supabase `rpc('current_workspace', {})`, with the
+same response plus optional `organization_name` and `display_name`. The function is
+SECURITY INVOKER, authenticated-only, read-only and protected by existing RLS. Supabase
+Auth/PostgREST verifies the token server-side; role/user/org inputs are not accepted.
+This supports authentication while Cloud Run is paused. Optional API mode still
+performs its own JWT verification and never trusts client-selected roles.
 
 Errors use this envelope with the same sanitized ID in `X-Request-ID`:
 

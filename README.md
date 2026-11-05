@@ -4,10 +4,12 @@ A warm, straightforward workforce workspace for attendance, team coordination,
 employee records and HR reviews. The foundation includes a public website, unified
 login, three distinct workspace interfaces, and a runnable API boundary.
 
-**Status:** frontend prototype + backend foundation. Synthetic workspaces run only
-in development. The owner reports the public frontend live at
-<https://snr-nest.pages.dev>. Live attendance, membership authorization, documents
-and database integration are pending. The Google backend has not been deployed.
+**Status:** public frontend, Supabase authentication integration and API foundation.
+The owner reports the frontend live at <https://snr-nest.pages.dev>. Supabase
+connection code and server-enforced workspace authorization are implemented; live
+activation still requires the project's migrations, account assignment and frontend
+variables. Workforce business workflows remain pending. Synthetic workspaces run
+only in development. Google Cloud setup is paused.
 
 ## Stack and architecture
 
@@ -38,7 +40,7 @@ scripts/    Shared verification helpers
 - **HR `/hr`:** scoped directory, approval queue, attendance, sites/shifts,
   documents and reports. HR does not inherit auditor or system-owner rights.
 
-Protected routes redirect to login without backend-confirmed access. During local
+Protected routes redirect to login without server-confirmed access. During local
 development, visit `/preview/me`, `/preview/team`, or `/preview/hr` from the login
 page to explore synthetic records. Local sample actions reset on refresh. Preview
 routes and fixtures are excluded from production; they never grant real access.
@@ -47,6 +49,7 @@ routes and fixtures are excluded from production; they never grant real access.
 
 Prerequisites: Node.js 24 (see `.node-version`), npm 11+, Python 3.12+, and Git.
 No Supabase account is required for the public site, previews, or health API.
+Follow [Supabase setup](docs/SUPABASE_SETUP.md) to enable real authentication.
 
 Frontend (first terminal; works in Bash and PowerShell):
 
@@ -84,20 +87,27 @@ directories (`Copy-Item .env.example .env` in PowerShell). Restart services afte
 changes. Example files contain names and safe defaults, never real secrets.
 
 Frontend uses `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, and
-`VITE_SUPABASE_PUBLISHABLE_KEY`. These are public values. All `VITE_*` values are
+`VITE_SUPABASE_PUBLISHABLE_KEY`, plus `VITE_AUTH_SESSION_SOURCE` (default `supabase`).
+These are public values. All `VITE_*` values are
 bundled into the browser: **never place service-role keys or database credentials
 there**. `PUBLIC_SITE_URL` is a build-only canonical HTTPS origin, not a fake domain.
 
-Backend uses `APP_ENV`, `CORS_ORIGINS`, `ALLOWED_HOSTS`, `SUPABASE_URL`,
+Backend uses `APP_ENV`, `CORS_ORIGINS`, `ALLOWED_HOSTS`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`,
 `SUPABASE_JWT_ISSUER`, `SUPABASE_JWT_AUDIENCE`, and `SUPABASE_JWKS_URL`.
 See examples and [deployment](docs/DEPLOYMENT.md) for exact configuration.
 No database password or service-role credential is required by the current API.
 
-Supabase sign-in is prepared, but a valid token alone cannot open a workspace.
-`/api/v1/session` must resolve a trusted membership; its current adapter deliberately
-returns 503. Do not replace this with frontend roles or JWT user metadata.
-The draft migration enables RLS and denies browser writes. Test it in an isolated
-Supabase project before implementing adapters. See [data model](docs/DATA_MODEL.md).
+Supabase verifies sign-in and user identity; the `current_workspace()` database RPC
+confirms the active role/organization under RLS. This works without Cloud Run.
+New Auth accounts remain blocked until the project owner explicitly assigns a
+workspace. User metadata never grants privileges. Sessions survive reloads within
+the same tab via sessionStorage and are removed on sign-out.
+
+The optional `api` session source calls FastAPI `/api/v1/session`, whose Supabase
+adapter uses the same RPC with the caller's verified JWT and public key. It requires
+a deployed HTTPS API; unconfigured installs still deny access. Both migrations were
+tested in disposable PostgreSQL, not applied to the live Supabase project. Browser
+writes remain denied. See [data model](docs/DATA_MODEL.md) and the setup guide.
 
 ## Commands and testing
 
@@ -139,8 +149,9 @@ and `/health`. Nothing is deployed automatically. Review
 For the manual GitHub Actions release workflow and required hosting credentials,
 see [release setup](docs/RELEASE.md). It publishes only after an explicit workflow
 dispatch on `main`; pushes alone run checks.
-For the selected `snr-nest` Google project, follow the
-[Cloud Shell setup instructions](docs/GCP_SETUP.md).
+Google Cloud setup is paused at the owner's request. The optional later API hosting
+instructions remain in [Cloud Shell setup](docs/GCP_SETUP.md). Current Supabase
+authentication needs only a frontend deployment and the database setup.
 
 Sitemap generation includes only `/`, requires an actual `PUBLIC_SITE_URL`, and
 never invents a domain. Login, private routes and previews are noindex. Robots is

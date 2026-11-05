@@ -4,6 +4,13 @@
 `auth.users` is Supabase-owned. All application tenant records reference an
 organization; composite foreign keys prevent cross-tenant references.
 
+The second migration adds read-only `current_workspace()` authorization. It returns
+one active membership for `auth.uid()` under RLS, including organization/name and
+authorized team/site IDs. Zero/multiple memberships are denied. The project owner
+assigns verified accounts using scripts in `supabase/setup/`; there is no public
+role-provisioning function or automatic promotion. An assignment may exist before
+an employee profile; that does not grant attendance mutation capabilities.
+
 ```mermaid
 erDiagram
   organizations ||--o{ organization_memberships : contains

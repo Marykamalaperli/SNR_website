@@ -49,7 +49,7 @@ export default function DashboardLayout({ children }) {
               title="This page isn’t here"
               description="Choose a page from your workspace navigation."
             />
-          ) : !isPreview ? (
+          ) : !children ? (
             <EmptyState
               title="Your workspace is being prepared"
               description="Your account is verified. Workforce records will appear when your organization’s data connection is ready."

@@ -28,3 +28,11 @@ reviewed extra policies. Database owners/service roles bypass RLS; a production
 adapter must preserve scopes, restrict privileges and independently authorize each
 request. Attendance ordering, active shift/site checks, actor role checks and atomic
 auditing require transactional services; table constraints alone do not implement them.
+
+Local PostgreSQL validation is now automated by `bash scripts/test-supabase.sh`.
+It applies both migrations and tests actual RLS, role/tenant ownership, metadata
+spoofing, active-assignment revocation, multi-organization denial, browser-write
+denial and auditor/owner separation. Owner provisioning helpers are also exercised.
+Auth user contexts are emulated locally; live Supabase Auth/PostgREST verification
+still requires project setup. `current_workspace()` is SECURITY INVOKER, has no
+identity/role arguments, and grants no administrative mutation capability.
