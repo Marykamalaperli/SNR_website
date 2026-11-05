@@ -10,5 +10,7 @@ npm run test
 npm run build
 cd "$project_root/backend"
 .venv/bin/python -m ruff check .
+.venv/bin/python -m ruff check --config pyproject.toml ../scripts/bootstrap_gcp.py
 .venv/bin/python -m ruff format --check .
+.venv/bin/python -m ruff format --check --config pyproject.toml ../scripts/bootstrap_gcp.py
 .venv/bin/python -m pytest

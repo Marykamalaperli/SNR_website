@@ -88,3 +88,18 @@ access. It stores requirements only, never credential values. Review/save the dr
 in environment settings and publish it to activate a reusable configuration.
 GitHub Actions needs its own secure settings as documented in `RELEASE.md`.
 No hosted website or Cloud Run service is claimed to exist.
+
+## Google Cloud setup follow-up
+
+The owner subsequently reported the frontend live at `https://snr-nest.pages.dev`
+and supplied Google Project ID `snr-nest`. Neither the Google project nor billing
+has been independently verified. The Cloud Shell setup script checks both before
+provisioning; no Google resources were created from this task.
+
+Thirteen additional Python tests passed for billing-first behavior, repeated runs,
+scope/identity conflicts, private regional source storage, preservation of unrelated
+files, explicit project routing and keyless repository/branch trust. These use a fake
+CLI and do not establish live Google IAM correctness. The full repository check
+passed again: 30 frontend tests, 39 backend/setup tests, nine Node deployment tests,
+formatting/lint and the production build. Both workflow files passed actionlint.
+The bootstrap `--plan` command ran offline for `snr-nest` and `asia-south1`.

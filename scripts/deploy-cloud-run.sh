@@ -5,7 +5,7 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$project_root"
 
-for variable in GCP_PROJECT_ID GCP_REGION GCP_ARTIFACT_REPOSITORY GCP_SERVICE GCP_BUILD_SERVICE_ACCOUNT GCP_RUNTIME_SERVICE_ACCOUNT PUBLIC_SITE_URL; do
+for variable in GCP_PROJECT_ID GCP_REGION GCP_ARTIFACT_REPOSITORY GCP_BUILD_SOURCE_BUCKET GCP_SERVICE GCP_BUILD_SERVICE_ACCOUNT GCP_RUNTIME_SERVICE_ACCOUNT PUBLIC_SITE_URL; do
   if [ -z "${!variable:-}" ]; then
     printf 'Required deployment setting is missing: %s\n' "$variable" >&2
     exit 1
@@ -51,6 +51,7 @@ image_base="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/$GCP_ARTIFACT_REPOSITORY/
 image="$image_base:$release_tag"
 gcloud builds submit . --quiet --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
   --service-account="projects/$GCP_PROJECT_ID/serviceAccounts/$GCP_BUILD_SERVICE_ACCOUNT" \
+  --gcs-source-staging-dir="$GCP_BUILD_SOURCE_BUCKET/source" \
   --config=infra/cloud-run/cloudbuild.yaml --substitutions="_IMAGE=$image"
 digest="$(gcloud artifacts docker images describe "$image" --project="$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
 if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then

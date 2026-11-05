@@ -5,8 +5,9 @@ employee records and HR reviews. The foundation includes a public website, unifi
 login, three distinct workspace interfaces, and a runnable API boundary.
 
 **Status:** frontend prototype + backend foundation. Synthetic workspaces run only
-in development. Live attendance, membership authorization, documents and database
-integration are pending; no cloud resources have been created.
+in development. The owner reports the public frontend live at
+<https://snr-nest.pages.dev>. Live attendance, membership authorization, documents
+and database integration are pending. The Google backend has not been deployed.
 
 ## Stack and architecture
 
@@ -138,6 +139,8 @@ and `/health`. Nothing is deployed automatically. Review
 For the manual GitHub Actions release workflow and required hosting credentials,
 see [release setup](docs/RELEASE.md). It publishes only after an explicit workflow
 dispatch on `main`; pushes alone run checks.
+For the selected `snr-nest` Google project, follow the
+[Cloud Shell setup instructions](docs/GCP_SETUP.md).
 
 Sitemap generation includes only `/`, requires an actual `PUBLIC_SITE_URL`, and
 never invents a domain. Login, private routes and previews are noindex. Robots is

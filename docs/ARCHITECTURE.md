@@ -17,7 +17,8 @@ flowchart LR
   API -->|Authorized short-lived URLs| Storage[Supabase private Storage]
 ```
 
-Cloud targets above are planned, not deployed. Authentication integration is opt-in
+The frontend was reported live at `https://snr-nest.pages.dev`; Google Cloud Run
+and Supabase remain pending. Authentication integration is opt-in
 through configuration; there is no usable private session in an unconfigured install.
 Development `/preview/*` routes import synthetic fixtures only in Vite development
 mode. The production route table and bundle omit those imports. The normal `/me`,

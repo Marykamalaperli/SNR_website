@@ -4,8 +4,9 @@ The repository was an empty, unborn `work` checkout of
 `Marykamalaperli/SNR_website`. No earlier files or architecture decisions were
 overwritten. The initial files below were committed as `ff502f8` and subsequently
 pushed to GitHub `main` at the user's request. Deployment automation was added in a
-follow-up; see `RELEASE.md` and `VALIDATION.md`. No live deployment, cloud provisioning
-or database migration has been performed.
+follow-up; see `RELEASE.md` and `VALIDATION.md`. The owner now reports the frontend
+live at `https://snr-nest.pages.dev`. No Google backend deployment or database
+migration has been performed.
 
 ## Delivered
 

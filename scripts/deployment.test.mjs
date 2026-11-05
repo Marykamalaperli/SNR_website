@@ -140,6 +140,7 @@ test("Cloud Build upload rules exclude credentials, caches, UI and unrelated fil
       "frontend/.env",
       "frontend/src/main.jsx",
       "gha-creds-test.json",
+      ".local/gcp-github-variables.env",
       "unrelated-notes.txt",
     ]) {
       await mkdir(dirname(join(directory, file)), { recursive: true });

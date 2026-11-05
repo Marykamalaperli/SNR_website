@@ -3,8 +3,8 @@
 The executable, manual release workflow is documented in [RELEASE.md](RELEASE.md).
 It supports Cloudflare Pages and Cloud Run once hosting access is configured.
 
-**No deployment or cloud provisioning has been performed.** Commands here are for a
-future authorized release. The current foundation is suitable for public UI review;
+The owner reports the frontend live at `https://snr-nest.pages.dev`. Google backend
+provisioning and deployment remain pending. The current foundation supports public UI review;
 private business workflows and membership authorization remain incomplete.
 
 ## Cloudflare Pages
