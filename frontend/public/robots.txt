@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /me
+Disallow: /team
+Disallow: /hr
+Disallow: /preview
+Disallow: /api
+# Build adds a sitemap reference only when PUBLIC_SITE_URL is configured.
+# Crawler instructions do not protect private information.

@@ -1,0 +1,4 @@
+# Preparation only. Run any future deployment from this directory after approval.
+name = "snr-nest"
+pages_build_output_dir = "../../frontend/dist"
+compatibility_date = "2026-11-05"
