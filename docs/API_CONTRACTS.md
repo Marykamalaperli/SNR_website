@@ -94,6 +94,39 @@ open-session reassignment and missing/inactive shift/site; `PT422` invalid field
 or date bounds. SQL error text is sanitized through a fixed frontend allowlist.
 History is append-only. Correction events are not accepted by the normal writer.
 
+## Per-punch location contract (migration 0006)
+
+The active `record_attendance` signature is
+`(p_event_type,p_request_id,p_previous_event_id,p_location,p_employee_id)`. The
+employee ID is an expected-subject guard; verified identity and tenant still come
+from the caller's active membership. The three-argument compatibility signature
+rejects location-free requests. Private base functions are not executable by API
+roles.
+
+`p_location` accepts exactly numeric `latitude`, `longitude`, `accuracy_meters`,
+ISO `captured_at`, and `consent_version: 'attendance-location-v1'`. Latitude is
+−90…90, longitude −180…180, accuracy finite/nonnegative; new fixes must be within
+120 seconds of server receipt and at most 30 seconds ahead. It cannot supply an
+attendance timestamp, actor, tenant or assignment. The result adds
+`location_saved: true`. Event/audit/GPS commit together. A matching retry keeps the
+original fix even after it ages; a changed location or legacy request ID conflicts.
+
+`attendance_workspace()` adds `location_required: true` and the notice version.
+An updated client requires that handshake before capture. `attendance_records()`
+adds in/out availability flags only for Employee/HR; coordinates never appear in
+list payloads and Supervisor responses contain no such flags.
+
+`attendance_location_details(p_session_id)` checks Employee ownership or HR tenant
+scope and appends a minimal view audit. It returns
+`{session_id,timezone,clock_in,clock_out}`; each point is null or contains numeric
+latitude/longitude/accuracy, device `captured_at`, server `recorded_at` and type.
+Legacy points are null. Other employees/tenants and Supervisor/auditor/owner roles
+are denied. Direct location-table reads/writes are denied.
+
+New machine messages include `attendance_location_required`,
+`invalid_attendance_location`, `stale_attendance_location`, and
+`legacy_attendance_request`. The frontend renders only fixed safe messages.
+
 ## Dashboard account gateway and settings
 
 Cloudflare Pages Functions hosts these same-origin endpoints. The caller sends a

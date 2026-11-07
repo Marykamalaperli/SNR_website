@@ -1,21 +1,22 @@
 # Decisions and approval register
 
-| Decision                                               | Status                                   | Rationale                                                       |
-| ------------------------------------------------------ | ---------------------------------------- | --------------------------------------------------------------- |
-| React + JavaScript/JSX + Vite; Python/FastAPI          | Confirmed by brief                       | Small maintainable team stack; no TypeScript                    |
-| Orange-led five-color identity                         | Confirmed by brief                       | Warm, people-focused product                                    |
-| Cloudflare Pages → Cloud Run → Supabase                | Frontend reported live; API/data pending | Separate static, API and data boundaries                        |
-| Server-confirmed roles and tenant scope                | Confirmed                                | Browser state cannot grant access                               |
-| Employee, Supervisor, HR interfaces                    | Initial frontend                         | Auditor and owner interfaces deferred; privileges stay distinct |
-| Supervisor recommends; HR decides                      | Confirmed                                | No supervisor final approval                                    |
-| Dev-only, visibly labeled synthetic previews           | Implemented                              | Review UI without fabricating authentication                    |
-| Session membership adapter fails closed                | Implemented                              | No approved database integration or credentials yet             |
-| Attendance is append-only, server-timed and idempotent | Required future contract                 | Preserve original evidence                                      |
-| Browser writes denied in initial RLS migration         | Draft security baseline                  | Mutations require audited transactional APIs                    |
-| No location or selfie collection in foundation         | Confirmed                                | Consent/retention not approved; no facial recognition           |
-| Self-host fonts; no external analytics                 | Implemented                              | Avoid runtime third-party requests                              |
-| No PWA, payroll or leave calculations                  | Deferred                                 | Not part of approved MVP foundation                             |
-| License                                                | Pending owner approval                   | No LICENSE file created                                         |
+| Decision                                               | Status                                   | Rationale                                                         |
+| ------------------------------------------------------ | ---------------------------------------- | ----------------------------------------------------------------- |
+| React + JavaScript/JSX + Vite; Python/FastAPI          | Confirmed by brief                       | Small maintainable team stack; no TypeScript                      |
+| Orange-led five-color identity                         | Confirmed by brief                       | Warm, people-focused product                                      |
+| Cloudflare Pages → Cloud Run → Supabase                | Frontend reported live; API/data pending | Separate static, API and data boundaries                          |
+| Server-confirmed roles and tenant scope                | Confirmed                                | Browser state cannot grant access                                 |
+| Employee, Supervisor, HR interfaces                    | Initial frontend                         | Auditor and owner interfaces deferred; privileges stay distinct   |
+| Supervisor recommends; HR decides                      | Confirmed                                | No supervisor final approval                                      |
+| Dev-only, visibly labeled synthetic previews           | Implemented                              | Review UI without fabricating authentication                      |
+| Session membership adapter fails closed                | Implemented                              | No approved database integration or credentials yet               |
+| Attendance is append-only, server-timed and idempotent | Required future contract                 | Preserve original evidence                                        |
+| Browser writes denied in initial RLS migration         | Draft security baseline                  | Mutations require audited transactional APIs                      |
+| Per-punch device location with notice and permission   | Authorized by owner request              | Employee/HR precise access; device-reported accuracy              |
+| No selfie collection or facial recognition             | Confirmed                                | Location approval does not authorize media or background tracking |
+| Self-host fonts; no external analytics                 | Implemented                              | Avoid runtime third-party requests                                |
+| No PWA, payroll or leave calculations                  | Deferred                                 | Not part of approved MVP foundation                               |
+| License                                                | Pending owner approval                   | No LICENSE file created                                           |
 
 ## Decisions required before private-data integration
 
@@ -140,3 +141,26 @@ reassignment do not deadlock with a normal punch. Completed IDs return receipts
 without another event/audit. Direct browser table writes stay denied. Activation
 requires only the reviewed new migration and a frontend release, followed by
 owner verification in the existing project; daily data stays in the dashboard.
+
+## Per-punch device location
+
+The owner confirmed working attendance and explicitly requested saving the device
+location at both clock-in and clock-out. This authorizes per-event location for
+attendance verification. Notice `attendance-location-v1` requires staff
+acknowledgement and browser permission before a fresh high-accuracy fix. Device
+accuracy is retained; neither physical presence nor a site radius is certified.
+Location is collected only for the chosen punch, with no background movement or
+media capture. Its records are retained with attendance; no automatic purge is added.
+
+Migration 0006 stores coordinates, reported accuracy, device capture time, server
+receipt time and notice version in a private RLS table without browser grants.
+Employee/HR view a selected session through an audited, scoped RPC; supervisors
+receive no precise location. Normal lists contain only availability flags for
+authorized viewers. OpenStreetMap links share a point only when explicitly opened.
+
+The existing punch transaction is moved to a private non-executable helper. The
+exposed writer requires both a location and expected employee snapshot; the old
+location-free API rejects writes. Event, audit and GPS persist atomically. Exact
+replay binds the original fix and can recover after it ages. Leaving the screen
+discards an outstanding fix; changed credentials/identity cannot transfer the
+intent to another employee. Existing history is preserved without backfilled GPS.

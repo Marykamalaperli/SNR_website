@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 import time
+from datetime import UTC, datetime
 
 container_id = sys.argv[1]
 if not re.fullmatch(r"[a-f0-9]{12,64}", container_id):
@@ -160,6 +161,7 @@ def as_user(number: int) -> str:
     return (
         "begin;set role authenticated;select set_config('request.jwt.claims',"
         f'\'{{"sub":"{subject}"}}\',true);'
+        f"select set_config('test.geo_subject','d4000000-0000-4000-8000-{number:012d}',true);"
     )
 
 
@@ -204,13 +206,20 @@ def overlap(first_sql: str, second_sql: str) -> subprocess.CompletedProcess:
     return second
 
 
+captured = datetime.now(UTC).isoformat()
+location = (
+    "jsonb_build_object('latitude',12.971599,'longitude',77.594566,'accuracy_meters',8,"
+    f"'captured_at','{captured}','consent_version','attendance-location-v1')"
+)
 first_punch = (
     "select public.record_attendance('clock_in',"
-    "'d7000000-0000-4000-8000-000000000001',null);commit;"
+    f"'d7000000-0000-4000-8000-000000000001',null,{location},"
+    "current_setting('test.geo_subject')::uuid);commit;"
 )
 other_punch = (
     "select public.record_attendance('clock_in',"
-    "'d7000000-0000-4000-8000-000000000002',null);commit;"
+    f"'d7000000-0000-4000-8000-000000000002',null,{location},"
+    "current_setting('test.geo_subject')::uuid);commit;"
 )
 result = overlap(as_user(2) + first_punch, as_user(2) + other_punch)
 if result.returncode == 0 or "PT409" not in result.stderr:
@@ -248,6 +257,8 @@ if result.returncode == 0 or "PT409" not in result.stderr:
 query("""
 do $$ begin
  assert (select count(*) from public.attendance_events
+  where organization_id='d2000000-0000-4000-8000-000000000001')=4;
+ assert (select count(*) from snr_private.attendance_locations
   where organization_id='d2000000-0000-4000-8000-000000000001')=4;
  assert (select count(*) from public.audit_events
   where organization_id='d2000000-0000-4000-8000-000000000001'

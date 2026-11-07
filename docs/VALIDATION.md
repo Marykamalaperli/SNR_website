@@ -294,3 +294,48 @@ The owner must apply only migration 0005, deploy the frontend, and verify a test
 employee's actual punches in the existing project. Routine shift assignments and
 attendance then stay in SNR NEST. Corrections/approval and private-document
 workflows remain unimplemented; no payroll or inferred attendance policy is claimed.
+
+## Per-punch device locations
+
+The owner confirmed normal attendance and requested saved clock-in/out locations.
+The change adds explicit per-event acknowledgement, fresh high-accuracy browser
+fixes, private atomic persistence and selected Employee/HR detail views. No real
+position, employee account or production credential was used during implementation.
+
+Final executed checks on 7 November 2026:
+
+- `PUBLIC_SITE_URL=https://snr-nest.pages.dev bash scripts/check.sh` passed:
+  **126 frontend tests**, **20 account-server tests**, **55 backend/setup tests**,
+  nine deployment guardrails, formatting/lint/Bash checks and the production
+  build. The existing upstream Starlette/httpx deprecation warning remains.
+- The PostgreSQL harness verified migrations 0001–0005, committed a synthetic
+  legacy open session, then applied 0006 without changing its time/ID. All prior
+  suites passed. Seven location scenario groups check old/private/anonymous
+  bypass denial, notice/type/bounds/freshness/subject validation, atomic normal
+  event/location persistence, exact replay without backfilling old GPS, forced
+  location-insert failure rolling back both event/audit, private/role/tenant/own
+  view restrictions, minimal view audits, immutability, late recovery and revoked
+  access. Separate real sessions verify four original events, four matching
+  location rows and four punch audits during contention/revocation/reassignment.
+  The isolated database container is removed afterward.
+- Full Chromium regression: **31 browser checks passed**. The native simulated
+  position provider supplies distinct in/out points; reload retains their values
+  and a lost committed response retries without another device fix. Browser
+  checks also cover no capture before acknowledgement/activation, permission
+  denial without a punch, HR detail/map rendering, Supervisor exclusion and
+  accessibility. Unit tests reject missing/null coordinates without inventing a
+  zero fix. Desktop/mobile screenshots were visually reviewed.
+- A running **Wrangler 4.158.0 Pages runtime** compiled the actual Worker and
+  served `/login` as HTTP 200 with `camera=(), microphone=(), geolocation=(self)`.
+  Chromium successfully obtained a simulated native fix under that served policy.
+  The unauthenticated account gateway still returned 401. Supabase network calls
+  were blocked in this probe; no live identity or GPS sensor was used. The local
+  server was stopped. Local Wrangler emitted existing SPA redirect/`Request.cf`
+  metadata warnings; the representative requests and permission probe passed.
+
+No dependencies, billing resource, map SDK or new secret was added. Live rollout
+requires only migration 0006 and a frontend deployment; staff must then allow
+location on the actual device. Old records keep their genuine missing-location
+status. Device accuracy/spoof resistance and the live Supabase/hardware path are
+not certified by simulated-position tests. See `ATTENDANCE_LOCATIONS.md` for
+the versioned notice, data access and retained-record behavior.

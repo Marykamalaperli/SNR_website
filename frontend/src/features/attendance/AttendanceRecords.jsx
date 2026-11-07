@@ -10,6 +10,7 @@ import FormField from '../../components/forms/FormField';
 import useRemoteData from '../../hooks/useRemoteData';
 import { loadAttendanceRecords } from '../../services/attendanceService';
 import { dateLabel, durationLabel, earlierDate, momentLabel } from './attendanceFormat';
+import AttendanceLocationDetails from './AttendanceLocationDetails';
 
 export default function AttendanceRecords({ workspace, revision = 0, own = false }) {
   const initial = {
@@ -24,6 +25,7 @@ export default function AttendanceRecords({ workspace, revision = 0, own = false
   const [filters, setFilters] = useState(initial);
   const [draft, setDraft] = useState(initial);
   const [validation, setValidation] = useState('');
+  const [locationRow, setLocationRow] = useState(null);
   const loader = useCallback(() => {
     void revision;
     return loadAttendanceRecords(filters);
@@ -103,6 +105,26 @@ export default function AttendanceRecords({ workspace, revision = 0, own = false
         </StatusBadge>
       ),
     },
+    ...(own || workspace.role === 'hr'
+      ? [
+          {
+            key: 'location',
+            label: 'Location',
+            render: (row) =>
+              row.clock_in_location_available || row.clock_out_location_available ? (
+                <Button
+                  variant="text"
+                  onClick={() => setLocationRow(row)}
+                  aria-label={`View locations ${row.employee_number} ${dateLabel(row.attendance_date)}`}
+                >
+                  View locations
+                </Button>
+              ) : (
+                <span className="muted">Not collected</span>
+              ),
+          },
+        ]
+      : []),
   ];
   return (
     <>
@@ -255,6 +277,9 @@ export default function AttendanceRecords({ workspace, revision = 0, own = false
           </>
         )}
       </Card>
+      {locationRow && (
+        <AttendanceLocationDetails row={locationRow} onClose={() => setLocationRow(null)} />
+      )}
     </>
   );
 }

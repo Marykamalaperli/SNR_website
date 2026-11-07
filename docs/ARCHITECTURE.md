@@ -138,6 +138,21 @@ records. Direct writes and history changes stay denied; HR cannot edit original
 times. The application adds no automatic absence/lateness/payroll rules. See
 `ATTENDANCE_SETUP.md` for activation, concrete limits and owner acceptance checks.
 
+## Per-punch location capture
+
+Following owner approval, the browser requests one fresh device fix after staff
+acknowledgement/native permission. High accuracy is requested and its reported
+uncertainty is saved. A pending fix is discarded on navigation; retries reuse the
+original subject/state/location intent. Native capture does not grant authority.
+
+Migration 0006 wraps the existing private normal-punch transaction and stores its
+location atomically. GPS stays in a private RLS table without browser grants.
+Employee-self/HR-organization detail views are audited; ordinary history loads
+carry only availability flags. Supervisor views expose no precise location.
+Map links are external, user-initiated navigation; no map/geocoding SDK or new
+hosting secret is introduced. See `ATTENDANCE_LOCATIONS.md` for concrete policy,
+activation and limits. Existing history keeps its original missing-location state.
+
 ## Tradeoffs
 
 This foundation prioritizes a polished, testable interface and fail-closed integration

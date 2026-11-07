@@ -67,7 +67,20 @@ test('employee clocks in/out, keeps history on reload and recovers a lost respon
 }) => {
   const state = await workforceFixture(page, { populated: true, role: 'employee' });
   seedShift(state, true);
+  await page.context().grantPermissions(['geolocation']);
+  await page.context().setGeolocation({ latitude: 12.971599, longitude: 77.594566, accuracy: 8 });
+  await page.addInitScript(() => {
+    const original = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+    window.locationRequests = 0;
+    navigator.geolocation.getCurrentPosition = (...arguments_) => {
+      window.locationRequests++;
+      return original(...arguments_);
+    };
+  });
   await signInWorkforce(page);
+  await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toBeDisabled();
+  expect(await page.evaluate(() => window.locationRequests)).toBe(0);
+  await page.getByRole('checkbox', { name: /I agree to share my location/ }).check();
   await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toBeEnabled();
   state.loseNextPunchResponse = true;
   await page.getByRole('button', { name: 'Clock in', exact: true }).click();
@@ -79,12 +92,28 @@ test('employee clocks in/out, keeps history on reload and recovers a lost respon
   expect(state.punches).toHaveLength(1);
   const attempts = state.calls.filter((call) => call.name === 'record_attendance');
   expect(attempts[0].parameters).toEqual(attempts[1].parameters);
+  expect(state.locations.size).toBe(1);
+  expect(await page.evaluate(() => window.locationRequests)).toBe(1);
+  expect(state.locations.get(state.punches[0].id).latitude).toBe(12.971599);
   await page.reload();
+  await page.context().setGeolocation({ latitude: 12.975, longitude: 77.6, accuracy: 11 });
   await expect(page.getByRole('button', { name: 'Clock out', exact: true })).toBeVisible();
+  await page.getByRole('checkbox', { name: /I agree to share my location/ }).check();
   await page.getByRole('button', { name: 'Clock out', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '8 h 0 min', exact: true })).toBeVisible();
   expect(state.punches).toHaveLength(2);
+  expect(state.locations.size).toBe(2);
+  expect(state.locations.get(state.punches[1].id).latitude).toBe(12.975);
+  await page.getByRole('button', { name: /^View locations/ }).click();
+  const locationDialog = page.getByRole('dialog');
+  await expect(locationDialog.getByText('12.971599, 77.594566', { exact: true })).toBeVisible();
+  await expect(locationDialog.getByText('12.975000, 77.600000', { exact: true })).toBeVisible();
+  await expect(locationDialog.getByRole('link', { name: 'View clock-in on map' })).toHaveAttribute(
+    'href',
+    /openstreetmap.org/,
+  );
+  await locationDialog.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await page.getByRole('link', { name: 'My Schedule', exact: true }).click();
   await expect(page.getByRole('cell', { name: 'Day shift', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'My Attendance', exact: true }).click();
@@ -130,6 +159,13 @@ for (const role of ['hr', 'supervisor'])
       duration_seconds: null,
       status: 'open',
     });
+    state.locations.set(state.sessions[0].id, {
+      latitude: 12.971599,
+      longitude: 77.594566,
+      accuracy_meters: 8,
+      captured_at: `${state.today}T04:00:00Z`,
+      recorded_at: `${state.today}T04:00:00Z`,
+    });
     await signInWorkforce(page);
     await page
       .getByRole('link', { name: role === 'hr' ? 'Attendance' : 'Team Attendance', exact: true })
@@ -138,6 +174,8 @@ for (const role of ['hr', 'supervisor'])
       page.getByRole('cell', { name: 'In progress', exact: true }).first(),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toHaveCount(0);
+    if (role === 'supervisor')
+      await expect(page.getByRole('button', { name: /^View locations/ })).toHaveCount(0);
     await page.getByLabel('Find a person').fill('No person');
     await page.getByRole('button', { name: 'Apply filters' }).click();
     await expect(page.getByText('No attendance matches these dates')).toBeVisible();
@@ -146,6 +184,22 @@ for (const role of ['hr', 'supervisor'])
     await expect(
       page.getByRole('cell', { name: 'In progress', exact: true }).first(),
     ).toBeVisible();
+    if (role === 'hr') {
+      await page.getByRole('button', { name: /^View locations/ }).click();
+      await expect(
+        page.getByRole('dialog').getByText('12.971599, 77.594566', { exact: true }),
+      ).toBeVisible();
+      await expect(page.getByRole('dialog').getByText('Clock-out not recorded yet.')).toBeVisible();
+      expect(
+        (
+          await new AxeBuilder({ page })
+            .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+            .analyze()
+        ).violations,
+      ).toEqual([]);
+      await page.screenshot({ path: '/tmp/snr-location-hr-details.png', fullPage: true });
+      await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
+    }
     expect(
       (
         await new AxeBuilder({ page })
@@ -155,3 +209,38 @@ for (const role of ['hr', 'supervisor'])
     ).toEqual([]);
     await page.screenshot({ path: `/tmp/snr-attendance-${role}-desktop.png`, fullPage: true });
   });
+
+test('location denial leaves attendance unchanged and no fix is requested before consent', async ({
+  page,
+}) => {
+  const state = await workforceFixture(page, { populated: true, role: 'employee' });
+  seedShift(state, true);
+  await page.addInitScript(() => {
+    window.locationRequests = 0;
+    navigator.geolocation.getCurrentPosition = (_success, fail) => {
+      window.locationRequests++;
+      fail({ code: 1 });
+    };
+  });
+  await signInWorkforce(page);
+  await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toBeDisabled();
+  expect(await page.evaluate(() => window.locationRequests)).toBe(0);
+  await page.getByRole('checkbox', { name: /I agree to share my location/ }).check();
+  await page.getByRole('button', { name: 'Clock in', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Location permission was denied');
+  expect(state.punches).toHaveLength(0);
+  expect(state.locations.size).toBe(0);
+  expect(state.calls.some((call) => call.name === 'record_attendance')).toBe(false);
+});
+
+test('location activation is required before the updated client requests a device fix', async ({
+  page,
+}) => {
+  const state = await workforceFixture(page, { populated: true, role: 'employee' });
+  seedShift(state, true);
+  state.locationEnabled = false;
+  await signInWorkforce(page);
+  await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toBeDisabled();
+  await expect(page.getByText(/apply attendance migration 0006/)).toBeVisible();
+  expect(state.punches).toHaveLength(0);
+});

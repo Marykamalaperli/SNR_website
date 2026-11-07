@@ -20,7 +20,7 @@ snr_psql() {
 }
 snr_psql < "$snr_project_root/supabase/tests/bootstrap.sql"
 for snr_migration in "$snr_project_root"/supabase/migrations/*.sql; do
-  snr_psql < "$snr_migration"
+  if [[ "$(basename "$snr_migration")" < '202611070006' ]]; then snr_psql < "$snr_migration"; fi
 done
 python3 - "$snr_project_root" <<'PY' | snr_psql
 from pathlib import Path
@@ -41,4 +41,9 @@ snr_psql < "$snr_project_root/supabase/tests/authorization.sql"
 snr_psql < "$snr_project_root/supabase/tests/workforce.sql"
 snr_psql < "$snr_project_root/supabase/tests/dashboard-accounts.sql"
 snr_psql < "$snr_project_root/supabase/tests/attendance.sql"
+snr_psql < "$snr_project_root/supabase/tests/location-upgrade.sql"
+for snr_migration in "$snr_project_root"/supabase/migrations/*.sql; do
+  if [[ "$(basename "$snr_migration")" > '202611070005_attendance.sql' ]]; then snr_psql < "$snr_migration"; fi
+done
+snr_psql < "$snr_project_root/supabase/tests/attendance-locations.sql"
 python3 "$snr_project_root/scripts/test_workspace_concurrency.py" "$snr_pg_container"

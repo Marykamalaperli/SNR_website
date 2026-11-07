@@ -83,6 +83,24 @@ Private Storage needs a separate reviewed bucket/path mapping, scanning, MIME/si
 validation, access logs, retention and deletion policy. No live migration, seed data
 or bucket changes have been performed by this coding task. See `supabase/policies/README.md`.
 
+## Private punch locations
+
+Migration 0006 adds `snr_private.attendance_locations`, keyed by organization/event
+with a foreign key to the immutable punch. It stores reported latitude/longitude,
+accuracy meters, device capture time, server receipt time and notice version.
+No existing event is rewritten; old rows retain missing-location status. A new
+clock-out can attach its own GPS to a pre-upgrade open session.
+
+The normal writer and location insert share one transaction/audit. Retries compare
+the original location values as well as action/prior event, returning the receipt
+without a new fix or event. An expected-employee snapshot prevents actor changes
+from reassigning an in-flight capture. The old writer is private/non-executable;
+its public compatibility guard requires location instead of allowing a bypass.
+
+Precise data is absent from list projections and direct browser reads. A scoped
+Employee/HR detail RPC returns both session points and appends a view-audit event
+without coordinates. RLS and append-only triggers protect the location table.
+
 ## Dashboard administration migration
 
 Migration 0004 adds an organization version, an optional membership display name,

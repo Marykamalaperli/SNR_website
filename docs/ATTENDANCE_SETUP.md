@@ -1,5 +1,10 @@
 # Attendance and employee shifts
 
+The owner subsequently requested location on both punches. Activate the additional
+[location migration 0006](ATTENDANCE_LOCATIONS.md) after the attendance setup below.
+It preserves existing attendance and requires a fresh permitted device fix for
+new punches; do not rerun migration 0005 after attendance exists.
+
 The attendance release adds dashboard-managed employee shift assignments, normal
 clock-in/out, personal history/schedules, supervisor team attendance and an HR
 overview. Google Cloud remains paused. It uses the existing Supabase caller JWT
@@ -78,8 +83,9 @@ site/department must match. Employees keep access to their own history; HR stays
 within its organization and does not acquire audit-reading rights.
 
 HR cannot edit original punch timestamps. Corrections and supervisor/HR approval
-remain the next workflow; no corrective events, forced closures or location/selfie
-collection are exposed by normal attendance functions.
+remain the next workflow; no corrective events, forced closures or selfies are
+exposed. Per-event device locations use the separate consent/access contract in
+the location guide above.
 
 ## Verification
 

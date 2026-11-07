@@ -14,6 +14,11 @@ Attendance and shift assignments are implemented; activate the one-time
 [attendance migration](docs/ATTENDANCE_SETUP.md). Corrections/documents remain pending. Synthetic workspaces run only in
 development. Google Cloud setup is paused.
 
+Per-punch device location capture is implemented with explicit staff notice and
+browser permission. Activate only migration 0006 using
+[attendance locations](docs/ATTENDANCE_LOCATIONS.md). Employee/HR can view saved
+coordinates, accuracy and map links; attendance timestamps remain server-generated.
+
 ## Stack and architecture
 
 React + JavaScript/JSX, Vite, React Router, Lucide, CSS custom properties; ESLint,

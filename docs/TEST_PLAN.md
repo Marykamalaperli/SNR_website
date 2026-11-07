@@ -1,5 +1,24 @@
 # Test plan
 
+## Per-punch locations
+
+Unit/browser checks cover acknowledgement before native capture, precise/fresh
+options, denied/unavailable/timeout errors, no request after navigation, separate
+in/out coordinates, unchanged GPS payload on replay, map links and restricted
+detail controls. Chromium positions are simulated; real GPS is not accessed.
+
+The SQL harness first verifies migrations 0001–0005, creates a synthetic legacy
+open punch, then applies 0006 and tests its preservation/new checkout. It checks
+private/old-API denial, consent/types/bounds/freshness, subject guards, exact/late
+recovery, view scope/audits, immutable fixes and forced post-punch location failure
+with atomic rollback. Concurrent requests must leave four events, four matching
+location rows and four punch audits. The container is removed afterward.
+
+The actual local Pages runtime also needs a production-header check: geolocation
+must be allowed for self while camera/microphone stay denied. Browser geolocation
+emulation under that served policy checks the deployed layer rather than assuming
+Vite development headers match Cloudflare.
+
 ## Assigned shifts and normal attendance
 
 Run `bash scripts/test-supabase.sh` for actual PostgreSQL role/tenant isolation,

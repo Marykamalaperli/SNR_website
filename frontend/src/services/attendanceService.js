@@ -1,6 +1,14 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  attendance_location_required:
+    'Location is required for clock-in and clock-out. Reload the page and allow location access.',
+  invalid_attendance_location:
+    'A valid location and consent are required. Enable precise location and try again.',
+  stale_attendance_location:
+    'Capture a fresh location and check your device’s date and time, then try again.',
+  legacy_attendance_request:
+    'This request predates location capture. Refresh your attendance status before a new action.',
   record_changed: 'This record changed. Close the form, refresh the directory and try again.',
   employee_shift_required: 'Shift assignments are available for active employee accounts.',
   employee_profile_required: 'Your employee profile is not active. Contact HR.',
@@ -77,12 +85,24 @@ export function loadAttendanceRecords({
     p_page: page,
   });
 }
-export const recordAttendance = ({ type, id, previousId }) =>
+export const recordAttendance = ({ type, id, previousId, employeeId, location }) =>
   request('record_attendance', {
     p_event_type: type,
     p_request_id: id,
     p_previous_event_id: previousId || null,
+    p_employee_id: employeeId || null,
+    p_location: location
+      ? {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          accuracy_meters: location.accuracy_meters,
+          captured_at: location.captured_at,
+          consent_version: location.consent_version,
+        }
+      : null,
   });
+export const loadAttendanceLocations = (id) =>
+  request('attendance_location_details', { p_session_id: id });
 export const loadEmployeeShifts = (id) => request('hr_employee_shifts', { p_employee_id: id });
 export const saveEmployeeShift = (employee, values, assignment = null, cancel = false) =>
   request('hr_save_employee_shift', {

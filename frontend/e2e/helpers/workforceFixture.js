@@ -37,6 +37,8 @@ export async function workforceFixture(
     assignments: [],
     sessions: [],
     punches: [],
+    locations: new Map(),
+    locationEnabled: true,
     loseNextPunchResponse: false,
     today: new Date().toISOString().slice(0, 10),
   };
@@ -226,6 +228,8 @@ export async function workforceFixture(
       return reply({
         role,
         today: state.today,
+        location_required: state.locationEnabled,
+        location_notice_version: 'attendance-location-v1',
         timezone: 'Asia/Kolkata',
         server_time: `${state.today}T04:00:00Z`,
         sites: state.sites,
@@ -266,8 +270,15 @@ export async function workforceFixture(
       if (role !== 'employee')
         return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
       const existing = state.punches.find((punch) => punch.request_id === parameters.p_request_id);
-      if (existing) return reply({ ...existing, replayed: true });
+      if (existing) return reply({ ...existing, replayed: true, location_saved: true });
       const person = state.people[0];
+      if (
+        !parameters.p_location ||
+        parameters.p_location.consent_version !== 'attendance-location-v1'
+      )
+        return reply({ code: 'PT422', message: 'attendance_location_required' }, 422);
+      if (parameters.p_employee_id !== person.id)
+        return reply({ code: 'PT409', message: 'attendance_changed' }, 409);
       const plan = state.assignments.find(
         (assignment) => assignment.employee_id === person.id && !assignment.cancelled,
       );
@@ -282,6 +293,11 @@ export async function workforceFixture(
         occurred_at: `${state.today}T${parameters.p_event_type === 'clock_in' ? '04' : '12'}:00:00Z`,
       };
       state.punches.push(punch);
+      state.locations.set(punch.id, {
+        ...parameters.p_location,
+        recorded_at: punch.occurred_at,
+        event_type: punch.event_type,
+      });
       if (punch.event_type === 'clock_in')
         state.sessions.push({
           id: punch.id,
@@ -306,12 +322,26 @@ export async function workforceFixture(
           clock_out: punch.occurred_at,
           status: 'closed',
           duration_seconds: 28800,
+          clock_out_event_id: punch.id,
         });
       if (state.loseNextPunchResponse) {
         state.loseNextPunchResponse = false;
         return route.abort('failed');
       }
-      return reply({ ...punch, replayed: false });
+      return reply({ ...punch, replayed: false, location_saved: true });
+    }
+    if (name === 'attendance_location_details') {
+      if (role === 'supervisor')
+        return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
+      const session = state.sessions.find((session) => session.id === parameters.p_session_id);
+      if (!session || (role === 'employee' && session.employee_id !== state.people[0].id))
+        return reply({ code: 'PT404', message: 'record_unavailable' }, 404);
+      return reply({
+        session_id: session.id,
+        timezone: session.timezone,
+        clock_in: state.locations.get(session.id) || null,
+        clock_out: state.locations.get(session.clock_out_event_id) || null,
+      });
     }
     if (name === 'attendance_records') {
       let sessions = state.sessions.filter(
@@ -336,7 +366,17 @@ export async function workforceFixture(
             .includes(parameters.p_search.toLowerCase()),
         );
       return reply({
-        rows: sessions.slice((parameters.p_page - 1) * 20, parameters.p_page * 20),
+        rows: sessions
+          .slice((parameters.p_page - 1) * 20, parameters.p_page * 20)
+          .map((session) => ({
+            ...session,
+            ...(role === 'supervisor'
+              ? {}
+              : {
+                  clock_in_location_available: state.locations.has(session.id),
+                  clock_out_location_available: state.locations.has(session.clock_out_event_id),
+                }),
+          })),
         total: sessions.length,
         page: parameters.p_page,
         page_size: 20,

@@ -19,6 +19,16 @@ it('sends a punch intent and expected state without client-selected identity, te
     type: 'clock_in',
     id: 'request',
     previousId: 'previous',
+    employeeId: 'employee',
+    location: {
+      latitude: 12.97,
+      longitude: 77.59,
+      accuracy_meters: 9,
+      captured_at: '2026-11-07T04:00:00Z',
+      consent_version: 'attendance-location-v1',
+      altitude: 777,
+      user_id: 'forged',
+    },
     user_id: 'forged',
     organization_id: 'forged',
     occurred_at: 'historical',
@@ -27,6 +37,14 @@ it('sends a punch intent and expected state without client-selected identity, te
     p_event_type: 'clock_in',
     p_request_id: 'request',
     p_previous_event_id: 'previous',
+    p_employee_id: 'employee',
+    p_location: {
+      latitude: 12.97,
+      longitude: 77.59,
+      accuracy_meters: 9,
+      captured_at: '2026-11-07T04:00:00Z',
+      consent_version: 'attendance-location-v1',
+    },
   });
 });
 it('uses authenticated read functions and forwards literal, bounded filter proposals', async () => {

@@ -59,7 +59,7 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
 
 ## Before production private data
 
-Normal attendance derives the employee, assignment, location and timestamps in
+Normal attendance derives the employee, assignment, work site and timestamps in
 PostgreSQL. Only active Employee accounts can punch themselves. A request UUID,
 expected previous event, serialized writes and unique checkout pairing prevent
 duplicates/stale transitions. HR assignment saves check versions and disallow
@@ -69,6 +69,18 @@ event scope; current profile reassignment alone cannot expose old-site records.
 History remains append-only, and every successful normal punch has one atomic
 audit event. Revocation remains possible during an open session; HR profile/role
 reassignment waits for checkout. No elevated key is used by attendance.
+
+Owner-authorized per-punch location additionally requires the versioned employee
+notice and browser permission. Browser positions are untrusted device reports;
+they do not establish identity, physical presence or attendance timestamps. The
+server validates coordinate/accuracy bounds, capture freshness and notice version,
+and binds the proposed employee snapshot to its independently derived subject.
+Precise locations persist atomically with the punch in an immutable private RLS
+table, without API-role table grants. Only Employee-self and HR-organization
+detail RPC access is allowed and audited. Supervisors, other employees/tenants,
+auditors and owners do not inherit it. List payloads contain no coordinates.
+Device data is not logged or persisted in browser storage. Native permission and
+an acknowledgement precede each new capture; retries reuse the original fix.
 
 Dashboard Auth administration additionally requires migration 0004 and the private
 Cloudflare binding described in `ADMIN_DASHBOARD_SETUP.md`. The gateway validates
@@ -98,8 +110,10 @@ CORS/host/CSP origins, HTTPS and managed secrets. Do not expose API docs in prod
 The API health endpoint is process liveness, not database readiness.
 
 Approve document access/retention, upload validation/scanning, short-lived signed
-URLs and privacy notices. Location needs consent/purpose/retention approval; optional
-selfie evidence is not biometric verification. Facial recognition is outside the MVP.
+URLs and privacy notices. Per-punch location uses the approved scope and notice
+in `ATTENDANCE_LOCATIONS.md`; locations are retained with attendance without an
+automatic purge. Broader tracking/retention changes need a separate owner policy.
+Selfie evidence and facial recognition remain outside the MVP.
 
 Robots/noindex are crawler hints, not confidentiality. Service roles bypass RLS and
 must never be used in the frontend or as a shortcut for scoped reads. Never dump

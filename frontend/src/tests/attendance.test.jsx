@@ -1,12 +1,15 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, it, vi } from 'vitest';
 import PunchCard from '../features/attendance/PunchCard';
 import AttendanceRecords from '../features/attendance/AttendanceRecords';
 import EmployeeSchedule from '../features/attendance/EmployeeSchedule';
+import AttendanceLocationDetails from '../features/attendance/AttendanceLocationDetails';
+import { captureAttendanceLocation } from '../services/locationService';
 import {
   loadAttendanceRecords,
   loadAttendanceWorkspace,
+  loadAttendanceLocations,
   recordAttendance,
 } from '../services/attendanceService';
 import {
@@ -18,9 +21,17 @@ import {
 vi.mock('../services/attendanceService', () => ({
   loadAttendanceRecords: vi.fn(),
   loadAttendanceWorkspace: vi.fn(),
+  loadAttendanceLocations: vi.fn(),
   recordAttendance: vi.fn(),
 }));
+vi.mock('../services/locationService', () => ({
+  captureAttendanceLocation: vi.fn(),
+  LOCATION_NOTICE_VERSION: 'attendance-location-v1',
+}));
 const workspace = {
+  employee_id: 'employee',
+  location_required: true,
+  location_notice_version: 'attendance-location-v1',
   today: '2026-11-07',
   timezone: 'Asia/Kolkata',
   site_name: 'Main office',
@@ -37,8 +48,22 @@ const workspace = {
     scheduled_end: '2026-11-07T11:30:00Z',
   },
 };
-const receipt = { id: 'new-event', event_type: 'clock_in', occurred_at: '2026-11-07T04:00:00Z' };
+const point = {
+  latitude: 12.971599,
+  longitude: 77.594566,
+  accuracy_meters: 8,
+  captured_at: '2026-11-07T04:00:00Z',
+  consent_version: 'attendance-location-v1',
+};
+const receipt = {
+  id: 'new-event',
+  event_type: 'clock_in',
+  occurred_at: '2026-11-07T04:00:00Z',
+  location_saved: true,
+};
 beforeEach(() => {
+  loadAttendanceLocations.mockResolvedValue({ timezone: 'UTC', clock_in: null, clock_out: null });
+  captureAttendanceLocation.mockResolvedValue(point);
   loadAttendanceWorkspace.mockResolvedValue({ ...workspace, role: 'employee', schedule: [] });
   recordAttendance.mockResolvedValue(receipt);
   loadAttendanceRecords.mockResolvedValue({
@@ -48,6 +73,22 @@ beforeEach(() => {
     page_size: 20,
     summary: { sessions: 0, open: 0, completed_seconds: 0 },
   });
+});
+
+it('does not turn missing coordinate values into a fabricated zero location or map link', async () => {
+  loadAttendanceLocations.mockResolvedValue({
+    timezone: 'UTC',
+    clock_in: { latitude: null, longitude: null, accuracy_meters: 0 },
+    clock_out: null,
+  });
+  render(
+    <AttendanceLocationDetails
+      row={{ id: 'session', display_name: 'Test person', attendance_date: '2026-11-07' }}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(await screen.findByText('This saved location could not be displayed.')).toBeVisible();
+  expect(screen.queryByRole('link')).not.toBeInTheDocument();
 });
 
 it('handles a changed database role without rendering an employee schedule from stale navigation', async () => {
@@ -78,6 +119,7 @@ it('blocks clock-in until a shift is assigned but permits finishing an open sess
       onRefresh={vi.fn()}
     />,
   );
+  await userEvent.setup().click(screen.getByRole('checkbox'));
   expect(screen.getByRole('button', { name: 'Clock out' })).toBeEnabled();
 });
 it('recovers an uncertain punch with the original request and snapshot, without toggling the action', async () => {
@@ -88,6 +130,7 @@ it('recovers an uncertain punch with the original request and snapshot, without 
   const refresh = vi.fn();
   const user = userEvent.setup();
   render(<PunchCard workspace={workspace} onRecorded={saved} onRefresh={refresh} />);
+  await user.click(screen.getByRole('checkbox'));
   await user.click(screen.getByRole('button', { name: 'Clock in' }));
   expect(await screen.findByRole('button', { name: 'Check attendance request' })).toBeEnabled();
   expect(screen.getByRole('button', { name: 'Refresh status' })).toBeDisabled();
@@ -96,7 +139,10 @@ it('recovers an uncertain punch with the original request and snapshot, without 
   expect(recordAttendance.mock.calls[0][0]).toMatchObject({
     type: 'clock_in',
     previousId: 'previous',
+    employeeId: 'employee',
+    location: point,
   });
+  expect(captureAttendanceLocation).toHaveBeenCalledOnce();
   expect(saved).toHaveBeenCalledOnce();
   expect(refresh).not.toHaveBeenCalled();
 });
@@ -111,11 +157,51 @@ it('does not treat a malformed receipt as a confirmed punch or issue a second ac
   const saved = vi.fn();
   const user = userEvent.setup();
   render(<PunchCard workspace={workspace} onRecorded={saved} onRefresh={vi.fn()} />);
+  await user.click(screen.getByRole('checkbox'));
   await user.dblClick(screen.getByRole('button', { name: 'Clock in' }));
   expect(recordAttendance).toHaveBeenCalledOnce();
   resolve({ status: 'unexpected' });
   expect(await screen.findByRole('button', { name: 'Check attendance request' })).toBeVisible();
   expect(saved).not.toHaveBeenCalled();
+});
+it('waits for explicit consent and never submits a punch after location permission is denied', async () => {
+  captureAttendanceLocation.mockRejectedValueOnce(new Error('Location permission was denied.'));
+  const user = userEvent.setup();
+  render(<PunchCard workspace={workspace} onRecorded={vi.fn()} onRefresh={vi.fn()} />);
+  expect(screen.getByRole('button', { name: 'Clock in' })).toBeDisabled();
+  expect(captureAttendanceLocation).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('checkbox'));
+  await user.click(screen.getByRole('button', { name: 'Clock in' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('permission was denied');
+  expect(recordAttendance).not.toHaveBeenCalled();
+});
+it('discards a pending device fix after leaving the attendance screen', async () => {
+  let resolve;
+  captureAttendanceLocation.mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  const user = userEvent.setup();
+  const view = render(<PunchCard workspace={workspace} onRecorded={vi.fn()} onRefresh={vi.fn()} />);
+  await user.click(screen.getByRole('checkbox'));
+  await user.click(screen.getByRole('button', { name: 'Clock in' }));
+  view.unmount();
+  await act(async () => resolve(point));
+  expect(recordAttendance).not.toHaveBeenCalled();
+});
+it('does not collect location before the matching server policy is installed', () => {
+  render(
+    <PunchCard
+      workspace={{ ...workspace, location_required: false }}
+      onRecorded={vi.fn()}
+      onRefresh={vi.fn()}
+    />,
+  );
+  expect(screen.getByRole('button', { name: 'Clock in' })).toBeDisabled();
+  expect(screen.getByText(/apply attendance migration 0006/)).toBeVisible();
+  expect(captureAttendanceLocation).not.toHaveBeenCalled();
 });
 it('keeps attendance filtering explicit and rejects a range longer than 31 days', async () => {
   const user = userEvent.setup();
