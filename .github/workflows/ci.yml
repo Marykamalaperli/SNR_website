@@ -35,6 +35,10 @@ jobs:
         env:
           WRANGLER_SEND_METRICS: "false"
         run: npx --yes wrangler@4.158.0 pages functions build functions --outdir .wrangler/worker --compatibility-date 2026-11-07
+      - name: Test account creation in the Cloudflare runtime
+        env:
+          WRANGLER_SEND_METRICS: "false"
+        run: npx --yes --package=wrangler@4.158.0 -- node scripts/test-worker-runtime.mjs
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
       - uses: actions/upload-artifact@v4

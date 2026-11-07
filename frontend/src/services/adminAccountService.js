@@ -54,7 +54,12 @@ async function accountRequest(path, method, body) {
       account_change_not_confirmed:
         'The account change is not confirmed yet. Check Pending account requests.',
       request_interrupted:
-        'The request was interrupted. Check Pending account requests before trying again.',
+        result.connection_stage === 'verify_session'
+          ? 'The sign-in service could not be reached. Please try again shortly.'
+          : 'The request was interrupted. Check Pending account requests before trying again.',
+      upstream_unavailable: result.operation_id
+        ? 'The account service could not confirm this request. Check Pending account requests.'
+        : 'The account service returned an unexpected response. Please try again shortly.',
       account_rate_limit: 'Too many account requests. Wait a minute before trying again.',
     };
     const failure = new Error(

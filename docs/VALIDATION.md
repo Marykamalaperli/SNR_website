@@ -219,3 +219,33 @@ Activation is documented in `ADMIN_DASHBOARD_SETUP.md`. The owner must apply onl
 the new migration, set the encrypted Production `SUPABASE_ADMIN_KEY` binding and
 redeploy the frontend. Ordinary staff edits then use the dashboard; no recurring
 Supabase console step is required. Attendance/corrections/documents remain pending.
+
+## Immediate account-creation connection failure
+
+On 7 November 2026, the owner reported an immediate `request_interrupted` error.
+The original authenticated gateway reproduced the same HTTP 503 in the actual
+Workers engine before its first upstream call: Workers does not implement the
+`redirect: 'error'` option. The corrected gateway uses manual redirects and refuses
+3xx responses before reading their body. It also returns a fixed connection-stage
+label so a session-service outage is distinguished from a pending Auth operation.
+
+Executed checks on the fix:
+
+- `PUBLIC_SITE_URL=https://snr-nest.pages.dev bash scripts/check.sh` passed:
+  **97 frontend tests**, **20 server tests**, **55 backend/setup tests**, nine
+  deployment guardrails, formatting/lint checks and the production build. The
+  previously recorded Starlette/httpx deprecation warning remains.
+- The pinned Wrangler runtime command passed **six checks**: authenticated
+  creation plus redirect refusal during session verification and administrative
+  writes for each of `2021-11-02` and `2026-11-07`. All outbound calls are synthetic;
+  assertions verify that a redirect destination receives no request and that an
+  already prepared request keeps its recovery ID. The original gateway fails the
+  creation check before this fix. CI and the frontend deployment now run this check.
+- All **24 Chromium browser checks** passed. Wrangler **4.158.0** compiled the
+  actual Pages Functions Worker successfully. Both workflows passed actionlint.
+
+No SQL, dependencies, hosting compatibility settings or credentials changed. The
+SQL suite was not rerun because the schema is unchanged. No live Supabase account
+or private data was used in validation. A frontend release and owner verification
+against the configured project are still needed; this is a local runtime regression
+result, not a claim that the live project has been tested.

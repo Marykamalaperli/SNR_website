@@ -105,6 +105,9 @@ jobs:
         env:
           PUBLIC_SITE_URL: ${{ steps.project.outputs.site_url }}
         run: npm run build
+      - name: Test account creation in the Cloudflare runtime
+        working-directory: frontend
+        run: npx --yes --package=wrangler@4.158.0 -- node scripts/test-worker-runtime.mjs
       - name: Check production routes
         working-directory: frontend
         run: |

@@ -94,6 +94,12 @@ reserved versions. No password/key is returned. HTTP 401/403/404/409/422/429/503
 represent identity, capability, unavailable record, pending/stale/conflict,
 validation, rate limit and unavailable/interrupted server respectively.
 
+Connection errors may also include a fixed `connection_stage`: `verify_session`,
+`prepare_request`, `auth_account`, or `account_record`. This contains no URL,
+credentials or person data. A session-service connection failure does not imply a
+pending account. Upstream redirects are refused with HTTP 503 / `upstream_unavailable`;
+an already prepared operation retains its recovery ID.
+
 Additional authenticated-only HR RPCs in migration 0004:
 `hr_begin_staff_account`, `hr_staff_account_context`, `hr_complete_staff_account`,
 `hr_recover_staff_account`, `hr_close_staff_account`, `hr_pending_staff_accounts`,

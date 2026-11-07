@@ -1,5 +1,18 @@
 # Test plan
 
+The account gateway also needs its real hosting runtime, since Node's Fetch API
+accepts options that Workers rejects. From `frontend`, run:
+
+```sh
+npm exec --yes --package=wrangler@4.158.0 -- node scripts/test-worker-runtime.mjs
+```
+
+This checks authenticated account/profile creation and refuses redirects during
+identity verification and administrative Auth writes, with both old/current
+compatibility dates. All outbound services and credentials are synthetic. The
+check runs in CI and before the production frontend deployment; it does not
+replace real project-owner acceptance testing after a release.
+
 ## Required foundation checks
 
 Frontend: `npm ci`, `npm run lint`, `npm run format:check`, `npm run test`,

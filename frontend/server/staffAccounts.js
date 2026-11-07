@@ -248,17 +248,30 @@ export async function handleStaffAccounts(
     if (!config.supabaseUrl || !config.supabaseKey) throw unavailable();
     const deadline = now() + 25000;
     async function upstream(path, method, body, admin = false) {
+      const connection = {
+        connection_stage:
+          path === '/auth/v1/user'
+            ? 'verify_session'
+            : path === '/rest/v1/rpc/hr_begin_staff_account'
+              ? 'prepare_request'
+              : admin
+                ? 'auth_account'
+                : 'account_record',
+      };
       if (now() >= deadline)
         throw new Failure(
           503,
           'request_interrupted',
           'The request was interrupted. Check Pending account requests before trying again.',
+          connection,
         );
       let result;
       try {
         result = await fetcher(`${config.supabaseUrl}${path}`, {
           method,
-          redirect: 'error',
+          // Workers supports manual/follow only. Handle redirects ourselves so
+          // tokens and the administrative key never follow another destination.
+          redirect: 'manual',
           headers: {
             apikey: admin ? settings.adminKey : config.supabaseKey,
             Authorization: admin ? `Bearer ${settings.adminKey}` : authorization,
@@ -272,8 +285,16 @@ export async function handleStaffAccounts(
           503,
           'request_interrupted',
           'The request was interrupted. Check Pending account requests before trying again.',
+          connection,
         );
       }
+      if (result.status >= 300 && result.status < 400)
+        throw new Failure(
+          503,
+          'upstream_unavailable',
+          'Account management received an unexpected response. Please try again.',
+          connection,
+        );
       let data;
       try {
         data = await result.json();
@@ -282,6 +303,7 @@ export async function handleStaffAccounts(
           503,
           'upstream_unavailable',
           'Account management could not be reached. Please try again.',
+          connection,
         );
       }
       return { result, data };

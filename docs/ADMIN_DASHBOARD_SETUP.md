@@ -81,6 +81,12 @@ are outside this release. Attendance/corrections/documents remain separate work.
 
 ## Interrupted requests
 
+An immediate “request was interrupted” error in the initial account-management
+release came from an unsupported Cloudflare request option, before any account
+was created. The corrected release fixes that connection. Deploy the latest `main`
+using the existing frontend workflow, then reload the app. This fix needs no SQL
+migration or key change. All routine staff actions continue in the dashboard.
+
 An account request has a UUID and a private database intent before Auth is called.
 It stores safe profile fields and an opaque keyed HMAC fingerprint, never a
 password or admin key. GoTrue's server-only `app_metadata` identifies the operation

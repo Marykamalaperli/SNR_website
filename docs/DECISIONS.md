@@ -102,3 +102,18 @@ or replayed after completed request IDs. Protected roles and tenant boundaries
 remain enforced. Existing-account onboarding includes confirmation in the server
 flow; workspace/own settings are implemented rather than redirecting to a provider
 console. Own email changes retain the Auth provider's verification policy.
+
+## Cloudflare fetch compatibility for account operations
+
+An immediate account-creation failure was reproduced in the actual Workers runtime:
+Workers rejects `redirect: 'error'` before sending a request. Node-only mocked fetch
+tests and unauthenticated runtime probes had not exercised that path. The gateway
+now uses `redirect: 'manual'` and rejects every 3xx response before parsing it.
+Caller tokens, passwords and the administrative key therefore stay at the configured
+Supabase origin. No automatic retry is added to Auth writes.
+
+A pinned Wrangler/Miniflare runtime check now executes authenticated creation and
+redirect refusal before deployment as well as in CI. Synthetic outbound handlers
+replace all external services; the actual Worker `fetch` constructs every request.
+Both the legacy Pages compatibility date and the current date are covered without
+requiring a hosting-setting change or an application dependency upgrade.

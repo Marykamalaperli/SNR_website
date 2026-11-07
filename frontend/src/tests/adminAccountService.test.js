@@ -123,3 +123,32 @@ it('requires a session and rejects malformed successful responses', async () => 
   fetcher.mockResolvedValue(Response.json({ status: 'unexpected' }));
   await expect(recoverStaffAccount('request')).rejects.toThrow('could not be verified');
 });
+it('distinguishes an unreachable sign-in service from a recoverable account interruption', async () => {
+  fetcher.mockResolvedValue(
+    Response.json(
+      {
+        error: { code: 'request_interrupted', message: 'PRIVATE-DETAILS' },
+        connection_stage: 'verify_session',
+      },
+      { status: 503 },
+    ),
+  );
+  const unavailable = createStaffAccount(values, 'request');
+  await expect(unavailable).rejects.toThrow(
+    'The sign-in service could not be reached. Please try again shortly.',
+  );
+  await expect(unavailable).rejects.not.toHaveProperty('operationId');
+  fetcher.mockResolvedValue(
+    Response.json(
+      {
+        error: { code: 'upstream_unavailable', message: 'PRIVATE-DETAILS' },
+        operation_id: 'request',
+      },
+      { status: 503 },
+    ),
+  );
+  await expect(createStaffAccount(values, 'request')).rejects.toMatchObject({
+    message: 'The account service could not confirm this request. Check Pending account requests.',
+    operationId: 'request',
+  });
+});
