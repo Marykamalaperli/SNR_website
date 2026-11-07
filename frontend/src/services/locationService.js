@@ -1,6 +1,6 @@
 export const LOCATION_NOTICE_VERSION = 'attendance-location-v1';
 
-export async function captureAttendanceLocation({
+export async function captureDeviceLocation({
   geolocation = globalThis.navigator?.geolocation,
   secure = globalThis.isSecureContext,
   now = Date.now,
@@ -60,7 +60,6 @@ export async function captureAttendanceLocation({
             longitude,
             accuracy_meters: accuracy,
             captured_at: new Date(timestamp).toISOString(),
-            consent_version: LOCATION_NOTICE_VERSION,
           });
         },
         (error) => {
@@ -89,4 +88,11 @@ export async function captureAttendanceLocation({
       );
     }
   });
+}
+
+export async function captureAttendanceLocation(options) {
+  return {
+    ...(await captureDeviceLocation(options)),
+    consent_version: LOCATION_NOTICE_VERSION,
+  };
 }

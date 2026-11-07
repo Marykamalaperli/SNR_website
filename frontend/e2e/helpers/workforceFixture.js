@@ -39,6 +39,8 @@ export async function workforceFixture(
     punches: [],
     locations: new Map(),
     locationEnabled: true,
+    storePolicyEnabled: true,
+    storeAreas: new Map(),
     loseNextPunchResponse: false,
     today: new Date().toISOString().slice(0, 10),
   };
@@ -230,6 +232,13 @@ export async function workforceFixture(
         today: state.today,
         location_required: state.locationEnabled,
         location_notice_version: 'attendance-location-v1',
+        store_geofence_required: state.storePolicyEnabled,
+        store_geofence_policy: 'store-radius-v1',
+        attendance_area: {
+          configured: state.storeAreas.has(person?.site_id),
+          radius_meters: state.storeAreas.get(person?.site_id)?.radius_meters,
+          site_name: person?.site_name,
+        },
         timezone: 'Asia/Kolkata',
         server_time: `${state.today}T04:00:00Z`,
         sites: state.sites,
@@ -286,6 +295,27 @@ export async function workforceFixture(
       const last = state.punches.at(-1);
       if ((last?.id || null) !== parameters.p_previous_event_id)
         return reply({ code: 'PT409', message: 'attendance_changed' }, 409);
+      const area = state.storeAreas.get(person.site_id);
+      if (!area) return reply({ code: 'PT409', message: 'store_area_not_configured' }, 409);
+      const radians = (degrees) => (degrees * Math.PI) / 180;
+      const fix = parameters.p_location;
+      const distance =
+        12742000 *
+        Math.asin(
+          Math.sqrt(
+            Math.min(
+              1,
+              Math.sin(radians(fix.latitude - area.latitude) / 2) ** 2 +
+                Math.cos(radians(area.latitude)) *
+                  Math.cos(radians(fix.latitude)) *
+                  Math.sin(radians(fix.longitude - area.longitude) / 2) ** 2,
+            ),
+          ),
+        );
+      if (distance > area.radius_meters)
+        return reply({ code: 'PT409', message: 'outside_store_area' }, 409);
+      if (distance + fix.accuracy_meters > area.radius_meters)
+        return reply({ code: 'PT409', message: 'store_location_uncertain' }, 409);
       const punch = {
         id: id('9', state.punches.length + 1),
         request_id: parameters.p_request_id,
@@ -297,6 +327,10 @@ export async function workforceFixture(
         ...parameters.p_location,
         recorded_at: punch.occurred_at,
         event_type: punch.event_type,
+        store_distance_meters: distance,
+        store_radius_meters: area.radius_meters,
+        store_policy_version: area.version,
+        store_rule_version: 'store-radius-v1',
       });
       if (punch.event_type === 'clock_in')
         state.sessions.push({
@@ -395,9 +429,40 @@ export async function workforceFixture(
       state.nextError = null;
       return reply(error, 422);
     }
+    if (name === 'hr_site_attendance_area') {
+      const site = state.sites.find((site) => site.id === parameters.p_site_id);
+      return reply({
+        site_id: site.id,
+        site_name: site.name,
+        configured: state.storeAreas.has(site.id),
+        latitude: null,
+        longitude: null,
+        radius_meters: 100,
+        version: null,
+        ...state.storeAreas.get(site.id),
+      });
+    }
+    if (name === 'hr_save_site_attendance_area') {
+      const previous = state.storeAreas.get(parameters.p_site_id);
+      if ((previous?.version ?? null) !== parameters.p_version)
+        return reply({ code: 'PT409', message: 'record_changed' }, 409);
+      const area = {
+        latitude: parameters.p_latitude,
+        longitude: parameters.p_longitude,
+        radius_meters: parameters.p_radius_meters,
+        version: (previous?.version || 0) + 1,
+      };
+      state.storeAreas.set(parameters.p_site_id, area);
+      return reply({ site_id: parameters.p_site_id, version: area.version });
+    }
     if (name === 'hr_organization_setup')
       return reply({
         ...state,
+        sites: state.sites.map((site) => ({
+          ...site,
+          attendance_area_configured: state.storeAreas.has(site.id),
+          attendance_radius_meters: state.storeAreas.get(site.id)?.radius_meters,
+        })),
         counts: {
           employees: state.people.length,
           active_employees: state.people.filter((p) => p.active).length,

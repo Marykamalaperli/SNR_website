@@ -148,7 +148,8 @@ The owner confirmed working attendance and explicitly requested saving the devic
 location at both clock-in and clock-out. This authorizes per-event location for
 attendance verification. Notice `attendance-location-v1` requires staff
 acknowledgement and browser permission before a fresh high-accuracy fix. Device
-accuracy is retained; neither physical presence nor a site radius is certified.
+accuracy is retained; physical presence is not certified. The later store-area
+decision below adds a server-enforced radius check against this reported position.
 Location is collected only for the chosen punch, with no background movement or
 media capture. Its records are retained with attendance; no automatic purge is added.
 
@@ -164,3 +165,26 @@ location-free API rejects writes. Event, audit and GPS persist atomically. Exact
 replay binds the original fix and can recover after it ages. Leaving the screen
 discards an outstanding fix; changed credentials/identity cannot transfer the
 intent to another employee. Existing history is preserved without backfilled GPS.
+
+## Store attendance areas
+
+The owner requested that both clock-in and clock-out require proximity to the
+store. Migration 0007 makes an HR-configured centre/radius mandatory. The default
+is 100 metres, editable per store from 10 to 1,000 metres. No production coordinates
+are invented. Missing configuration blocks both punches; there is no bypass switch.
+
+The private location insert trigger derives the store from the normal event, uses
+great-circle distance, and requires distance plus reported accuracy to fit within
+the radius. Accuracy never expands the boundary. An outside/uncertain fix rejects
+the entire event/audit/location transaction. Clock-out uses its open session’s
+store and the currently configured area, including for an expired shift/inactive
+site. Accepted GPS retains an immutable centre/radius/version/distance snapshot.
+Exact committed retries return their original receipt without reapplying a changed
+policy. Older location rows remain explicitly unchecked, without history rewrites.
+
+Location capture remains explicit per punch after acknowledgement and native
+permission. No background capture or automatic consent is added. Store setup can
+use an explicitly requested device fix or manually entered coordinates, reviewed
+before save. All routine configuration remains in the HR dashboard. Browser GPS
+can be spoofed; this policy compares the reported device position, not independent
+proof of physical presence. See `STORE_ATTENDANCE_AREAS.md` for activation/tests.

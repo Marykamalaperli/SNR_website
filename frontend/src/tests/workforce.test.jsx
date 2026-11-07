@@ -10,6 +10,8 @@ import {
   loadOrganization,
   saveEmployee,
   saveOrganizationRecord,
+  loadStoreArea,
+  saveStoreArea,
 } from '../services/workforceService';
 import useRemoteData from '../hooks/useRemoteData';
 
@@ -20,6 +22,8 @@ vi.mock('../services/workforceService', () => ({
   loadOrganization: vi.fn(),
   saveEmployee: vi.fn(),
   saveOrganizationRecord: vi.fn(),
+  loadStoreArea: vi.fn(),
+  saveStoreArea: vi.fn(),
 }));
 const organization = {
   organization: { name: 'Test organization', timezone: 'Asia/Kolkata' },
@@ -42,6 +46,16 @@ const person = {
   membership_version: 4,
 };
 beforeEach(() => {
+  loadStoreArea.mockResolvedValue({
+    site_id: 'site',
+    site_name: 'Main office',
+    configured: false,
+    latitude: null,
+    longitude: null,
+    radius_meters: 100,
+    version: null,
+  });
+  saveStoreArea.mockResolvedValue({ site_id: 'site', version: 1 });
   loadPendingAccounts.mockResolvedValue([]);
   loadOrganization.mockResolvedValue(organization);
   loadDirectory.mockResolvedValue({ rows: [person], total: 1, page: 1, page_size: 20 });
@@ -51,6 +65,50 @@ beforeEach(() => {
 function mount(component) {
   return render(<MemoryRouter>{component}</MemoryRouter>);
 }
+
+it('configures a store area in the dashboard with real coordinates and a versioned radius', async () => {
+  const user = userEvent.setup();
+  mount(<OrganizationSetup />);
+  await user.click(
+    await screen.findByRole('button', { name: 'Manage attendance area for Main office' }),
+  );
+  const dialog = within(screen.getByRole('dialog'));
+  const latitude = await dialog.findByLabelText('Store latitude');
+  expect(latitude).toHaveValue(null);
+  await user.type(latitude, '12.971599');
+  await user.type(dialog.getByLabelText('Store longitude'), '77.594566');
+  expect(dialog.getByLabelText('Allowed radius (metres)')).toHaveValue(100);
+  await user.click(dialog.getByRole('button', { name: 'Save attendance area' }));
+  await waitFor(() =>
+    expect(saveStoreArea).toHaveBeenCalledWith(
+      expect.objectContaining({ version: null, site_id: 'site' }),
+      { latitude: '12.971599', longitude: '77.594566', radius_meters: '100' },
+    ),
+  );
+  expect(await screen.findByText(/Store attendance area saved/)).toBeVisible();
+});
+
+it('keeps a stale store-area edit visible for review without claiming success', async () => {
+  const user = userEvent.setup();
+  loadStoreArea.mockResolvedValue({
+    site_id: 'site',
+    site_name: 'Main office',
+    configured: true,
+    latitude: 12.971599,
+    longitude: 77.594566,
+    radius_meters: 100,
+    version: 3,
+  });
+  saveStoreArea.mockRejectedValueOnce(new Error('This record changed while you were editing.'));
+  mount(<OrganizationSetup />);
+  await user.click(
+    await screen.findByRole('button', { name: 'Manage attendance area for Main office' }),
+  );
+  const dialog = within(screen.getByRole('dialog'));
+  await user.click(await dialog.findByRole('button', { name: 'Save attendance area' }));
+  expect(await dialog.findByRole('alert')).toHaveTextContent('changed while you were editing');
+  expect(saveStoreArea.mock.calls[0][0].version).toBe(3);
+});
 
 it('searches and filters the real directory, resets paging, and renders server failures', async () => {
   const user = userEvent.setup();

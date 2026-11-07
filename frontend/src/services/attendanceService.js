@@ -1,6 +1,12 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  store_area_not_configured:
+    'HR must set your store’s attendance area before you can clock in or out.',
+  outside_store_area:
+    'You are outside your store’s attendance area. Move to the store and try again.',
+  store_location_uncertain:
+    'Location accuracy is too low to confirm you are inside the store area. Enable precise location, move closer to the store and try again.',
   attendance_location_required:
     'Location is required for clock-in and clock-out. Reload the page and allow location access.',
   invalid_attendance_location:

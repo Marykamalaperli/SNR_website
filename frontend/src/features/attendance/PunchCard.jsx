@@ -27,8 +27,20 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
   const locationReady =
     workspace.location_required === true &&
     workspace.location_notice_version === LOCATION_NOTICE_VERSION;
+  const storePolicyReady =
+    workspace.store_geofence_required === true &&
+    workspace.store_geofence_policy === 'store-radius-v1';
+  const area = workspace.attendance_area;
+  const areaReady =
+    storePolicyReady && area?.configured === true && Number.isFinite(area.radius_meters);
   async function punch() {
-    if (busy.current || !locationReady || (!pending && !consent)) return;
+    if (
+      busy.current ||
+      !locationReady ||
+      !storePolicyReady ||
+      (!pending && (!consent || blocked || !areaReady))
+    )
+      return;
     busy.current = true;
     setSaving(true);
     setError('');
@@ -126,6 +138,23 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
       {!workspace.site_active && !clockedIn && (
         <p className="notice">Your work site is inactive. Contact HR.</p>
       )}
+      {!storePolicyReady ? (
+        <p className="notice">
+          Store distance checks are not installed yet. Ask your project administrator to apply
+          attendance migration 0007 and deploy the latest frontend.
+        </p>
+      ) : areaReady ? (
+        <p className="notice">
+          Clock in and out within {area.radius_meters} metres of {area.site_name}. Each punch
+          automatically requests a fresh location after you agree. Low location accuracy can prevent
+          a punch near the boundary.
+        </p>
+      ) : (
+        <p className="notice">
+          HR must set this store’s attendance area in Sites &amp; Shifts before you can clock in or
+          out.
+        </p>
+      )}
       {locationReady ? (
         <div className="attendance-location-consent">
           <p>
@@ -167,7 +196,12 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
       <div className="live-punch-actions">
         <Button
           onClick={punch}
-          disabled={saving || !locationReady || (blocked && !pending) || (!consent && !pending)}
+          disabled={
+            saving ||
+            !locationReady ||
+            !storePolicyReady ||
+            ((!areaReady || blocked || !consent) && !pending)
+          }
         >
           {clockedIn ? (
             <LogOut size={18} aria-hidden="true" />

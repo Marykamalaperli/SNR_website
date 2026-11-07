@@ -42,7 +42,9 @@ overrides the employee, organization, shift/work date or punch timestamp. The
 expected employee ID is a snapshot check, not permission to choose another person.
 
 Device positions can be approximate or spoofed. The UI shows reported accuracy;
-this feature does not certify exact physical presence or enforce a site radius.
+this feature does not certify exact physical presence. Migration 0007 additionally
+enforces a store radius against the reported fix and accuracy; activate it using
+[store attendance areas](STORE_ATTENDANCE_AREAS.md).
 No altitude, heading, speed, selfie, movement history, reverse-geocoded address or
 additional tracking identifier is requested. Location records are retained with
 attendance; this release adds no automatic retention purge.

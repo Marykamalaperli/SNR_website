@@ -11,6 +11,7 @@ import useRemoteData from '../../hooks/useRemoteData';
 import { loadOrganization, saveOrganizationRecord } from '../../services/workforceService';
 import RecordForm from './RecordForm';
 import SelectField from './SelectField';
+import StoreAreaEditor from './StoreAreaEditor';
 
 function SetupForm({ kind, record, organization, onClose, onSaved }) {
   const title = `${record ? 'Edit' : 'Add'} ${kind}`;
@@ -81,6 +82,7 @@ function SetupForm({ kind, record, organization, onClose, onSaved }) {
 export default function OrganizationSetup() {
   const { data, loading, error, reload } = useRemoteData(loadOrganization);
   const [editor, setEditor] = useState(null);
+  const [areaSite, setAreaSite] = useState(null);
   const [notice, setNotice] = useState('');
   const edit = (kind, record = null) => setEditor({ kind, record });
   return (
@@ -145,6 +147,18 @@ export default function OrganizationSetup() {
                         Shift templates ·{' '}
                         {data.shifts.filter((shift) => shift.site_id === site.id).length}
                       </small>
+                      <p className="field-hint">
+                        {site.attendance_area_configured
+                          ? `Attendance area · ${site.attendance_radius_meters} metres`
+                          : 'Attendance area required before clock-in or clock-out.'}
+                      </p>
+                      <Button
+                        variant="text"
+                        onClick={() => setAreaSite(site)}
+                        aria-label={`Manage attendance area for ${site.name}`}
+                      >
+                        Manage attendance area
+                      </Button>
                     </div>
                     <Button
                       variant="text"
@@ -258,6 +272,17 @@ export default function OrganizationSetup() {
               onClose={() => setEditor(null)}
               onSaved={(message) => {
                 setEditor(null);
+                setNotice(message);
+                reload();
+              }}
+            />
+          )}
+          {areaSite && (
+            <StoreAreaEditor
+              site={areaSite}
+              onClose={() => setAreaSite(null)}
+              onSaved={(message) => {
+                setAreaSite(null);
                 setNotice(message);
                 reload();
               }}

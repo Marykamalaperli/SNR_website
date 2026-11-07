@@ -59,6 +59,15 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
 
 ## Before production private data
 
+Migration 0007 adds mandatory HR-configured store distance checks for clock-in and
+clock-out. The private location insert trigger uses the server-derived event site
+and requires distance plus reported accuracy to fit the configured radius. Missing
+setup, outside/uncertain fixes and stale data roll back the whole punch. Store
+centre/radius/version/distance snapshots are immutable. Configuration is HR-only,
+tenant-scoped and versioned; direct table access/private helper execution is denied.
+See `STORE_ATTENDANCE_AREAS.md`. Device GPS remains untrusted input, not proof of
+physical presence; acknowledgement and browser permission still precede capture.
+
 Normal attendance derives the employee, assignment, work site and timestamps in
 PostgreSQL. Only active Employee accounts can punch themselves. A request UUID,
 expected previous event, serialized writes and unique checkout pairing prevent

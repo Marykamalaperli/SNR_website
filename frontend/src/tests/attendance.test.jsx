@@ -32,6 +32,9 @@ const workspace = {
   employee_id: 'employee',
   location_required: true,
   location_notice_version: 'attendance-location-v1',
+  store_geofence_required: true,
+  store_geofence_policy: 'store-radius-v1',
+  attendance_area: { configured: true, radius_meters: 100, site_name: 'Main office' },
   today: '2026-11-07',
   timezone: 'Asia/Kolkata',
   site_name: 'Main office',
@@ -73,6 +76,52 @@ beforeEach(() => {
     page_size: 20,
     summary: { sessions: 0, open: 0, completed_seconds: 0 },
   });
+});
+
+it.each([
+  [{ store_geofence_required: false }, /apply attendance migration 0007/],
+  [{ attendance_area: { configured: false } }, /HR must set this store/],
+])(
+  'blocks a new punch without an activated and configured store area',
+  async (changes, message) => {
+    const user = userEvent.setup();
+    render(
+      <PunchCard
+        workspace={{ ...workspace, ...changes }}
+        onRecorded={vi.fn()}
+        onRefresh={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole('checkbox', { name: /I agree to share/ }));
+    expect(screen.getByRole('button', { name: 'Clock in', exact: true })).toBeDisabled();
+    expect(screen.getByText(message)).toBeVisible();
+    expect(captureAttendanceLocation).not.toHaveBeenCalled();
+    expect(recordAttendance).not.toHaveBeenCalled();
+  },
+);
+
+it('keeps an outside-area clock-out open and captures a new fix for a later attempt', async () => {
+  const user = userEvent.setup();
+  const onRecorded = vi.fn();
+  recordAttendance.mockRejectedValueOnce(
+    new Error('You are outside your store’s attendance area.'),
+  );
+  recordAttendance.mockResolvedValueOnce({ ...receipt, event_type: 'clock_out' });
+  render(
+    <PunchCard
+      workspace={{ ...workspace, status: 'clocked_in' }}
+      onRecorded={onRecorded}
+      onRefresh={vi.fn()}
+    />,
+  );
+  await user.click(screen.getByRole('checkbox', { name: /I agree to share/ }));
+  await user.click(screen.getByRole('button', { name: 'Clock out', exact: true }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('outside');
+  expect(onRecorded).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: 'Clock out', exact: true }));
+  await waitFor(() => expect(onRecorded).toHaveBeenCalledOnce());
+  expect(captureAttendanceLocation).toHaveBeenCalledTimes(2);
+  expect(recordAttendance.mock.calls[0][0].id).not.toBe(recordAttendance.mock.calls[1][0].id);
 });
 
 it('does not turn missing coordinate values into a fabricated zero location or map link', async () => {

@@ -153,6 +153,16 @@ Map links are external, user-initiated navigation; no map/geocoding SDK or new
 hosting secret is introduced. See `ATTENDANCE_LOCATIONS.md` for concrete policy,
 activation and limits. Existing history keeps its original missing-location state.
 
+Migration 0007 adds a private HR-managed store-area table and a location insert
+trigger. Server-derived event site, fresh coordinates, great-circle distance and
+reported accuracy determine eligibility for both punches. A shared area lock keeps
+the rule stable through commit; a failed check rolls back event, audit and GPS.
+Each accepted location snapshots the store centre/radius/version/distance. A matched
+committed replay returns its receipt before any new insert or distance check.
+Ordinary employee workspace metadata carries only readiness and radius; precise
+store configuration is fetched through a scoped HR RPC. Versioned admin saves
+reject stale edits. See `STORE_ATTENDANCE_AREAS.md` for configuration and rollout.
+
 ## Tradeoffs
 
 This foundation prioritizes a polished, testable interface and fail-closed integration

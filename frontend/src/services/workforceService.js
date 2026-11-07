@@ -1,6 +1,7 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  invalid_store_area: 'Enter valid store coordinates and a radius between 10 and 1,000 metres.',
   open_attendance_session: 'Clock out before changing this person’s site, department or role.',
   record_changed:
     'This record changed while you were editing. Close this form, refresh the page and try again.',
@@ -69,6 +70,15 @@ async function request(name, parameters = {}) {
 }
 
 export const loadOrganization = () => request('hr_organization_setup');
+export const loadStoreArea = (id) => request('hr_site_attendance_area', { p_site_id: id });
+export const saveStoreArea = (area, values) =>
+  request('hr_save_site_attendance_area', {
+    p_site_id: area.site_id,
+    p_version: area.version,
+    p_latitude: Number(values.latitude),
+    p_longitude: Number(values.longitude),
+    p_radius_meters: Number(values.radius_meters),
+  });
 export const loadWorkspaceSettings = () => request('hr_workspace_settings');
 export const saveWorkspaceSettings = (values, version) =>
   request('hr_save_workspace_settings', {

@@ -3,6 +3,12 @@ import AxeBuilder from '@axe-core/playwright';
 import { workforceFixture, signInWorkforce } from './helpers/workforceFixture';
 
 function seedShift(state, assigned = false) {
+  state.storeAreas.set(state.sites[0].id, {
+    latitude: 12.971599,
+    longitude: 77.594566,
+    radius_meters: 100,
+    version: 1,
+  });
   state.shifts.push({
     id: '50000000-0000-4000-8000-000000000001',
     name: 'Day shift',
@@ -25,6 +31,67 @@ function seedShift(state, assigned = false) {
       version: 1,
     });
 }
+
+test('HR saves store coordinates and radius from Sites & Shifts with explicit location capture', async ({
+  page,
+}) => {
+  const state = await workforceFixture(page, { populated: true });
+  await page.context().grantPermissions(['geolocation']);
+  await page.context().setGeolocation({ latitude: 12.971599, longitude: 77.594566, accuracy: 8 });
+  await signInWorkforce(page);
+  await page.getByRole('link', { name: 'Sites & Shifts', exact: true }).click();
+  await page.getByRole('button', { name: 'Manage attendance area for Main office' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Store latitude')).toHaveValue('');
+  await dialog.getByRole('button', { name: 'Use my current location', exact: true }).click();
+  await expect(dialog.getByLabel('Store latitude')).toHaveValue('12.971599');
+  expect(state.storeAreas.size).toBe(0);
+  await dialog.getByLabel('Allowed radius (metres)').fill('150');
+  await dialog.getByRole('button', { name: 'Save attendance area' }).click();
+  await expect(page.getByText('Attendance area · 150 metres', { exact: true })).toBeVisible();
+  expect(state.storeAreas.get(state.sites[0].id).latitude).toBe(12.971599);
+  await page.reload();
+  await page.getByRole('button', { name: 'Manage attendance area for Main office' }).click();
+  await expect(dialog.getByLabel('Allowed radius (metres)')).toHaveValue('150');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
+  await page.screenshot({ path: '/tmp/snr-store-area-admin-mobile.png', fullPage: true });
+});
+
+test('outside and inaccurate clock-ins are rejected, and an unconfigured store blocks location requests', async ({
+  page,
+}) => {
+  const state = await workforceFixture(page, { populated: true, role: 'employee' });
+  seedShift(state, true);
+  state.storeAreas.clear();
+  await page.context().grantPermissions(['geolocation']);
+  await signInWorkforce(page);
+  await page.getByRole('checkbox', { name: /I agree to share/ }).check();
+  await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toBeDisabled();
+  await expect(page.getByText(/HR must set this store/)).toBeVisible();
+  state.storeAreas.set(state.sites[0].id, {
+    latitude: 12.971599,
+    longitude: 77.594566,
+    radius_meters: 100,
+    version: 1,
+  });
+  await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
+  await page.getByRole('checkbox', { name: /I agree to share/ }).check();
+  await page.context().setGeolocation({ latitude: 13, longitude: 77.594566, accuracy: 8 });
+  await page.getByRole('button', { name: 'Clock in', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('outside your store');
+  await page.context().setGeolocation({ latitude: 12.971599, longitude: 77.594566, accuracy: 101 });
+  await page.getByRole('button', { name: 'Clock in', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('accuracy is too low');
+  expect(state.punches).toHaveLength(0);
+  expect(state.locations.size).toBe(0);
+});
 
 test('HR assigns and cancels an unused shift in the dashboard and stale overlaps remain visible', async ({
   page,
@@ -100,15 +167,20 @@ test('employee clocks in/out, keeps history on reload and recovers a lost respon
   await expect(page.getByRole('button', { name: 'Clock out', exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: /I agree to share my location/ }).check();
   await page.getByRole('button', { name: 'Clock out', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('outside your store');
+  expect(state.punches).toHaveLength(1);
+  expect(state.locations.size).toBe(1);
+  await page.context().setGeolocation({ latitude: 12.9717, longitude: 77.5946, accuracy: 11 });
+  await page.getByRole('button', { name: 'Clock out', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '8 h 0 min', exact: true })).toBeVisible();
   expect(state.punches).toHaveLength(2);
   expect(state.locations.size).toBe(2);
-  expect(state.locations.get(state.punches[1].id).latitude).toBe(12.975);
+  expect(state.locations.get(state.punches[1].id).latitude).toBe(12.9717);
   await page.getByRole('button', { name: /^View locations/ }).click();
   const locationDialog = page.getByRole('dialog');
   await expect(locationDialog.getByText('12.971599, 77.594566', { exact: true })).toBeVisible();
-  await expect(locationDialog.getByText('12.975000, 77.600000', { exact: true })).toBeVisible();
+  await expect(locationDialog.getByText('12.971700, 77.594600', { exact: true })).toBeVisible();
   await expect(locationDialog.getByRole('link', { name: 'View clock-in on map' })).toHaveAttribute(
     'href',
     /openstreetmap.org/,

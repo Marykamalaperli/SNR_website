@@ -132,6 +132,10 @@ select 'd2000000-0000-4000-8000-000000000001',
 insert into public.sites(id,organization_id,name,timezone) values
  ('d3000000-0000-4000-8000-000000000001','d2000000-0000-4000-8000-000000000001','Main','UTC'),
  ('d3000000-0000-4000-8000-000000000002','d2000000-0000-4000-8000-000000000001','Other','UTC');
+insert into snr_private.site_attendance_areas(
+ organization_id,site_id,latitude,longitude,radius_meters,updated_by)
+ values('d2000000-0000-4000-8000-000000000001','d3000000-0000-4000-8000-000000000001',
+ 12.971599,77.594566,100,'d1000000-0000-4000-8000-000000000001');
 insert into public.departments(id,organization_id,name) values
  ('d5000000-0000-4000-8000-000000000001','d2000000-0000-4000-8000-000000000001','Operations');
 insert into public.employee_profiles(id,organization_id,user_id,site_id,department_id,
@@ -273,3 +277,49 @@ print(
     "PASS: concurrent punches, keyed replay, revocation and HR reassignment "
     "preserve four events/audits without deadlock"
 )
+
+# Hold the area's shared lock after acceptance. An HR edit must wait until the
+# punch commits, preserving the exact policy used; subsequent punches use the edit.
+query("""
+create function snr_private.test_delay_store_snapshot() returns trigger language plpgsql as $$
+begin perform pg_sleep(0.8);return new;end $$;
+create trigger zzz_test_delay_store_snapshot after insert on snr_private.attendance_locations
+ for each row when (new.organization_id='d2000000-0000-4000-8000-000000000001')
+ execute function snr_private.test_delay_store_snapshot();
+""")
+result = overlap(
+    as_user(2) + "select public.record_attendance('clock_out',"
+    "'d7000000-0000-4000-8000-000000000003',"
+    "(select id from public.attendance_events where "
+    "employee_id='d4000000-0000-4000-8000-000000000002' and event_type='clock_in'),"
+    f"{location},current_setting('test.geo_subject')::uuid);commit;",
+    as_user(1) + "select public.hr_save_site_attendance_area("
+    "'d3000000-0000-4000-8000-000000000001',1,13,77.594566,100);commit;",
+)
+if result.returncode != 0:
+    raise SystemExit("A concurrent area edit must wait for the accepted punch without deadlock.")
+query(
+    as_user(2) + "do $$ begin begin perform public.record_attendance('clock_in',"
+    "'d7000000-0000-4000-8000-000000000004',"
+    "(select id from public.attendance_events where "
+    "employee_id='d4000000-0000-4000-8000-000000000002' and event_type='clock_out'),"
+    f"{location},current_setting('test.geo_subject')::uuid);"
+    "raise exception 'Outside position admitted';exception when sqlstate 'PT409' then "
+    "assert sqlerrm='outside_store_area';end;end $$;commit;"
+)
+query("""
+do $$ begin
+ assert (select store_policy_version from snr_private.attendance_locations
+  where event_id=(select id from public.attendance_events
+   where employee_id='d4000000-0000-4000-8000-000000000002' and event_type='clock_out'))=1;
+ assert (select version from snr_private.site_attendance_areas
+  where site_id='d3000000-0000-4000-8000-000000000001')=2;
+ assert (select count(*) from public.attendance_events
+  where organization_id='d2000000-0000-4000-8000-000000000001')=5;
+ assert (select count(*) from snr_private.attendance_locations
+  where organization_id='d2000000-0000-4000-8000-000000000001')=5;
+end $$;
+drop trigger zzz_test_delay_store_snapshot on snr_private.attendance_locations;
+drop function snr_private.test_delay_store_snapshot();
+""")
+print("PASS: concurrent HR area edits preserve accepted policy snapshots and govern the next punch")

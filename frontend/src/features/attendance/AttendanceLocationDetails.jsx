@@ -62,6 +62,16 @@ function SavedPoint({ point, label, timezone, emptyText = 'Location not collecte
           <dt>Attendance saved</dt>
           <dd>{momentLabel(point.recorded_at, timezone)}</dd>
         </div>
+        <div>
+          <dt>Store area check</dt>
+          <dd>
+            {point.store_rule_version === 'store-radius-v1' &&
+            Number.isFinite(point.store_distance_meters) &&
+            Number.isFinite(point.store_radius_meters)
+              ? `${Math.round(point.store_distance_meters)} m from store centre · ${point.store_radius_meters} m allowed · policy ${point.store_policy_version}`
+              : 'Recorded before store area checks.'}
+          </dd>
+        </div>
       </dl>
       <a className="text-link" href={map.href} target="_blank" rel="noopener noreferrer">
         View {label.toLowerCase()} on map
