@@ -72,7 +72,47 @@ paths → 404, unsupported methods → 405, unexpected errors → generic 500. C
 IDs accept 8–64 ASCII letters/digits/underscore/hyphen; otherwise server-generated UUID.
 Health confirms the process only, not Supabase or business readiness.
 
+## Dashboard account gateway and settings
+
+Cloudflare Pages Functions hosts these same-origin endpoints. The caller sends a
+Bearer access token; Auth verifies identity and SQL derives one active HR tenant.
+No user-selected Auth role, actor or tenant is accepted. Request body limit 8 KiB;
+upstream calls are bounded and redirects denied. Responses are JSON/no-store,
+with fixed safe errors. The admin binding is used only for targeted GoTrue APIs;
+all SQL operations forward the caller JWT with the public key.
+
+| Method/path                                             | Inputs / behavior                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/admin/staff`                                 | `request_id` UUID, `account_mode` create/existing, email, initial password (required for create), and profile `{display_name,employee_number,site_id,department_id,role,active}`. Employee/Supervisor only. Existing unprofiled accounts can be linked/confirmed. |
+| `PATCH /api/admin/staff/{profile_id}/account`           | UUID request ID, email, optional password, profile `version` and `membership_version`. Server resolves the target Auth identity and checks its current scope.                                                                                                     |
+| `POST /api/admin/staff/operations/{request_id}/recover` | Auth/HR scoped status check. Finishes a confirmed operation without another credential write; expired unconfirmed operations end safely.                                                                                                                          |
+
+Success returns `{status:"completed",employee_id}`. Recovery can return
+`status:"failed"` plus the reserved snapshot. A recoverable error includes an
+operation ID; definite rejections can include `operation_closed` and current
+reserved versions. No password/key is returned. HTTP 401/403/404/409/422/429/503
+represent identity, capability, unavailable record, pending/stale/conflict,
+validation, rate limit and unavailable/interrupted server respectively.
+
+Additional authenticated-only HR RPCs in migration 0004:
+`hr_begin_staff_account`, `hr_staff_account_context`, `hr_complete_staff_account`,
+`hr_recover_staff_account`, `hr_close_staff_account`, `hr_pending_staff_accounts`,
+`hr_workspace_settings` and `hr_save_workspace_settings`. The private ledger is
+not directly exposed. Begin binds a keyed fingerprint and a 90-second lease;
+completion requires server-only Auth metadata. Settings save organization name,
+default time zone and own display name using an expected organization version.
+The read-only INVOKER `current_workspace()` retains RLS and adds the own-name
+fallback. Own credential changes use standard Auth `getUser`/`updateUser`, with
+normal email verification and a refreshed verified session.
+
+Auth/application changes span services; they are not falsely described as one
+transaction. SQL stages and audit entries are transactional; the pending/recovery
+flow handles the cross-service boundary. See `ADMIN_DASHBOARD_SETUP.md`.
+
 ## Proposed, NOT implemented
+
+The following domain `/api/v1` endpoints remain proposed. The implemented Pages
+account endpoints below are a separate hosting adapter.
 
 Do not call these endpoints from production UI until authorization and integration
 tests exist. Currently they return 404.

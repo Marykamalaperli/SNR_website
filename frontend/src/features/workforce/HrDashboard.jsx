@@ -85,7 +85,7 @@ export default function HrDashboard() {
                   },
                   {
                     title: 'Add your first employee',
-                    description: 'Link a confirmed account to an employee profile.',
+                    description: 'Create their login and profile right here.',
                     done: data.counts.employees > 0,
                     to: '/hr/employees',
                   },

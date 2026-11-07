@@ -83,3 +83,22 @@ stale overwrites, including external access changes. Inactive profile access is
 explicitly disabled in membership; data requests recheck it. Staff projections
 enforce self/team/HR scope and expose account email only to HR. Direct table writes
 remain denied. Attendance, corrections and private files need separate designs.
+
+## Dashboard-only day-to-day administration
+
+The owner explicitly requested that person/data creation and edits happen in the
+admin dashboard, removing the prerequisite to create each Auth user in Supabase.
+A small JavaScript Pages Functions hosting adapter now invokes GoTrue Admin APIs
+for scoped staff creation/linking and credentials. This is a narrow exception for
+the existing hosting runtime; Python/FastAPI remains the business API stack. No
+new hosting provider or Google billing is needed. It uses a runtime-only encrypted
+binding, not an elevated browser key. A one-time migration/binding/deployment is
+required; routine staff operations stay in the app.
+
+The account/profile boundary uses private intents, server-only Auth operation
+markers, keyed fingerprints, held snapshots/relationships and dashboard recovery.
+Credentials are never persisted in the application ledger, rolled back blindly,
+or replayed after completed request IDs. Protected roles and tenant boundaries
+remain enforced. Existing-account onboarding includes confirmation in the server
+flow; workspace/own settings are implemented rather than redirecting to a provider
+console. Own email changes retain the Auth provider's verification policy.

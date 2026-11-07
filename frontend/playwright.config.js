@@ -14,6 +14,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
+    { name: 'accounts', testMatch: /accounts.spec.js/, use: { baseURL: 'http://127.0.0.1:5174' } },
     {
       name: 'workforce',
       testMatch: /workforce.spec.js/,

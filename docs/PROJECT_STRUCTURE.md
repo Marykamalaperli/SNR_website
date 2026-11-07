@@ -1,5 +1,10 @@
 # Project map
 
+Dashboard account administration adds `frontend/functions/` (Pages route adapter),
+`frontend/server/` (server-only handler/security checks), an ignored public build
+config and private SQL operation records. Runtime admin credentials never enter
+frontend source or generated artifacts. See `ADMIN_DASHBOARD_SETUP.md`.
+
 | Path                                       | Responsibility                                                   |
 | ------------------------------------------ | ---------------------------------------------------------------- |
 | `AGENTS.md`, `design_system.md`            | Contributor rules and shared design decisions                    |

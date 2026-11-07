@@ -3,3 +3,6 @@ node_modules
 test-results
 playwright-report
 package-lock.json
+.server-generated
+.wrangler
+.dev.vars

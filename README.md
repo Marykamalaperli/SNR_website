@@ -6,8 +6,10 @@ login, three distinct workspace interfaces, and a runnable API boundary.
 
 **Status:** public frontend, working Supabase authentication (confirmed by the owner),
 organization setup, employee profiles/directory and API foundation. The frontend is
-at <https://snr-nest.pages.dev>. The workforce release needs its new migration and
-frontend deployment; see [workforce activation](docs/WORKFORCE_SETUP.md).
+at <https://snr-nest.pages.dev>. Dashboard-managed account creation, email/password
+changes and workspace/personal settings are implemented. Activate the one-time
+server setup in [admin dashboard setup](docs/ADMIN_DASHBOARD_SETUP.md). Routine
+staff administration then stays in the app, including existing-account onboarding.
 Attendance/corrections/documents remain pending. Synthetic workspaces run only in
 development. Google Cloud setup is paused.
 
@@ -15,7 +17,8 @@ development. Google Cloud setup is paused.
 
 React + JavaScript/JSX, Vite, React Router, Lucide, CSS custom properties; ESLint,
 Prettier, Vitest, Testing Library and Playwright. Python 3.12+, FastAPI, Pydantic,
-Uvicorn and Pytest. Target hosting: Cloudflare Pages → Cloud Run → Supabase Auth,
+Uvicorn and Pytest. Cloudflare Pages includes a narrow Pages Functions Auth gateway;
+optional Cloud Run → Supabase Auth,
 PostgreSQL/RLS and private Storage. No TypeScript application source.
 
 See [architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md),
@@ -99,8 +102,9 @@ No database password or service-role credential is required by the current API.
 
 Supabase verifies sign-in and user identity; the `current_workspace()` database RPC
 confirms the active role/organization under RLS. This works without Cloud Run.
-New Auth accounts remain blocked until the project owner explicitly assigns a
-workspace. User metadata never grants privileges. Sessions survive reloads within
+The project owner bootstraps HR once; authorized HR staff then create and assign
+Employee/Supervisor accounts in the dashboard. User metadata never grants
+privileges. Sessions survive reloads within
 the same tab via sessionStorage and are removed on sign-out.
 
 The optional `api` session source calls FastAPI `/api/v1/session`, whose Supabase
@@ -110,7 +114,15 @@ writes remain denied. The third migration adds scoped directory reads and audite
 HR save functions without Cloud Run. It needs separate live activation; see
 [data model](docs/DATA_MODEL.md) and [workforce setup](docs/WORKFORCE_SETUP.md).
 
+The Pages account gateway alone uses a Cloudflare Production secret binding named
+`SUPABASE_ADMIN_KEY`. Vite never reads it; it is absent from source/build artifacts.
+Existing public URL/key settings generate an ignored server config. Scoped data
+queries still use the caller JWT, never the elevated key.
+
 ## Commands and testing
+
+`npm run test:server` additionally verifies account authorization, recovery and
+representative HTTP requests.
 
 Run inside `frontend/`:
 
@@ -164,7 +176,7 @@ See the security matrix before adding permissions.
 
 ## Remaining milestones
 
-Activate and verify the workforce migration; then implement transactional attendance
+Activate and verify the dashboard account server; then implement transactional attendance
 and correction APIs; finally private documents, scoped exports and production
 hardening. See the [roadmap](docs/DEVELOPMENT_ROADMAP.md). No payroll, facial
 recognition or completed attendance workflow is claimed. License selection remains

@@ -6,6 +6,58 @@
   color: var(--teal-text);
   background: var(--soft-teal);
 }
+.settings-hint {
+  padding: 1rem 1.5rem 1.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.account-password {
+  display: flex;
+  align-items: center;
+  border: 1px solid #bbc3c4;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+}
+.account-password > input {
+  border: 0;
+  background: transparent;
+}
+.account-password > .icon-button {
+  margin-right: 0.25rem;
+}
+.directory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.directory-actions .button {
+  font-size: 0.75rem;
+  padding-inline: 0.6rem;
+}
+.pending-accounts > ul {
+  padding: 0 1.5rem 1rem;
+}
+.pending-accounts li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+}
+.pending-accounts li > div {
+  flex: 1;
+  min-width: 180px;
+  overflow-wrap: anywhere;
+}
+.pending-accounts li p,
+.pending-notice {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.pending-notice {
+  padding: 1rem 1.5rem;
+}
 .record-fields {
   display: grid;
   gap: 1.1rem;

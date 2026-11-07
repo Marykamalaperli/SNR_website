@@ -73,3 +73,22 @@ incomplete. The API adapter must handle these explicitly, never disable RLS.
 Private Storage needs a separate reviewed bucket/path mapping, scanning, MIME/size
 validation, access logs, retention and deletion policy. No live migration, seed data
 or bucket changes have been performed by this coding task. See `supabase/policies/README.md`.
+
+## Dashboard administration migration
+
+Migration 0004 adds an organization version, an optional membership display name,
+and the private `snr_private.staff_account_operations` ledger. That table has RLS,
+no browser table privileges, pending request uniqueness and state/lease/fingerprint
+fields. It contains no passwords or administrative key. A keyed HMAC fingerprint
+binds request content without storing raw credentials. Auth accounts themselves
+remain GoTrue-owned and are changed through its Admin API only.
+
+Narrow HR functions prepare, authorize, complete, recover and close requests.
+Completion checks server-only Auth metadata, derives the target identity and
+links profiles/memberships atomically with the application audit. Profiles and
+identity/protected-role relationships are held while pending; inactive membership
+updates remain available. Completed operations cannot replay credentials; closing
+never deletes an Auth account or undoes its already saved attributes. Organization
+preferences/own display-name saves are versioned and audited. The INVOKER session
+RPC keeps all prior RLS/role checks and uses membership display name only as an
+own-name fallback, never authority.

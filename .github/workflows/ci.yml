@@ -28,8 +28,13 @@ jobs:
       - run: node --test ../scripts/deployment.test.mjs
       - run: npm run format:check
       - run: npm run lint
+      - run: npm run test:server
       - run: npm run test
       - run: npm run build
+      - name: Compile account-management server
+        env:
+          WRANGLER_SEND_METRICS: "false"
+        run: npx --yes wrangler@4.158.0 pages functions build functions --outdir .wrangler/worker --compatibility-date 2026-11-07
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
       - uses: actions/upload-artifact@v4
@@ -56,8 +61,10 @@ jobs:
       - run: python -m pip check
       - run: python -m ruff check .
       - run: python -m ruff check --config pyproject.toml ../scripts/bootstrap_gcp.py
+      - run: python -m ruff check --config pyproject.toml ../scripts/test_workspace_concurrency.py
       - run: python -m ruff format --check .
       - run: python -m ruff format --check --config pyproject.toml ../scripts/bootstrap_gcp.py
+      - run: python -m ruff format --check --config pyproject.toml ../scripts/test_workspace_concurrency.py
       - run: python -m pytest
       - name: Build backend runtime image
         working-directory: .

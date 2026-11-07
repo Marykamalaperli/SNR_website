@@ -97,8 +97,26 @@ export default function AuthProvider({ children }) {
     }
   }
 
+  async function refreshSession() {
+    const refreshRequest = ++request.current;
+    const client = await getAuthClient();
+    try {
+      const { data, error } = await client.auth.getSession();
+      if (error || !data?.session?.access_token) throw new Error('Please sign in again.');
+      const confirmed = await confirmSession(data.session.access_token, client);
+      if (refreshRequest === request.current) setSession(confirmed);
+      return confirmed;
+    } catch (error) {
+      if (refreshRequest === request.current) {
+        setSession(null);
+        await clearAuthSession(client).catch(() => {});
+      }
+      throw error;
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ session, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, loading, signIn, signOut, refreshSession }}>
       {children}
     </AuthContext.Provider>
   );

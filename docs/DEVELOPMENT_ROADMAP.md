@@ -1,5 +1,9 @@
 # Development roadmap
 
+The latest release makes routine staff/account and workspace edits available in
+the admin dashboard. Activate its one-time server binding and migration using
+`ADMIN_DASHBOARD_SETUP.md`, then verify a real test employee login before attendance.
+
 1. **Foundation (this repository):** architecture and design system, public site, auth
    boundary, three synthetic preview workspaces, health API, draft RLS, CI/deployment
    preparation and meaningful local validation.

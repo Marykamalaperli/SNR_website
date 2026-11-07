@@ -11,6 +11,8 @@ import FormField from '../../components/forms/FormField';
 import useRemoteData from '../../hooks/useRemoteData';
 import { loadDirectory, loadOrganization } from '../../services/workforceService';
 import EmployeeForm from './EmployeeForm';
+import ManageAccountForm from './ManageAccountForm';
+import PendingAccounts from './PendingAccounts';
 
 const initialFilters = { search: '', site: '', department: '', status: 'active', page: 1 };
 const roleNames = { employee: 'Employee', supervisor: 'Supervisor', hr: 'HR' };
@@ -19,7 +21,9 @@ export default function EmployeeDirectory({ manage = false }) {
   const [filters, setFilters] = useState(initialFilters);
   const [search, setSearch] = useState('');
   const [editor, setEditor] = useState(null);
+  const [accountEditor, setAccountEditor] = useState(null);
   const [notice, setNotice] = useState('');
+  const [accountRevision, setAccountRevision] = useState(0);
   const fetchDirectory = useCallback(() => loadDirectory(filters), [filters]);
   const fetchOrganization = useCallback(
     () => (manage ? loadOrganization() : Promise.resolve(null)),
@@ -72,14 +76,23 @@ export default function EmployeeDirectory({ manage = false }) {
       label: 'Action',
       render: (row) =>
         ['employee', 'supervisor'].includes(row.role) ? (
-          <Button
-            variant="text"
-            disabled={!organization.data}
-            aria-label={`Edit employee ${row.display_name}`}
-            onClick={() => setEditor({ record: row })}
-          >
-            Edit
-          </Button>
+          <div className="directory-actions">
+            <Button
+              variant="text"
+              disabled={!organization.data}
+              aria-label={`Edit employee ${row.display_name}`}
+              onClick={() => setEditor({ record: row })}
+            >
+              Edit profile
+            </Button>
+            <Button
+              variant="text"
+              aria-label={`Manage account ${row.display_name}`}
+              onClick={() => setAccountEditor(row)}
+            >
+              Manage account
+            </Button>
+          </div>
         ) : (
           <span className="muted">Managed separately</span>
         ),
@@ -107,6 +120,14 @@ export default function EmployeeDirectory({ manage = false }) {
         <p className="success-notice" role="status">
           {notice}
         </p>
+      )}
+      {manage && (
+        <PendingAccounts
+          key={accountRevision}
+          onResolved={() => {
+            directory.reload();
+          }}
+        />
       )}
       {manage && organization.error && (
         <Card>
@@ -255,7 +276,7 @@ export default function EmployeeDirectory({ manage = false }) {
                 filtered
                   ? 'Try a different name, employee number or filter.'
                   : manage
-                    ? 'Add an employee profile after creating their confirmed account in Supabase.'
+                    ? 'Create the person’s login account and employee profile here.'
                     : 'Ask HR to review your department and site assignments.'
               }
             />
@@ -301,12 +322,32 @@ export default function EmployeeDirectory({ manage = false }) {
         <EmployeeForm
           record={editor.record}
           organization={organization.data}
-          onClose={() => setEditor(null)}
+          onClose={() => {
+            setEditor(null);
+            setAccountRevision((value) => value + 1);
+            directory.reload();
+          }}
           onSaved={(message) => {
             setEditor(null);
+            setAccountRevision((value) => value + 1);
             setNotice(message);
             directory.reload();
-            organization.reload();
+          }}
+        />
+      )}
+      {accountEditor && (
+        <ManageAccountForm
+          record={accountEditor}
+          onClose={() => {
+            setAccountEditor(null);
+            setAccountRevision((value) => value + 1);
+            directory.reload();
+          }}
+          onSaved={(message) => {
+            setAccountEditor(null);
+            setAccountRevision((value) => value + 1);
+            setNotice(message);
+            directory.reload();
           }}
         />
       )}

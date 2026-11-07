@@ -1,7 +1,8 @@
 # Connect Supabase authentication
 
-The owner has since confirmed working sign-in. For the organization setup and
-employee directory release, follow [workforce activation](WORKFORCE_SETUP.md).
+The owner has since confirmed working sign-in. For routine staff creation and
+edits, use the dashboard after [account server activation](ADMIN_DASHBOARD_SETUP.md).
+For site/department/shift setup, see [workforce activation](WORKFORCE_SETUP.md).
 The steps below document the original authentication setup.
 
 Google Cloud setup is paused. The public frontend can authenticate directly with
@@ -51,12 +52,11 @@ account's email, and run it in SQL Editor as the project owner. This explicitly 
 organization and assigns that selected account the `hr` workspace. It does not
 promote the first person who signs up or grant auditor/system-owner privileges.
 
-For additional people, use
-[assign-workspace.sql](../supabase/setup/assign-workspace.sql). Set the organization
-UUID from the `organizations` table, a confirmed Auth email and one exact role.
-The helper preserves existing memberships; role changes/reactivation need an explicit
-administrator review. Supervisors also need appropriate department/site assignments
-before they can read team records. No self-service role selection exists.
+For additional staff, use **Employees → Add employee** after the one-time account
+server activation. New credentials, existing-account confirmation/linking, profiles
+and assignments are managed inside the application. The owner-only SQL helpers
+remain bootstrap/recovery tools, not the regular staff workflow. Roles are never
+self-assigned and supervisor scope remains an explicit department/site.
 
 In Authentication settings, disable public sign-ups for this staff-only application.
 In **URL Configuration**, set Site URL to `https://snr-nest.pages.dev` and use only

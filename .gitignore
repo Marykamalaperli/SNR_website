@@ -16,5 +16,8 @@ test-results/
 .DS_Store
 frontend/public/sitemap.xml
 frontend/.seo-generated/
+frontend/.server-generated/
+frontend/.dev.vars
+frontend/.wrangler/
 gha-creds-*.json
 /.local/

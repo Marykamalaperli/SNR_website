@@ -8,7 +8,8 @@ profiles now use Supabase database functions; attendance/corrections/documents
 remain unimplemented. Authentication uses Supabase Auth plus the
 RLS-protected `current_workspace()` RPC. The optional FastAPI membership adapter
 calls the same RPC using a verified caller JWT. Missing configuration or assignment
-is denied. Live activation awaits project setup. No API returns demo data.
+is denied. The owner confirmed live login and workforce screens; the account
+gateway has a separate one-time activation. No API returns demo data.
 
 ```mermaid
 flowchart LR
@@ -30,7 +31,9 @@ mode. The production route table and bundle omit those imports. The normal `/me`
 
 ## Request and authentication flow
 
-1. Supabase receives email/password directly over HTTPS. No password reaches our API.
+1. Sign-in email/password goes directly to Supabase over HTTPS. Staff account
+   creation and credential edits use the separate authorized Pages gateway below;
+   its request credentials are never logged or persisted.
 2. The SDK obtains an access token; Auth `getUser` verifies identity against Supabase.
 3. With the default `supabase` session source, `current_workspace()` executes in
    PostgreSQL as the authenticated caller under RLS. It accepts no identity/role/org
@@ -105,7 +108,17 @@ FastAPI returns a consistent error envelope and request ID, emits JSON request l
 security/cache headers. Durable audit events are separate from operational logs and
 must be written in the same transaction as sensitive changes.
 
-Frontend builds are static. Cloud Run is stateless with an injected port, non-root
+Frontend assets are static. `/api/admin/*` alone routes to Pages Functions. This
+small hosting adapter handles GoTrue account creation/linking and credential
+changes while Google Cloud is paused; it does not replace the Python business API.
+It verifies Auth identity and checked database scope before using a runtime-only
+admin key. All data RPCs retain caller JWT authorization. The private intent
+ledger, Auth operation markers and recovery UI explicitly handle the boundary
+between Auth and application transactions. SQL guards hold pending profile/role
+relationships, permit immediate membership deactivation, and prevent duplicate or
+stale operations. See `ADMIN_DASHBOARD_SETUP.md` for deployment and exact limits.
+
+Cloud Run is stateless with an injected port, non-root
 container and health endpoint. Secrets stay server-side in managed configuration.
 See `DEPLOYMENT.md` and `RUNBOOK.md`. CORS and robots directives are not authorization.
 

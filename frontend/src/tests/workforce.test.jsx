@@ -6,6 +6,7 @@ import EmployeeDirectory from '../features/workforce/EmployeeDirectory';
 import OrganizationSetup from '../features/workforce/OrganizationSetup';
 import {
   loadDirectory,
+  loadPendingAccounts,
   loadOrganization,
   saveEmployee,
   saveOrganizationRecord,
@@ -14,6 +15,8 @@ import useRemoteData from '../hooks/useRemoteData';
 
 vi.mock('../services/workforceService', () => ({
   loadDirectory: vi.fn(),
+  loadPendingAccounts: vi.fn(),
+  closePendingAccount: vi.fn(),
   loadOrganization: vi.fn(),
   saveEmployee: vi.fn(),
   saveOrganizationRecord: vi.fn(),
@@ -39,6 +42,7 @@ const person = {
   membership_version: 4,
 };
 beforeEach(() => {
+  loadPendingAccounts.mockResolvedValue([]);
   loadOrganization.mockResolvedValue(organization);
   loadDirectory.mockResolvedValue({ rows: [person], total: 1, page: 1, page_size: 20 });
   saveEmployee.mockResolvedValue('profile');

@@ -8,7 +8,15 @@ const messages = {
   shift_name_exists: 'This site already has a shift with this name.',
   employee_exists: 'The account or employee number already has a profile in this organization.',
   confirmed_account_required:
-    'Create and confirm this account under Supabase Authentication → Users, then enter its exact email here.',
+    'This email has no account ready to link. Choose “Create new account” to set up its login here.',
+  pending_account_change:
+    'An account request is still pending. Review Pending account requests in the directory.',
+  operation_in_progress:
+    'This account request is still processing. Check its status again shortly.',
+  record_unavailable: 'This request is no longer available in your workspace.',
+  operation_closed: 'This request has already ended. Refresh the directory to review the account.',
+  account_change_not_confirmed:
+    'The account change is not confirmed yet. Check its status again shortly.',
   account_unavailable:
     'This account cannot be added here. Ask the project administrator to review its assignments.',
   protected_account:
@@ -60,6 +68,17 @@ async function request(name, parameters = {}) {
 }
 
 export const loadOrganization = () => request('hr_organization_setup');
+export const loadWorkspaceSettings = () => request('hr_workspace_settings');
+export const saveWorkspaceSettings = (values, version) =>
+  request('hr_save_workspace_settings', {
+    p_version: version,
+    p_name: values.name.trim(),
+    p_timezone: values.timezone.trim(),
+    p_display_name: values.display_name.trim(),
+  });
+export const loadPendingAccounts = () => request('hr_pending_staff_accounts');
+export const closePendingAccount = (id) =>
+  request('hr_close_staff_account', { p_request_id: id, p_lease_token: null });
 
 export function loadDirectory({
   search = '',

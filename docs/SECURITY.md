@@ -25,8 +25,9 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
 - Production setup/directory/profile screens use server-authorized Supabase records.
   Attendance/corrections/documents remain unconnected. Demo imports/routes exist
   only in development; production tests assert fixtures/preview paths are absent.
-- Supabase uses only a public publishable/anon key. Build/server configuration rejects
-  service-role keys. No password/token logging. Auth `getUser` verifies identity;
+- Browser/FastAPI settings use a public publishable/anon key and reject service-role
+  keys. The narrow Pages account gateway has a separate encrypted runtime binding,
+  never a Vite value or build artifact. Auth `getUser` verifies identity;
   the database RPC confirms roles under RLS. Session restoration rechecks assignment.
 - Session credentials persist only in tab-scoped sessionStorage, with memory fallback
   when storage is unavailable. No localStorage persistence. Logout clears local
@@ -57,6 +58,23 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
   shift hours cannot be rewritten. These are database-enforced rules.
 
 ## Before production private data
+
+Dashboard Auth administration additionally requires migration 0004 and the private
+Cloudflare binding described in `ADMIN_DASHBOARD_SETUP.md`. The gateway validates
+the caller, HR scope and target snapshots before every administrative write. Only
+fixed Auth routes receive the elevated key; database queries retain caller JWTs.
+Initial/new passwords are processed in memory and never logged/persisted by the
+application. Errors do not echo provider bodies, credentials or submitted fields.
+Requests are size/deadline bounded and reject cross-origin callers.
+
+Private operation intents and keyed fingerprints prevent duplicate/replayed
+credential writes. Auth server-only operation metadata confirms completion;
+user metadata grants no authority. Profile/identity/protected-role changes are
+guarded during a pending operation while active-access revocation remains possible.
+Recovery/closure runs inside the HR dashboard and never deletes accounts or
+pretends to roll back already saved credentials. Workspace preferences and own
+display names have scoped/versioned audited saves; own email/password changes use
+only the owner's ordinary Auth session. Protected-role grants remain outside HR.
 
 Apply and validate the migrations against the real Supabase project; provision
 confirmed accounts/assignments with the project-owner setup queries. Keep public

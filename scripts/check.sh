@@ -6,11 +6,14 @@ bash -n "$project_root/scripts/deploy-cloud-run.sh"
 cd "$project_root/frontend"
 npm run format:check
 npm run lint
+npm run test:server
 npm run test
 npm run build
 cd "$project_root/backend"
 .venv/bin/python -m ruff check .
 .venv/bin/python -m ruff check --config pyproject.toml ../scripts/bootstrap_gcp.py
+.venv/bin/python -m ruff check --config pyproject.toml ../scripts/test_workspace_concurrency.py
 .venv/bin/python -m ruff format --check .
 .venv/bin/python -m ruff format --check --config pyproject.toml ../scripts/bootstrap_gcp.py
+.venv/bin/python -m ruff format --check --config pyproject.toml ../scripts/test_workspace_concurrency.py
 .venv/bin/python -m pytest

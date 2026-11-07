@@ -88,7 +88,7 @@ it('sends site time zones and shift times without browser-generated audit fields
 
 it.each([
   ['PGRST202', 'missing procedure', 'migration'],
-  ['PT422', 'confirmed_account_required', 'Create and confirm'],
+  ['PT422', 'confirmed_account_required', 'Create new account'],
   ['PT409', 'record_changed', 'changed while you were editing'],
   ['PT403', 'protected_account', 'protected role'],
   ['PT403', 'private database details', 'does not have access'],

@@ -1,5 +1,10 @@
 # Activate organization setup and the employee directory
 
+For the subsequent account-management release, first follow
+[Admin dashboard setup](ADMIN_DASHBOARD_SETUP.md). Staff creation and edits now
+happen entirely in the app; the Supabase dashboard is used only for initial
+project/migration/secret setup.
+
 The owner confirmed that live sign-in works. This release connects real workforce
 records to HR organization setup, employee onboarding/editing, an employee's own
 profile and the supervisor's assigned roster. Cloudflare still hosts the frontend;
@@ -46,30 +51,22 @@ create a new template instead. A name-only edit remains available.
 
 ## 4. Add an employee and supervisor
 
-Create two application accounts under Supabase **Authentication → Users → Add user
-→ Create user**, using email/password and **Auto Confirm User**. The email must
-appear as confirmed in this project's Auth user list. Enter passwords only in
-Supabase. The HR form does not create credentials, send invitations, reset
-passwords, or change account emails.
+After activating the account gateway, open **Employees → Add employee → Create
+new account**. Enter email, initial password, name, unique employee number, site,
+department, Employee/Supervisor role and account access. The application creates
+and confirms the login and links the profile. No separate Auth-user creation is
+needed. Existing accounts can be linked and confirmed from the same form.
 
-Open **Employees → Add employee** (`/hr/employees`). Enter the confirmed account
-email, full name, unique employee number, site and department. Select Employee or
-Supervisor and choose Active or Inactive account access. Create one profile of
-each role. A supervisor's scope is the selected department **and** site. Existing
-multi-assignment supervisors require project-owner review and are not overwritten.
+Use **Edit profile** for name/number/site/department/role/access, and **Manage
+account** for email/password. Inactive access retains records and denies workspace
+reads on the next request. The supervisor scope is the selected department AND
+site. HR/auditor/owner grants and cross-tenant/protected accounts remain outside
+staff controls. Existing multi-scope supervisors require separate reviewed policy.
 
-Only active HR members of a single organization can save these records. They
-cannot grant HR/auditor/owner roles, change their own HR account, downgrade a
-protected account, or attach an account assigned to another organization. A new
-account receives its membership and profile together; the manual employee
-membership helper is unnecessary for this flow. HR provisioning itself still
-belongs to the project owner.
-
-For existing profiles choose **Edit**. Inactive disables workspace data access on
-the next request and retains the profile. Use **Access → Inactive accounts** to
-find and explicitly reactivate an existing profile. Add employee never silently
-re-enables a revoked membership. Reopen and refresh stale forms before retrying;
-both profile and membership versions are checked, including owner-made changes.
+**Settings** edits organization name/default time zone, own display name and own
+login details. Credential interruptions are handled under **Pending account
+requests** in the directory. Detailed activation and recovery steps are in the
+admin guide; no ongoing person/data edits need the Supabase console.
 
 ## 5. Verify role access
 

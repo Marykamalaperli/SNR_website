@@ -31,7 +31,7 @@ first = first.replace("administrator_email text := 'REPLACE_WITH_YOUR_CONFIRMED_
 assign = (root / 'supabase/setup/assign-workspace.sql').read_text()
 assign = assign.replace('target_organization uuid := null;', 'target_organization uuid := (select id from public.organizations);', 1)
 assign = assign.replace("target_email text := 'REPLACE_WITH_CONFIRMED_EMAIL'", "target_email text := 'setup-employee@example.invalid'", 1)
-print("begin; insert into auth.users values ('90000000-0000-4000-8000-000000000001','setup-admin@example.invalid',now()),('90000000-0000-4000-8000-000000000002','setup-employee@example.invalid',now());")
+print("begin; insert into auth.users(id,email,email_confirmed_at) values ('90000000-0000-4000-8000-000000000001','setup-admin@example.invalid',now()),('90000000-0000-4000-8000-000000000002','setup-employee@example.invalid',now());")
 for query in (first, assign):
     print(query.replace('\nbegin;\n', '\n').replace('\ncommit;\n', '\n'))
 print("do $$ begin assert (select count(*) from public.organizations)=1; assert (select role from public.organization_memberships where user_id='90000000-0000-4000-8000-000000000001')='hr'; assert (select role from public.organization_memberships where user_id='90000000-0000-4000-8000-000000000002')='employee'; end $$; rollback;")
@@ -39,3 +39,5 @@ PY
 echo 'PASS: owner-only administrator and employee provisioning queries'
 snr_psql < "$snr_project_root/supabase/tests/authorization.sql"
 snr_psql < "$snr_project_root/supabase/tests/workforce.sql"
+snr_psql < "$snr_project_root/supabase/tests/dashboard-accounts.sql"
+python3 "$snr_project_root/scripts/test_workspace_concurrency.py" "$snr_pg_container"

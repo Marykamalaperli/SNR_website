@@ -8,6 +8,7 @@ export default function RecordForm({
   onSave,
   children,
   submitLabel = 'Save changes',
+  lockFields = false,
 }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -27,7 +28,7 @@ export default function RecordForm({
   return (
     <Modal title={title} onClose={onClose} busy={saving}>
       <form className="stack-form" onSubmit={submit}>
-        <fieldset className="record-fields" disabled={saving}>
+        <fieldset className="record-fields" disabled={saving || lockFields}>
           {children}
         </fieldset>
         {error && (

@@ -1,30 +1,62 @@
+import { useRef, useState } from 'react';
 import FormField from '../../components/forms/FormField';
 import { saveEmployee } from '../../services/workforceService';
+import { createStaffAccount, recoverStaffAccount } from '../../services/adminAccountService';
 import RecordForm from './RecordForm';
 import SelectField from './SelectField';
+import PasswordField from './PasswordField';
 
 export default function EmployeeForm({ record, organization, onClose, onSaved }) {
+  const [mode, setMode] = useState('create');
+  const [pending, setPending] = useState(null);
+  const requestId = useRef(crypto.randomUUID());
+  async function submit(values) {
+    try {
+      if (record) await saveEmployee(values, record);
+      else {
+        const result = pending
+          ? await recoverStaffAccount(pending)
+          : await createStaffAccount(values, requestId.current, mode);
+        if (result.status === 'failed') {
+          setPending(null);
+          requestId.current = crypto.randomUUID();
+          throw new Error('No account setup was confirmed. Review the details and try again.');
+        }
+      }
+      onSaved(record ? 'Employee changes saved.' : 'Employee account and profile saved.');
+    } catch (error) {
+      if (error.operationClosed) {
+        setPending(null);
+        requestId.current = crypto.randomUUID();
+      } else if (error.operationId) setPending(error.operationId);
+      throw error;
+    }
+  }
   return (
     <RecordForm
       title={record ? 'Edit employee' : 'Add employee'}
       onClose={onClose}
-      submitLabel={record ? 'Save changes' : 'Add employee'}
-      onSave={async (values) => {
-        await saveEmployee(values, record);
-        onSaved(
-          record
-            ? 'Employee changes saved.'
-            : values.active === 'true'
-              ? 'Employee added. Their assigned workspace is ready.'
-              : 'Employee profile added with account access disabled.',
-        );
-      }}
+      submitLabel={
+        pending
+          ? 'Check account setup'
+          : record
+            ? 'Save changes'
+            : mode === 'create'
+              ? 'Create employee'
+              : 'Link employee'
+      }
+      lockFields={Boolean(pending)}
+      onSave={submit}
     >
       {!record && (
-        <p className="notice">
-          First create a confirmed account in Supabase Authentication → Users. Enter that account’s
-          email below to connect its employee profile.
-        </p>
+        <FormField label="Account setup">
+          {(attributes) => (
+            <select {...attributes} value={mode} onChange={(event) => setMode(event.target.value)}>
+              <option value="create">Create new account</option>
+              <option value="existing">Link existing account</option>
+            </select>
+          )}
+        </FormField>
       )}
       <FormField
         label="Account email"
@@ -37,10 +69,29 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
         defaultValue={record?.email || ''}
         hint={
           record
-            ? 'Account credentials are managed in Supabase Authentication.'
-            : 'Use the exact email of the confirmed account. A password is not needed here.'
+            ? 'Use Manage account in the directory to change the sign-in email or password.'
+            : mode === 'create'
+              ? 'The person will use this email to sign in.'
+              : 'Use the email of the existing account. Its sign-in details stay unchanged.'
         }
       />
+      {!record && (
+        <PasswordField
+          required={mode === 'create'}
+          label={mode === 'create' ? 'Initial password' : 'New password'}
+          hint={
+            mode === 'create'
+              ? 'Use 12–64 characters. Share this password securely with the person.'
+              : 'Leave blank to keep the existing password, or set a new one here.'
+          }
+        />
+      )}
+      {pending && (
+        <p className="notice">
+          This account setup needs a status check. You can also find it under Pending account
+          requests in the directory.
+        </p>
+      )}
       <div className="form-grid">
         <FormField
           label="Full name"

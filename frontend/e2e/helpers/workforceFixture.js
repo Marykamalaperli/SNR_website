@@ -18,13 +18,22 @@ export async function workforceFixture(
   const encode = (object) => Buffer.from(JSON.stringify(object)).toString('base64url');
   const token = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: userId, role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.fixture`;
   const state = {
-    organization: { id: id('1'), name: 'Workspace test organization', timezone: 'Asia/Kolkata' },
+    organization: {
+      id: id('1'),
+      name: 'Workspace test organization',
+      timezone: 'Asia/Kolkata',
+      version: 1,
+    },
+    adminDisplayName: 'Workspace Test User',
     sites: [],
     departments: [],
     shifts: [],
     people: [],
     calls: [],
     nextError: null,
+    accountCalls: [],
+    pending: [],
+    loseNextAccountResponse: false,
   };
   function profile(n) {
     return {
@@ -51,6 +60,69 @@ export async function workforceFixture(
     state.departments = [{ id: id('3'), name: 'Operations', version: 1 }];
     state.people = Array.from({ length: 23 }, (_, i) => profile(i + 1));
   }
+  function addProfile(parameters) {
+    const p = parameters.profile;
+    const person = {
+      ...profile(state.people.length + 1),
+      display_name: p.display_name,
+      employee_number: p.employee_number,
+      email: parameters.email,
+      site_id: p.site_id,
+      department_id: p.department_id,
+      role: p.role,
+      active: p.active,
+      site_name: state.sites.find((s) => s.id === p.site_id).name,
+      department_name: state.departments.find((d) => d.id === p.department_id).name,
+    };
+    state.people.push(person);
+    return person;
+  }
+  await page.route('**/api/admin/staff**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const parameters = route.request().postDataJSON();
+    state.accountCalls.push({ path, parameters });
+    const reply = (json, status = 200) =>
+      route.fulfill({ status, json, headers: { 'Cache-Control': 'no-store' } });
+    if (role !== 'hr') return reply({ error: { code: 'access_denied' } }, 403);
+    if (path.endsWith('/recover')) {
+      const operation = state.pending.find((op) => path.includes(op.id));
+      if (operation) {
+        const person = addProfile(operation.payload);
+        state.pending = state.pending.filter((op) => op !== operation);
+        return reply({ status: 'completed', employee_id: person.id });
+      }
+      return reply({ status: 'failed' });
+    }
+    if (state.nextError) {
+      const error = state.nextError;
+      state.nextError = null;
+      return reply({ error, operation_closed: true }, 422);
+    }
+    if (path.endsWith('/account')) {
+      const person = state.people.find((p) => path.includes(p.id));
+      if (person.version !== parameters.version)
+        return reply({ error: { code: 'record_changed' } }, 409);
+      person.email = parameters.email;
+      person.version++;
+      return reply({ status: 'completed', employee_id: person.id });
+    }
+    if (state.loseNextAccountResponse) {
+      state.loseNextAccountResponse = false;
+      state.pending.push({
+        id: parameters.request_id,
+        email: parameters.email,
+        action: 'create',
+        can_close: true,
+        created_at: new Date().toISOString(),
+        payload: parameters,
+      });
+      return reply(
+        { error: { code: 'request_interrupted' }, operation_id: parameters.request_id },
+        503,
+      );
+    }
+    return reply({ status: 'completed', employee_id: addProfile(parameters).id });
+  });
   await page.route('https://auth.snr-nest.test/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     const headers = {
@@ -75,7 +147,7 @@ export async function workforceFixture(
         user_id: userId,
         organization_id: state.organization.id,
         organization_name: state.organization.name,
-        display_name: 'Workspace Test User',
+        display_name: state.adminDisplayName,
         role,
         employee_id: null,
         team_ids: [],
@@ -99,6 +171,21 @@ export async function workforceFixture(
           supervisors: state.people.filter((p) => p.role === 'supervisor' && p.active).length,
         },
       });
+    if (name === 'hr_pending_staff_accounts')
+      return reply(state.pending.map(({ payload: _payload, ...operation }) => operation));
+    if (name === 'hr_workspace_settings')
+      return reply({ ...state.organization, display_name: state.adminDisplayName });
+    if (name === 'hr_save_workspace_settings') {
+      state.organization.name = parameters.p_name;
+      state.organization.timezone = parameters.p_timezone;
+      state.organization.version++;
+      state.adminDisplayName = parameters.p_display_name;
+      return reply({ ...state.organization, display_name: state.adminDisplayName });
+    }
+    if (name === 'hr_close_staff_account') {
+      state.pending = state.pending.filter((op) => op.id !== parameters.p_request_id);
+      return reply({ status: 'failed' });
+    }
     if (name === 'workforce_directory') {
       let people = role === 'employee' ? state.people.slice(0, 1) : state.people;
       people = people.filter(

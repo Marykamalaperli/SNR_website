@@ -43,13 +43,14 @@ beforeEach(() => {
 });
 
 function Probe() {
-  const { session, loading, signOut } = useAuth();
+  const { session, loading, signOut, refreshSession } = useAuth();
   return (
     <>
       <output aria-label="Session state">
         {loading ? 'loading' : session ? `${session.role}:${session.display_name}` : 'signed out'}
       </output>
       <button onClick={signOut}>Sign out</button>
+      <button onClick={() => refreshSession().catch(() => {})}>Refresh workspace</button>
     </>
   );
 }
@@ -63,6 +64,19 @@ it('restores a stored session only after server membership confirmation', async 
   );
   expect(await screen.findByText('employee:Verified Person')).toBeVisible();
   expect(confirmSession).toHaveBeenCalledWith('stored-token', client);
+});
+
+it('refreshes verified account details after dashboard settings change', async () => {
+  client.auth.getSession.mockResolvedValue({ data: { session: { access_token: 'stored-token' } } });
+  render(
+    <AuthProvider>
+      <Probe />
+    </AuthProvider>,
+  );
+  expect(await screen.findByText('employee:Verified Person')).toBeVisible();
+  confirmSession.mockResolvedValue({ ...membership, display_name: 'Updated Person' });
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Refresh workspace' }));
+  expect(await screen.findByText('employee:Updated Person')).toBeVisible();
 });
 
 it('signs in through the form and opens real account details without sample records', async () => {

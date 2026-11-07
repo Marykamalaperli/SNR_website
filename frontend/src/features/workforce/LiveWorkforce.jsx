@@ -4,6 +4,7 @@ import HrDashboard from './HrDashboard';
 import EmployeeDirectory from './EmployeeDirectory';
 import OrganizationSetup from './OrganizationSetup';
 import EmployeeProfile from './EmployeeProfile';
+import HrSettings from './HrSettings';
 
 export default function LiveWorkforce({ role, base }) {
   const { pathname } = useLocation();
@@ -12,6 +13,7 @@ export default function LiveWorkforce({ role, base }) {
     if (!section) return <HrDashboard />;
     if (section === 'employees') return <EmployeeDirectory manage />;
     if (section === 'sites') return <OrganizationSetup />;
+    if (section === 'settings') return <HrSettings />;
   }
   if (role === 'supervisor' && section === 'members') return <EmployeeDirectory />;
   if (role === 'employee' && section === 'profile') return <EmployeeProfile />;

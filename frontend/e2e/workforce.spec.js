@@ -39,11 +39,12 @@ test('HR configures a workplace, adds an employee, edits access, and reloads per
   await page.getByRole('button', { name: 'Add employee', exact: true }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Account email').fill('new-person@example.invalid');
+  await dialog.getByLabel('Initial password').fill('Synthetic-Password-17');
   await dialog.getByLabel('Full name').fill('New Team Member');
   await dialog.getByLabel('Employee number').fill('SNR-001');
   await dialog.getByLabel('Site', { exact: true }).selectOption({ label: 'Main office' });
   await dialog.getByLabel('Department', { exact: true }).selectOption({ label: 'Operations' });
-  await dialog.getByRole('button', { name: 'Add employee', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Create employee', exact: true }).click();
   await expect(page.getByText('New Team Member', { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: 'Edit employee New Team Member' }).click();
@@ -54,7 +55,9 @@ test('HR configures a workplace, adds an employee, edits access, and reloads per
   await page.getByLabel('Access', { exact: true }).selectOption('inactive');
   await expect(page.getByRole('cell', { name: 'Inactive', exact: true })).toBeVisible();
   const writes = state.calls.filter((call) => call.name.startsWith('hr_save_'));
-  expect(writes).toHaveLength(5);
+  expect(writes).toHaveLength(4);
+  expect(state.accountCalls).toHaveLength(1);
+  expect(state.accountCalls[0].parameters.profile.role).toBe('employee');
   for (const write of writes) expect(write.parameters).not.toHaveProperty('organization_id');
   expect(writes.at(-1).parameters).toMatchObject({
     p_version: 1,
@@ -112,6 +115,7 @@ test('a rejected save keeps entered fields and exposes no privileged role choice
   await page.getByRole('button', { name: 'Add employee', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Account email').fill('unconfirmed@example.invalid');
+  await dialog.getByLabel('Initial password').fill('Synthetic-Password-17');
   await dialog.getByLabel('Full name').fill('Pending Person');
   await dialog.getByLabel('Employee number').fill('SNR-099');
   await dialog.getByLabel('Site', { exact: true }).selectOption({ label: 'Main office' });
@@ -120,9 +124,9 @@ test('a rejected save keeps entered fields and exposes no privileged role choice
     'Employee',
     'Supervisor',
   ]);
-  state.nextError = { code: 'PT422', message: 'confirmed_account_required' };
-  await dialog.getByRole('button', { name: 'Add employee', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toContainText('Create and confirm');
+  state.nextError = { code: 'password_rejected' };
+  await dialog.getByRole('button', { name: 'Create employee', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('stronger password');
   await expect(dialog.getByLabel('Full name')).toHaveValue('Pending Person');
   expect(state.people).toHaveLength(23);
   const { violations } = await new AxeBuilder({ page })

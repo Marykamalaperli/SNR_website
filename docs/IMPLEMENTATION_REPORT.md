@@ -1,5 +1,11 @@
 # Initial implementation report
 
+The dashboard account release now removes the separate Auth-user creation step:
+staff creation/linking, login-detail edits, interrupted-operation recovery and
+workspace/own settings are implemented in the app. Its activation guide is
+`ADMIN_DASHBOARD_SETUP.md`; no live private credential/account operation is claimed
+by this coding task.
+
 This records the historical foundation. The owner subsequently confirmed working
 Supabase login. The next release implements organization setup, audited employee
 onboarding/editing, the HR directory, own profile and assigned supervisor roster.

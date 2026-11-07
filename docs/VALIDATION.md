@@ -174,3 +174,48 @@ project, deploy the frontend and verify real staff accounts/scopes. Existing pub
 configuration is reused. Auth account creation/passwords remain in the Supabase
 dashboard; HR forms link confirmed accounts and grant only Employee/Supervisor.
 Details and limits are in `WORKFORCE_SETUP.md`.
+
+## Dashboard-only account and settings release
+
+The owner requested that routine account/person/data changes happen in the admin
+dashboard. The new implementation adds a Pages Functions Auth gateway, in-app
+create/link/confirm/email/password operations, pending-request recovery and HR
+workspace/own settings. No live admin key was supplied or used; no real person,
+production Auth account, private binding or live schema was changed by this task.
+
+Executed final checks:
+
+- `scripts/check.sh` passed **96 frontend tests**, **20 account server tests**,
+  **55 backend/setup tests**, nine deployment guardrails, Prettier, ESLint, Ruff,
+  Bash syntax and the production build. The existing upstream Starlette/httpx
+  deprecation warning remains. No application dependency upgrade was needed.
+- `scripts/test-supabase.sh` applied all four migrations to network-isolated
+  PostgreSQL 16. All prior provisioning/RLS/workforce checks passed, plus the new
+  account/ledger/settings groups: private ACLs, metadata proof, idempotency,
+  snapshots, interruption/closure, protected/cross-tenant/revoked users, existing
+  unconfirmed accounts, pending relationships and role changes. It explicitly
+  rejects a foreign organization claiming an Auth account before profile completion.
+  A separate two-connection regression check forced overlapping settings updates;
+  one succeeds and the other gets a stale-version denial, with one audit event and
+  no deadlock/lost name. The disposable container was removed. GoTrue writes are
+  simulated only inside the test fixture, not in a real project.
+- **24 Chromium checks passed** on the final code, covering prior routes plus
+  account creation, login-detail editing, form-close recovery, workspace/own
+  settings, email-confirmation messaging, responsive views, accessibility and
+  keyboard focus. Upstream/browser HTTP uses intercepted contracts; these do not
+  establish live GoTrue behavior. Screenshots were visually reviewed.
+- Wrangler **4.158.0** compiled the actual Pages Functions Worker. A running local
+  Pages runtime served `/` and `/login` as HTML 200, and `/api/admin/staff` returned
+  JSON 401 without a token and JSON 403 for a foreign origin. These probes never
+  contacted live Supabase and used no administrative credential. The local server
+  was stopped afterward.
+- A generated, non-real runtime-key sentinel was supplied during the production
+  build and Worker compilation. It was absent from all **32 build artifacts**,
+  including browser assets, generated public config and the Worker. The value
+  was never printed. Both workflows passed actionlint and staged/source whitespace
+  checks passed. The real public project settings stay ignored locally.
+
+Activation is documented in `ADMIN_DASHBOARD_SETUP.md`. The owner must apply only
+the new migration, set the encrypted Production `SUPABASE_ADMIN_KEY` binding and
+redeploy the frontend. Ordinary staff edits then use the dashboard; no recurring
+Supabase console step is required. Attendance/corrections/documents remain pending.

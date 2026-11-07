@@ -86,3 +86,17 @@ normalized duplicates, IANA/overnight schedule validation, version conflicts,
 external access changes, self/team projections, bounded literal search/pagination,
 assigned-shift protection, supervisor reassignment and revoked/ambiguous users.
 Live Supabase/PostgREST and owner-account checks remain activation steps.
+
+## Dashboard account administration
+
+Run `npm run test:server` for real Web Request/Response handler and local HTTP
+checks with intercepted upstream contracts: role/tenant/identity denial, protected
+snapshots, input/origin/size limits, credential redaction, no privileged database
+queries, linking/confirmation, replay and lost-response recovery. PostgreSQL
+checks actual private-ledger ACLs, operation markers, pending profile/member/role
+guards, version reservations, own settings and stale/revoked/cross-tenant calls.
+GoTrue writes are emulated only in local SQL fixtures; no Auth schema is edited in
+production. Browser tests cover in-app creation, email/password management,
+recovery after closing a form, organization/own settings and mobile accessibility.
+CI also compiles the real Worker. Live account creation/login needs one-time owner
+activation; mocked HTTP and local SQL are not a live-provider integration result.
