@@ -249,3 +249,48 @@ SQL suite was not rerun because the schema is unchanged. No live Supabase accoun
 or private data was used in validation. A frontend release and owner verification
 against the configured project are still needed; this is a local runtime regression
 result, not a claim that the live project has been tested.
+
+## Assigned shifts and normal attendance
+
+After the owner confirmed staff account/role access, the next milestone added
+dashboard shift assignments, Employee clock-in/out and schedule/history, and
+Supervisor/HR attendance views. Migration 0005 has no seed data and refuses an
+unreviewed import of pre-existing attendance. Live activation is separate from
+this local implementation/verification; no real employee, Supabase secret or
+production database was used.
+
+Final executed checks on 7 November 2026:
+
+- `PUBLIC_SITE_URL=https://snr-nest.pages.dev bash scripts/check.sh` passed:
+  **113 frontend tests**, **20 account-server tests**, **55 backend/setup tests**,
+  nine deployment guardrails, Prettier/ESLint/Ruff/Bash checks and the production
+  build. The previously recorded Starlette/httpx deprecation warning remains.
+- `bash scripts/test-supabase.sh` applied all five migrations to an actual,
+  network-isolated PostgreSQL 16 database. All previous suites passed, plus
+  **12 attendance scenario groups**: anonymous/private/direct-write denial,
+  shift tenancy/site/date/versions/overlap, server timing and immutable snapshots,
+  expected-state/keyed replay, atomic audit and append-only history, revocation,
+  repeated daily sessions, role-scoped reads and filtered summaries, historical
+  supervisor scope, midnight/DST resolution, late overnight checkout/site
+  deactivation, retained cancellation and department/site pair intersections,
+  employee local-date defaults, and 20-row pagination with complete filtered
+  totals. Fixtures roll back and the disposable container is removed.
+- Separate PostgreSQL sessions forced four attendance races: distinct simultaneous
+  intents, identical simultaneous intents, membership revocation, and HR site
+  reassignment. Assertions confirm four original events/four audits, exact replay
+  or stale/access denials, and no deadlock. The previous settings race also passes.
+- Full Chromium regression: **29 browser checks passed**. New journeys cover HR
+  assignment/cancellation/overlap failures, Employee clock-in/out and reload,
+  recovery of a lost committed response using the same request, own schedules,
+  missing shifts, Supervisor/HR filters and mobile accessibility. Desktop/mobile
+  screenshots were visually reviewed; the mobile summaries and scroll hint were
+  refined and the full browser suite passed on the final screens.
+- The pinned Wrangler/Miniflare check passed all **six** authenticated-creation
+  and redirect-refusal cases, confirming the account gateway still works in
+  both tested Workers compatibility settings. All outbound contracts are synthetic.
+
+No dependencies or cloud credentials changed. Google Cloud remains paused.
+The owner must apply only migration 0005, deploy the frontend, and verify a test
+employee's actual punches in the existing project. Routine shift assignments and
+attendance then stay in SNR NEST. Corrections/approval and private-document
+workflows remain unimplemented; no payroll or inferred attendance policy is claimed.

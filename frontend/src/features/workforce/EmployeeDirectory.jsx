@@ -13,6 +13,7 @@ import { loadDirectory, loadOrganization } from '../../services/workforceService
 import EmployeeForm from './EmployeeForm';
 import ManageAccountForm from './ManageAccountForm';
 import PendingAccounts from './PendingAccounts';
+import EmployeeShifts from './EmployeeShifts';
 
 const initialFilters = { search: '', site: '', department: '', status: 'active', page: 1 };
 const roleNames = { employee: 'Employee', supervisor: 'Supervisor', hr: 'HR' };
@@ -22,6 +23,7 @@ export default function EmployeeDirectory({ manage = false }) {
   const [search, setSearch] = useState('');
   const [editor, setEditor] = useState(null);
   const [accountEditor, setAccountEditor] = useState(null);
+  const [shiftEditor, setShiftEditor] = useState(null);
   const [notice, setNotice] = useState('');
   const [accountRevision, setAccountRevision] = useState(0);
   const fetchDirectory = useCallback(() => loadDirectory(filters), [filters]);
@@ -92,6 +94,15 @@ export default function EmployeeDirectory({ manage = false }) {
             >
               Manage account
             </Button>
+            {row.role === 'employee' && row.active && (
+              <Button
+                variant="text"
+                aria-label={`Manage shifts ${row.display_name}`}
+                onClick={() => setShiftEditor(row)}
+              >
+                Manage shifts
+              </Button>
+            )}
           </div>
         ) : (
           <span className="muted">Managed separately</span>
@@ -347,6 +358,15 @@ export default function EmployeeDirectory({ manage = false }) {
             setAccountEditor(null);
             setAccountRevision((value) => value + 1);
             setNotice(message);
+            directory.reload();
+          }}
+        />
+      )}
+      {shiftEditor && (
+        <EmployeeShifts
+          record={shiftEditor}
+          onClose={() => {
+            setShiftEditor(null);
             directory.reload();
           }}
         />

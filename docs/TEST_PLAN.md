@@ -1,5 +1,22 @@
 # Test plan
 
+## Assigned shifts and normal attendance
+
+Run `bash scripts/test-supabase.sh` for actual PostgreSQL role/tenant isolation,
+HR dates/versions/overlap, server-time punches, keyed/stale-state handling, atomic
+audits, append-only history, revocation, time-zone/DST/overnight behavior, and
+historical supervisor scope. The two-session harness additionally forces distinct
+and identical simultaneous punches, revocation and HR reassignment, checking
+event/audit counts and the absence of deadlocks. Fixtures stay in a disposable,
+network-isolated database; no live project URL or secret is accepted.
+
+Unit checks cover narrow RPC payloads, error sanitization/retry classification,
+pending-intent recovery, invalid receipts, rapid submissions and date filters.
+Browser attendance cases cover dashboard assignment/cancellation/overlap errors,
+employee clock-in/out and reload, a lost committed response with one persisted
+punch, own schedule, missing shifts, staff/HR views and mobile accessibility.
+The browser SDK uses intercepted HTTP; live provider acceptance is separate.
+
 The account gateway also needs its real hosting runtime, since Node's Fetch API
 accepts options that Workers rejects. From `frontend`, run:
 

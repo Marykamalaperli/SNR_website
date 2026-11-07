@@ -86,9 +86,10 @@ inherit audit-reading privileges. Actor, organization and audit request ID come
 from PostgreSQL, not form authority. Unassigned/revoked/ambiguous accounts are
 denied even with a valid Auth token. Browser role metadata never grants access.
 
-Attendance punches, shift assignments, corrections, HR decisions, documents and
-exports remain future work. Their production pages retain honest empty states.
-No preview action becomes a real transaction in this release.
+For normal attendance and dashboard-managed employee shift assignments, activate
+the next migration using [attendance setup](ATTENDANCE_SETUP.md). Corrections,
+HR decisions, private documents and exports remain separate work. Preview actions
+remain synthetic and never authorize production operations.
 
 ## Local verification
 

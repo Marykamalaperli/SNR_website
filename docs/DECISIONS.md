@@ -117,3 +117,26 @@ redirect refusal before deployment as well as in CI. Synthetic outbound handlers
 replace all external services; the actual Worker `fetch` constructs every request.
 Both the legacy Pages compatibility date and the current date are covered without
 requiring a hosting-setting change or an application dependency upgrade.
+
+## Assigned shifts and normal attendance while Google Cloud is paused
+
+After confirming Employee and Supervisor access, the owner continued to the next
+milestone. Migration 0005 uses the established caller-JWT SQL boundary for shift
+assignments and attendance; the existing Pages administrative key is not involved.
+HR manages dated assignments in the directory. Dates cannot overlap, and used
+assignment dates/template hours cannot be rewritten. Unused current/future plans
+may be cancelled with their record/audit retained.
+
+The MVP permits multiple paired sessions on an assigned work date, one open
+session at a time. It captures server receipt timestamps and immutable shift,
+site/department/date/time-zone context. Overnight work follows its start date;
+UTC elapsed time handles DST. No lateness/absence/overtime/payroll or clock-in
+window policy is inferred. Only Employees punch; Supervisor and HR permissions
+remain scoped reads. Original punch edits and correction approvals are deferred.
+
+Request UUIDs bind the action and prior event snapshot. Database serialization
+matches HR profile mutation order before membership locks, so revocation and
+reassignment do not deadlock with a normal punch. Completed IDs return receipts
+without another event/audit. Direct browser table writes stay denied. Activation
+requires only the reviewed new migration and a frontend release, followed by
+owner verification in the existing project; daily data stays in the dashboard.

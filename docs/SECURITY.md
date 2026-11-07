@@ -23,7 +23,7 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
 ## Implemented controls
 
 - Production setup/directory/profile screens use server-authorized Supabase records.
-  Attendance/corrections/documents remain unconnected. Demo imports/routes exist
+  Normal attendance and shift assignments use audited SQL transactions. Corrections/documents remain unconnected. Demo imports/routes exist
   only in development; production tests assert fixtures/preview paths are absent.
 - Browser/FastAPI settings use a public publishable/anon key and reject service-role
   keys. The narrow Pages account gateway has a separate encrypted runtime binding,
@@ -58,6 +58,17 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
   shift hours cannot be rewritten. These are database-enforced rules.
 
 ## Before production private data
+
+Normal attendance derives the employee, assignment, location and timestamps in
+PostgreSQL. Only active Employee accounts can punch themselves. A request UUID,
+expected previous event, serialized writes and unique checkout pairing prevent
+duplicates/stale transitions. HR assignment saves check versions and disallow
+overlaps or rewriting dates used by history. Scoped summaries cannot count rows
+outside the caller's access. Supervisor history also requires matching immutable
+event scope; current profile reassignment alone cannot expose old-site records.
+History remains append-only, and every successful normal punch has one atomic
+audit event. Revocation remains possible during an open session; HR profile/role
+reassignment waits for checkout. No elevated key is used by attendance.
 
 Dashboard Auth administration additionally requires migration 0004 and the private
 Cloudflare binding described in `ADMIN_DASHBOARD_SETUP.md`. The gateway validates

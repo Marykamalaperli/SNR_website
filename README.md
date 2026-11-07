@@ -10,7 +10,8 @@ at <https://snr-nest.pages.dev>. Dashboard-managed account creation, email/passw
 changes and workspace/personal settings are implemented. Activate the one-time
 server setup in [admin dashboard setup](docs/ADMIN_DASHBOARD_SETUP.md). Routine
 staff administration then stays in the app, including existing-account onboarding.
-Attendance/corrections/documents remain pending. Synthetic workspaces run only in
+Attendance and shift assignments are implemented; activate the one-time
+[attendance migration](docs/ATTENDANCE_SETUP.md). Corrections/documents remain pending. Synthetic workspaces run only in
 development. Google Cloud setup is paused.
 
 ## Stack and architecture
@@ -176,8 +177,8 @@ See the security matrix before adding permissions.
 
 ## Remaining milestones
 
-Activate and verify the dashboard account server; then implement transactional attendance
-and correction APIs; finally private documents, scoped exports and production
+Activate and verify attendance using an assigned Employee and Supervisor;
+then implement correction requests and approvals, private documents, scoped exports and production
 hardening. See the [roadmap](docs/DEVELOPMENT_ROADMAP.md). No payroll, facial
-recognition or completed attendance workflow is claimed. License selection remains
+recognition or correction workflow is claimed. License selection remains
 with the repository owner.

@@ -72,6 +72,28 @@ paths → 404, unsupported methods → 405, unexpected errors → generic 500. C
 IDs accept 8–64 ASCII letters/digits/underscore/hyphen; otherwise server-generated UUID.
 Health confirms the process only, not Supabase or business readiness.
 
+## Supabase attendance RPCs
+
+Migration `202611070005_attendance.sql` adds the following caller-JWT functions.
+These are PostgreSQL transactions, not new FastAPI or privileged Pages endpoints.
+
+| RPC                                                                                                                       | Scope / behavior                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `attendance_workspace()`                                                                                                  | Single active Employee/Supervisor/HR membership; scoped filter options and server date/time. Employees additionally receive their actual state, prior event ID, current shift and up to 50 own schedule rows.                    |
+| `record_attendance(p_event_type,p_request_id,p_previous_event_id)`                                                        | Active Employee only. `clock_in`/`clock_out`, UUID and expected prior event only. Identity/tenant/shift/time are server-derived. Returns `{id,event_type,occurred_at,replayed}`.                                                 |
+| `attendance_records(p_from,p_to,p_search='',p_site_id=null,p_department_id=null,p_status='all',p_page=1)`                 | Self/team/HR projection; ≤31 inclusive dates, literal search ≤80, status all/open/closed, 20-row pages. `{rows,total,page,page_size,summary:{sessions,open,completed_seconds}}`; summaries cover all permitted filtered matches. |
+| `hr_employee_shifts(p_employee_id)`                                                                                       | HR, own tenant; employee version, matching site templates and up to 50 dated assignments with edit/cancel eligibility.                                                                                                           |
+| `hr_save_employee_shift(p_employee_id,p_employee_version,p_id,p_version,p_shift_id,p_starts_on,p_ends_on,p_cancel=false)` | HR; create an assignment, update its end, or retain an unused current/future assignment as cancelled. Immutable shift/start fields on edits, version and overlap checks, atomic audit; returns UUID.                             |
+
+Record rows contain employee name/number, site/department, work date/time zone,
+shift name/scheduled window, actual paired UTC times, status and completed elapsed
+seconds. They contain no staff email, credential, raw Auth data or private audit.
+Supervisor access checks both current team/profile scope and captured event scope.
+`PT409` covers stale state, changed request payload, overlapping/used assignments,
+open-session reassignment and missing/inactive shift/site; `PT422` invalid fields
+or date bounds. SQL error text is sanitized through a fixed frontend allowlist.
+History is append-only. Correction events are not accepted by the normal writer.
+
 ## Dashboard account gateway and settings
 
 Cloudflare Pages Functions hosts these same-origin endpoints. The caller sends a

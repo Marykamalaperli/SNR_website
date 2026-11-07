@@ -49,6 +49,15 @@ correction event may have a historical occurrence time, with its own server-reco
 timestamp. A derived attendance projection will reconcile original and correction
 events. Do not treat UI history as a stored source of truth.
 
+Migration 0005 implements normal sessions. `shift_assignments` gains version and
+retained cancellation fields. Attendance gains an employee-local sequence, prior event, session
+pair ID, assignment reference and frozen department/work date/time zone/scheduled
+window. The original clock-in is its session ID; a partial unique index permits
+one checkout per session. A repeated UUID must match its action/prior event and
+returns the committed receipt. Server timestamps and audit insertion are atomic.
+The 20-row history projection sums completed elapsed seconds and counts only
+scope-authorized filtered sessions. No mutable daily rollup is the source of truth.
+
 Direct browser table writes are denied. Approval status is derived from final events rather
 than a mutable request column. Unique idempotency keys and final decision constraints
 support, but do not replace, transactional state enforcement. Request retry payload

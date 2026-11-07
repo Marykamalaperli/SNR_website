@@ -77,7 +77,8 @@ Changing credentials follows Supabase's session expiry/revocation behavior; this
 release does not promise immediate invalidation of every existing access token.
 Use inactive workspace access when organization data must be denied immediately.
 Account deletion, invitations, bulk import and other privileged-role management
-are outside this release. Attendance/corrections/documents remain separate work.
+are outside this release. Normal attendance is activated separately using
+[attendance setup](ATTENDANCE_SETUP.md); corrections/documents remain separate work.
 
 ## Interrupted requests
 

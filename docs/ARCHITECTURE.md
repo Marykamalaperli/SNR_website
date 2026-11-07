@@ -4,8 +4,8 @@
 
 The public React site, login interface, isolated synthetic previews, and FastAPI
 health/session boundary run locally. Organization setup and scoped employee
-profiles now use Supabase database functions; attendance/corrections/documents
-remain unimplemented. Authentication uses Supabase Auth plus the
+profiles, shift assignments and normal attendance now use Supabase database
+functions; corrections/documents remain unimplemented. Authentication uses Supabase Auth plus the
 RLS-protected `current_workspace()` RPC. The optional FastAPI membership adapter
 calls the same RPC using a verified caller JWT. Missing configuration or assignment
 is denied. The owner confirmed live login and workforce screens; the account
@@ -122,9 +122,26 @@ Cloud Run is stateless with an injected port, non-root
 container and health endpoint. Secrets stay server-side in managed configuration.
 See `DEPLOYMENT.md` and `RUNBOOK.md`. CORS and robots directives are not authorization.
 
+## Attendance transactions
+
+Migration 0005 adds HR-managed, effective-dated employee shift assignments and
+server-timed normal attendance. The caller supplies only an action, request UUID
+and prior event ID. PostgreSQL derives identity, organization, shift/work date and
+immutable site/department/time-zone snapshots; it serializes normal punches with
+HR profile changes, checks expected state, and atomically appends the event/audit.
+A repeated request ID returns its committed receipt without another punch or audit. Paired
+sessions derive history/duration; overnight checkout retains its start work date.
+
+Attendance reads enforce self/team/HR scope, including original event location
+and current supervisor assignments. All summaries derive from permitted filtered
+records. Direct writes and history changes stay denied; HR cannot edit original
+times. The application adds no automatic absence/lateness/payroll rules. See
+`ATTENDANCE_SETUP.md` for activation, concrete limits and owner acceptance checks.
+
 ## Tradeoffs
 
 This foundation prioritizes a polished, testable interface and fail-closed integration
 over speculative business policy. No payroll, leave calculations, background workers,
-PWA, or real attendance processing yet. Real authorization, database integration,
-consent, retention and organization policies must be agreed before private data goes live.
+PWA, correction processing or private-document workflows are added here. Production
+activation, provider acceptance, consent/retention and later attendance policies
+remain explicit owner work.

@@ -130,11 +130,15 @@ export default function HrDashboard() {
                 <ArrowRight size={16} aria-hidden="true" />
               </Link>
               <div className="workforce-next">
-                <h3>Attendance comes next</h3>
+                <h3>A workday, recorded</h3>
                 <p>
-                  Clock-in, attendance history and correction reviews will appear when those
-                  workflows are ready.
+                  Assign employee shifts in the directory, then review their recorded clock-ins and
+                  clock-outs. Correction reviews are the next workflow.
                 </p>
+                <Link to="/hr/attendance" className="text-link">
+                  Review attendance
+                  <ArrowRight size={16} aria-hidden="true" />
+                </Link>
               </div>
             </Card>
           </div>

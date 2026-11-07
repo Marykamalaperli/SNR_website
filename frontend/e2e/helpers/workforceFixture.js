@@ -34,6 +34,11 @@ export async function workforceFixture(
     accountCalls: [],
     pending: [],
     loseNextAccountResponse: false,
+    assignments: [],
+    sessions: [],
+    punches: [],
+    loseNextPunchResponse: false,
+    today: new Date().toISOString().slice(0, 10),
   };
   function profile(n) {
     return {
@@ -157,6 +162,194 @@ export async function workforceFixture(
     const parameters = route.request().postDataJSON();
     state.calls.push({ name, parameters });
     if (missingMigration) return reply({ code: 'PGRST202', message: 'missing procedure' }, 404);
+    if (name === 'hr_employee_shifts') {
+      const person = state.people.find((person) => person.id === parameters.p_employee_id);
+      return reply({
+        employee_id: person.id,
+        employee_version: person.version,
+        today: state.today,
+        timezone: 'Asia/Kolkata',
+        shifts: state.shifts.filter((shift) => shift.site_id === person.site_id),
+        assignments: state.assignments
+          .filter((assignment) => assignment.employee_id === person.id)
+          .map((assignment) => ({
+            ...assignment,
+            can_edit: !assignment.cancelled,
+            can_cancel:
+              !assignment.cancelled &&
+              !state.sessions.some((session) => session.assignment_id === assignment.id),
+          })),
+      });
+    }
+    if (name === 'hr_save_employee_shift') {
+      const person = state.people.find((person) => person.id === parameters.p_employee_id);
+      if (person.version !== parameters.p_employee_version)
+        return reply({ code: 'PT409', message: 'record_changed' }, 409);
+      if (parameters.p_id) {
+        const plan = state.assignments.find((assignment) => assignment.id === parameters.p_id);
+        plan.ends_on = parameters.p_ends_on;
+        plan.cancelled = parameters.p_cancel;
+        plan.version++;
+      } else {
+        if (
+          state.assignments.some(
+            (assignment) =>
+              !assignment.cancelled &&
+              assignment.employee_id === person.id &&
+              (!assignment.ends_on || assignment.ends_on >= parameters.p_starts_on),
+          )
+        )
+          return reply({ code: 'PT409', message: 'shift_assignment_overlap' }, 409);
+        const shift = state.shifts.find((shift) => shift.id === parameters.p_shift_id);
+        state.assignments.push({
+          id: id('8', state.assignments.length + 1),
+          employee_id: person.id,
+          shift_id: shift.id,
+          name: shift.name,
+          starts_on: parameters.p_starts_on,
+          ends_on: parameters.p_ends_on,
+          timezone: shift.timezone,
+          cancelled: false,
+          version: 1,
+        });
+      }
+      person.version++;
+      return reply(parameters.p_id || state.assignments.at(-1).id);
+    }
+    if (name === 'attendance_workspace') {
+      const person = state.people[0];
+      const plan = state.assignments.find(
+        (assignment) => assignment.employee_id === person?.id && !assignment.cancelled,
+      );
+      const shift = state.shifts.find((shift) => shift.id === plan?.shift_id);
+      const last = state.punches.at(-1);
+      return reply({
+        role,
+        today: state.today,
+        timezone: 'Asia/Kolkata',
+        server_time: `${state.today}T04:00:00Z`,
+        sites: state.sites,
+        departments: state.departments,
+        ...(role === 'employee'
+          ? {
+              employee_id: person?.id,
+              site_name: person?.site_name,
+              site_active: true,
+              last_event_id: last?.id || null,
+              last_request_id: last?.request_id || null,
+              status: last?.event_type === 'clock_in' ? 'clocked_in' : 'clocked_out',
+              open_since: last?.occurred_at,
+              shift: shift
+                ? {
+                    name: shift.name,
+                    timezone: shift.timezone,
+                    work_date: state.today,
+                    scheduled_start: `${state.today}T04:00:00Z`,
+                    scheduled_end: `${state.today}T12:00:00Z`,
+                  }
+                : null,
+              schedule: state.assignments
+                .filter(
+                  (assignment) => assignment.employee_id === person?.id && !assignment.cancelled,
+                )
+                .map((assignment) => ({
+                  ...assignment,
+                  ...state.shifts.find((shift) => shift.id === assignment.shift_id),
+                  id: assignment.id,
+                  site_name: person.site_name,
+                })),
+            }
+          : {}),
+      });
+    }
+    if (name === 'record_attendance') {
+      if (role !== 'employee')
+        return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
+      const existing = state.punches.find((punch) => punch.request_id === parameters.p_request_id);
+      if (existing) return reply({ ...existing, replayed: true });
+      const person = state.people[0];
+      const plan = state.assignments.find(
+        (assignment) => assignment.employee_id === person.id && !assignment.cancelled,
+      );
+      if (!plan) return reply({ code: 'PT409', message: 'shift_not_assigned' }, 409);
+      const last = state.punches.at(-1);
+      if ((last?.id || null) !== parameters.p_previous_event_id)
+        return reply({ code: 'PT409', message: 'attendance_changed' }, 409);
+      const punch = {
+        id: id('9', state.punches.length + 1),
+        request_id: parameters.p_request_id,
+        event_type: parameters.p_event_type,
+        occurred_at: `${state.today}T${parameters.p_event_type === 'clock_in' ? '04' : '12'}:00:00Z`,
+      };
+      state.punches.push(punch);
+      if (punch.event_type === 'clock_in')
+        state.sessions.push({
+          id: punch.id,
+          employee_id: person.id,
+          display_name: person.display_name,
+          employee_number: person.employee_number,
+          site_id: person.site_id,
+          department_id: person.department_id,
+          site_name: person.site_name,
+          department_name: person.department_name,
+          shift_name: plan.name,
+          timezone: plan.timezone,
+          assignment_id: plan.id,
+          attendance_date: state.today,
+          clock_in: punch.occurred_at,
+          clock_out: null,
+          status: 'open',
+          duration_seconds: null,
+        });
+      else
+        Object.assign(state.sessions.at(-1), {
+          clock_out: punch.occurred_at,
+          status: 'closed',
+          duration_seconds: 28800,
+        });
+      if (state.loseNextPunchResponse) {
+        state.loseNextPunchResponse = false;
+        return route.abort('failed');
+      }
+      return reply({ ...punch, replayed: false });
+    }
+    if (name === 'attendance_records') {
+      let sessions = state.sessions.filter(
+        (session) =>
+          session.attendance_date >= parameters.p_from &&
+          session.attendance_date <= parameters.p_to,
+      );
+      if (role === 'employee')
+        sessions = sessions.filter((session) => session.employee_id === state.people[0]?.id);
+      if (parameters.p_site_id)
+        sessions = sessions.filter((session) => session.site_id === parameters.p_site_id);
+      if (parameters.p_department_id)
+        sessions = sessions.filter(
+          (session) => session.department_id === parameters.p_department_id,
+        );
+      if (parameters.p_status !== 'all')
+        sessions = sessions.filter((session) => session.status === parameters.p_status);
+      if (parameters.p_search)
+        sessions = sessions.filter((session) =>
+          `${session.display_name} ${session.employee_number}`
+            .toLowerCase()
+            .includes(parameters.p_search.toLowerCase()),
+        );
+      return reply({
+        rows: sessions.slice((parameters.p_page - 1) * 20, parameters.p_page * 20),
+        total: sessions.length,
+        page: parameters.p_page,
+        page_size: 20,
+        summary: {
+          sessions: sessions.length,
+          open: sessions.filter((session) => session.status === 'open').length,
+          completed_seconds: sessions.reduce(
+            (seconds, session) => seconds + (session.duration_seconds || 0),
+            0,
+          ),
+        },
+      });
+    }
     if (state.nextError && name.startsWith('hr_save_')) {
       const error = state.nextError;
       state.nextError = null;

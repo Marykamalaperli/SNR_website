@@ -14,6 +14,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/workforce.css';
+import './styles/live-attendance.css';
 import './styles/utilities.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(

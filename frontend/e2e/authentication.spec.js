@@ -56,6 +56,12 @@ async function interceptAuth(page, { invalidPassword = false, access = { allowed
     }
     if (path === '/auth/v1/user') return route.fulfill({ headers, json: user });
     if (path === '/auth/v1/logout') return route.fulfill({ status: 204, headers });
+    if (path === '/rest/v1/rpc/attendance_workspace')
+      return route.fulfill({
+        status: 404,
+        headers,
+        json: { code: 'PGRST202', message: 'missing attendance feature' },
+      });
     if (path === '/rest/v1/rpc/current_workspace') {
       workspaceRequests++;
       expect(route.request().postDataJSON()).toEqual({});

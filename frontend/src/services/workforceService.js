@@ -1,6 +1,7 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  open_attendance_session: 'Clock out before changing this person’s site, department or role.',
   record_changed:
     'This record changed while you were editing. Close this form, refresh the page and try again.',
   site_name_exists: 'A site with this name already exists.',

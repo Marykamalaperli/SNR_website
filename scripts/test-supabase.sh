@@ -40,4 +40,5 @@ echo 'PASS: owner-only administrator and employee provisioning queries'
 snr_psql < "$snr_project_root/supabase/tests/authorization.sql"
 snr_psql < "$snr_project_root/supabase/tests/workforce.sql"
 snr_psql < "$snr_project_root/supabase/tests/dashboard-accounts.sql"
+snr_psql < "$snr_project_root/supabase/tests/attendance.sql"
 python3 "$snr_project_root/scripts/test_workspace_concurrency.py" "$snr_pg_container"
