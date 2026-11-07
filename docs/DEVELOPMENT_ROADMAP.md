@@ -3,9 +3,10 @@
 1. **Foundation (this repository):** architecture and design system, public site, auth
    boundary, three synthetic preview workspaces, health API, draft RLS, CI/deployment
    preparation and meaningful local validation.
-2. **Identity and tenancy:** approve policies; configure a Supabase test project;
-   test migrations and RLS with multiple tenants; implement trusted memberships and
-   role revocation; connect a scoped employee read API. Complete this before private use.
+2. **Identity and tenancy:** authentication is confirmed live by the owner. The
+   organization/directory release implements HR saves and self/team profiles,
+   with multi-tenant SQL tests and atomic audit/version checks. Apply its migration,
+   deploy the frontend and verify live scopes using `WORKFORCE_SETUP.md`.
 3. **Attendance:** implement transactional state transitions, server timestamps,
    idempotency, overnight shifts, site/shift checks and auditable event history.
 4. **Corrections:** persist employee requests, supervisor recommendations and HR

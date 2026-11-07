@@ -135,3 +135,42 @@ summaries without changing their data or layout. Activation steps and limits are
 documented in `SUPABASE_SETUP.md`: project-owner migrations, a confirmed Auth account
 and explicit membership, public GitHub build variables, then a frontend-only release.
 No operational attendance, correction, employee-administration or storage API is claimed.
+
+## Organization setup and employee directory follow-up
+
+The owner confirmed working authentication and requested the next design and
+development slice. The new release adds real HR setup/directory screens, profile
+onboarding/editing, own employee profile and assigned supervisor roster. Narrow
+PostgreSQL functions handle the saves; FastAPI attendance/corrections remain pending.
+No live database change or frontend deployment was performed in this coding task.
+
+Executed checks:
+
+- `PUBLIC_SITE_URL=https://snr-nest.pages.dev bash scripts/check.sh` passed:
+  **82 frontend tests**, **55 backend/setup tests**, nine deployment guardrails,
+  formatting/ESLint/Ruff, Bash checks and the production build. The pre-existing
+  upstream Starlette/httpx deprecation warning remains. No dependency upgrade was made.
+- `bash scripts/test-supabase.sh` applied all three migrations in actual PostgreSQL
+  16, exercised administrator/employee provisioning helpers, nine baseline RLS
+  scenarios and eight additional workforce scenario groups. Assertions include
+  role/tenant tampering, confirmed/protected/revoked accounts, direct-write/helper
+  denial, atomic audit/rollback, snapshot conflicts including owner-made access
+  changes, duplicates, overnight/assigned shift rules, literal search/pagination
+  and supervisor scope changes. The private container was removed; fixtures rolled
+  back. Auth context is emulated locally, not a live GoTrue/PostgREST login.
+- Full Chromium regression: **20 browser checks passed**. After final visual and
+  accessibility adjustments, all six workforce scenarios passed again, including
+  dashboard/setup/mobile form accessibility, directory layouts at 360/1440px,
+  search/pagination, onboarding/edit/access, reload persistence, failures and staff
+  projections. The real SDK uses intercepted HTTP contracts; server authorization
+  is tested separately in PostgreSQL. Local screenshots were visually reviewed.
+
+The database harness now waits for the final PostgreSQL TCP listener inside its
+network-isolated container, avoiding the image's temporary initialization-server
+race. It still publishes no port and accepts no customer database URL or credential.
+
+Activation requires the owner to run only migration `202611070003` in the existing
+project, deploy the frontend and verify real staff accounts/scopes. Existing public
+configuration is reused. Auth account creation/passwords remain in the Supabase
+dashboard; HR forms link confirmed accounts and grant only Employee/Supervisor.
+Details and limits are in `WORKFORCE_SETUP.md`.

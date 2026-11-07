@@ -28,7 +28,8 @@
 - Auditor and system-owner capability definitions and separate interfaces.
 - Backup/restore objectives, incident owners, monitoring and rate-limit infrastructure.
 
-The SQL files are reviewable drafts; no live database changes are authorized or run.
+SQL files are reviewable migrations; no live changes run automatically. The owner
+applies reviewed migrations in the selected Supabase project.
 
 ## Deployment selections supplied by the owner
 
@@ -60,3 +61,25 @@ until a deliberate selection model is implemented. Session storage is tab-scoped
 restore and refresh recheck membership, and logout clears local tokens. Live project
 activation/verification still needs migrations, an assigned account and a frontend
 release. Attendance/corrections/documents remain outside this authentication change.
+
+## Workforce setup while Google Cloud remains paused
+
+The owner confirmed working sign-in and requested the next design/development
+slice. Organization setup and employee profiles use narrow Supabase PostgreSQL
+functions, keeping the release independent of Cloud Run and elevated browser keys.
+Production now includes an HR dashboard/directory/setup page, own employee profile
+and assigned supervisor roster. Preview components remain separate.
+
+Fixed-search-path definer functions authorize a single active membership on every
+call. HR can configure sites/departments/shift templates and explicitly onboard
+confirmed Auth accounts as Employee or Supervisor. Their one department/site scope
+is part of that saved assignment. HR/auditor/owner provisioning, protected accounts,
+multi-organization accounts and existing multi-assignment supervisor edits remain
+outside these forms. No Auth administrative key or Edge Function is required for
+this slice: account creation/passwords stay in the Supabase dashboard.
+
+All saves append audit events atomically. Record and membership versions prevent
+stale overwrites, including external access changes. Inactive profile access is
+explicitly disabled in membership; data requests recheck it. Staff projections
+enforce self/team/HR scope and expose account email only to HR. Direct table writes
+remain denied. Attendance, corrections and private files need separate designs.

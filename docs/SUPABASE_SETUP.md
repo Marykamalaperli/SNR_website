@@ -1,5 +1,9 @@
 # Connect Supabase authentication
 
+The owner has since confirmed working sign-in. For the organization setup and
+employee directory release, follow [workforce activation](WORKFORCE_SETUP.md).
+The steps below document the original authentication setup.
+
 Google Cloud setup is paused. The public frontend can authenticate directly with
 Supabase Auth and use a read-only Postgres RPC under RLS for server-confirmed workspace
 assignments. FastAPI remains available for later business APIs and optional API-based

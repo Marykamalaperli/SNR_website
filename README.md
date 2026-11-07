@@ -4,12 +4,12 @@ A warm, straightforward workforce workspace for attendance, team coordination,
 employee records and HR reviews. The foundation includes a public website, unified
 login, three distinct workspace interfaces, and a runnable API boundary.
 
-**Status:** public frontend, Supabase authentication integration and API foundation.
-The owner reports the frontend live at <https://snr-nest.pages.dev>. Supabase
-connection code and server-enforced workspace authorization are implemented; live
-activation still requires the project's migrations, account assignment and frontend
-variables. Workforce business workflows remain pending. Synthetic workspaces run
-only in development. Google Cloud setup is paused.
+**Status:** public frontend, working Supabase authentication (confirmed by the owner),
+organization setup, employee profiles/directory and API foundation. The frontend is
+at <https://snr-nest.pages.dev>. The workforce release needs its new migration and
+frontend deployment; see [workforce activation](docs/WORKFORCE_SETUP.md).
+Attendance/corrections/documents remain pending. Synthetic workspaces run only in
+development. Google Cloud setup is paused.
 
 ## Stack and architecture
 
@@ -105,9 +105,10 @@ the same tab via sessionStorage and are removed on sign-out.
 
 The optional `api` session source calls FastAPI `/api/v1/session`, whose Supabase
 adapter uses the same RPC with the caller's verified JWT and public key. It requires
-a deployed HTTPS API; unconfigured installs still deny access. Both migrations were
-tested in disposable PostgreSQL, not applied to the live Supabase project. Browser
-writes remain denied. See [data model](docs/DATA_MODEL.md) and the setup guide.
+a deployed HTTPS API; unconfigured installs still deny access. Direct browser table
+writes remain denied. The third migration adds scoped directory reads and audited
+HR save functions without Cloud Run. It needs separate live activation; see
+[data model](docs/DATA_MODEL.md) and [workforce setup](docs/WORKFORCE_SETUP.md).
 
 ## Commands and testing
 
@@ -163,8 +164,8 @@ See the security matrix before adding permissions.
 
 ## Remaining milestones
 
-Approve organizational policies and domain; implement/test memberships and RLS;
-then transactional attendance and correction APIs; finally private documents,
-scoped exports and production hardening. See the [roadmap](docs/DEVELOPMENT_ROADMAP.md).
-No payroll, facial recognition, live HR data, or working production private session
-is claimed. License selection remains with the repository owner.
+Activate and verify the workforce migration; then implement transactional attendance
+and correction APIs; finally private documents, scoped exports and production
+hardening. See the [roadmap](docs/DEVELOPMENT_ROADMAP.md). No payroll, facial
+recognition or completed attendance workflow is claimed. License selection remains
+with the repository owner.

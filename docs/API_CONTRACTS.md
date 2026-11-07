@@ -27,6 +27,34 @@ Auth/PostgREST verifies the token server-side; role/user/org inputs are not acce
 This supports authentication while Cloud Run is paused. Optional API mode still
 performs its own JWT verification and never trusts client-selected roles.
 
+## Supabase workforce RPCs
+
+Implemented in migration `202611070003_workforce_directory.sql`, activated separately
+from the frontend. They receive the caller JWT through the existing SDK. No
+organization/actor/audit ID is accepted as authority. Fixed-search-path definer
+functions check single-membership, exact role and scope. These are not new
+FastAPI `/api/v1` endpoints.
+
+| RPC                                                                                                                                        | Scope / inputs / result                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hr_organization_setup()`                                                                                                                  | HR; own organization, sites/departments/shifts and real staff counts                                                                                                                                                   |
+| `workforce_directory(p_search='',p_site_id=null,p_department_id=null,p_status='active',p_page=1)`                                          | Self/team/HR projection; literal name/number search ≤80 characters, status active/inactive/all, page 1–10000; `{rows,total,page,page_size:20}`. Email and membership version are HR-only; `is_self` marks own profile. |
+| `hr_save_site(p_id,p_version,p_name,p_timezone)`                                                                                           | HR; null ID/version creates, matching version updates; IANA zone; returns UUID                                                                                                                                         |
+| `hr_save_department(p_id,p_version,p_name)`                                                                                                | HR; create/update own department; returns UUID                                                                                                                                                                         |
+| `hr_save_shift(p_id,p_version,p_name,p_site_id,p_starts_at,p_ends_at)`                                                                     | HR; active own site, captured site zone, nonzero/overnight hours; assigned/historical schedules immutable; returns UUID                                                                                                |
+| `hr_save_employee(p_id,p_version,p_membership_version,p_email,p_display_name,p_employee_number,p_site_id,p_department_id,p_role,p_active)` | HR; link confirmed Auth account or edit profile; Employee/Supervisor only, explicit access and one supervisor scope; returns UUID                                                                                      |
+
+Every save appends server-generated audit metadata atomically. Names are ≤120
+characters and employee numbers ≤40. Duplicate names/numbers/accounts and stale
+snapshots are rejected. Existing profile identity is resolved by ID, never an
+edit-time email. No Auth password/admin operation is exposed.
+
+PostgREST codes: `PT401` unauthenticated; `PT403` denied/protected role; `PT404`
+own-scope record unavailable; `PT409` stale/conflicting/ambiguous assignment;
+`PT422` invalid fields/site/department or unconfirmed account. The UI allowlists
+safe machine messages and hides arbitrary database text. Direct table writes
+remain denied. See `WORKFORCE_SETUP.md`.
+
 Errors use this envelope with the same sanitized ID in `X-Request-ID`:
 
 ```json

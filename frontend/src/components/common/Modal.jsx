@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 
-export default function Modal({ title, onClose, children }) {
+export default function Modal({ title, onClose, children, busy = false }) {
   const ref = useRef(null);
   const id = useId();
   useEffect(() => {
@@ -19,14 +19,23 @@ export default function Modal({ title, onClose, children }) {
       ref={ref}
       className="modal"
       aria-labelledby={id}
-      onCancel={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        if (!busy) onClose();
+      }}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (!busy && event.target === event.currentTarget) onClose();
       }}
     >
       <div className="modal-heading">
         <h2 id={id}>{title}</h2>
-        <button type="button" className="icon-button" aria-label="Close dialog" onClick={onClose}>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Close dialog"
+          onClick={onClose}
+          disabled={busy}
+        >
           <X />
         </button>
       </div>

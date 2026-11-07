@@ -15,6 +15,11 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'workforce',
+      testMatch: /workforce.spec.js/,
+      use: { baseURL: 'http://127.0.0.1:5174' },
+    },
+    {
       name: 'authentication',
       testMatch: /authentication.spec.js/,
       use: { baseURL: 'http://127.0.0.1:5174' },

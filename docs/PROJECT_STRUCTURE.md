@@ -8,6 +8,7 @@
 | `frontend/src/layouts/`                    | Public, auth and shared workspace shells                         |
 | `frontend/src/components/`                 | Reusable controls, forms, navigation and tables                  |
 | `frontend/src/features/`                   | Home, auth and role-specific workspace content                   |
+| `frontend/src/features/workforce/`         | Real HR setup/directory, staff forms and scoped profiles         |
 | `frontend/src/data/`                       | Synthetic fixtures, imported only by dev preview entry           |
 | `frontend/src/lib/`, `services/`, `hooks/` | Configuration, HTTP, session and metadata                        |
 | `frontend/src/styles/`                     | Tokens, foundations, components and utilities                    |
@@ -18,7 +19,7 @@
 | `backend/app/modules/`                     | Domain boundaries, not pretend operational endpoints             |
 | `backend/app/services/`                    | Membership adapter boundary                                      |
 | `backend/tests/`                           | Health, validation, auth and middleware tests                    |
-| `supabase/migrations/`, `policies/`        | Draft schema and isolation review/test guidance                  |
+| `supabase/migrations/`, `policies/`        | Versioned schema, checked workforce RPCs and isolation guidance  |
 | `infra/`                                   | Cloudflare and Cloud Run preparation                             |
 | `scripts/`, `.github/workflows/`           | Repeatable local checks and CI                                   |
 

@@ -10,7 +10,8 @@ snr_pg_password="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))'
 snr_pg_container="$(POSTGRES_PASSWORD="$snr_pg_password" snr_docker run --detach --rm --network none --env POSTGRES_PASSWORD postgres:16-alpine)"
 trap 'snr_docker rm --force "$snr_pg_container" >/dev/null' EXIT
 for snr_attempt in $(seq 1 30); do
-  if snr_docker exec "$snr_pg_container" pg_isready --username=postgres >/dev/null 2>&1; then break; fi
+  # TCP is enabled only by the final server, after the image's temporary init server exits.
+  if snr_docker exec "$snr_pg_container" pg_isready --host=127.0.0.1 --username=postgres >/dev/null 2>&1; then break; fi
   if [ "$snr_attempt" = 30 ]; then echo 'Test PostgreSQL did not become ready.' >&2; exit 1; fi
   sleep 1
 done
@@ -18,8 +19,9 @@ snr_psql() {
   snr_docker exec --interactive "$snr_pg_container" psql --username=postgres --no-psqlrc --set=ON_ERROR_STOP=1 "$@"
 }
 snr_psql < "$snr_project_root/supabase/tests/bootstrap.sql"
-snr_psql < "$snr_project_root/supabase/migrations/202611050001_foundation.sql"
-snr_psql < "$snr_project_root/supabase/migrations/202611050002_auth_session.sql"
+for snr_migration in "$snr_project_root"/supabase/migrations/*.sql; do
+  snr_psql < "$snr_migration"
+done
 python3 - "$snr_project_root" <<'PY' | snr_psql
 from pathlib import Path
 import sys
@@ -36,3 +38,4 @@ print("do $$ begin assert (select count(*) from public.organizations)=1; assert 
 PY
 echo 'PASS: owner-only administrator and employee provisioning queries'
 snr_psql < "$snr_project_root/supabase/tests/authorization.sql"
+snr_psql < "$snr_project_root/supabase/tests/workforce.sql"

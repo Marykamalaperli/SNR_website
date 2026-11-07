@@ -2,7 +2,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { WorkspaceContext } from '../../hooks/useWorkspace';
 import { workspaces } from '../../app/navigation';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import VerifiedWorkspace from './VerifiedWorkspace';
+import LiveWorkforce from '../workforce/LiveWorkforce';
 
 export default function ProductionWorkspace({ role }) {
   const { session } = useAuth();
@@ -25,7 +25,11 @@ export default function ProductionWorkspace({ role }) {
       }}
     >
       <DashboardLayout>
-        <VerifiedWorkspace />
+        <LiveWorkforce
+          key={`${session.user_id}:${session.organization_id}:${role}`}
+          role={role}
+          base={`/${workspaces[role].slug}`}
+        />
       </DashboardLayout>
     </WorkspaceContext.Provider>
   );

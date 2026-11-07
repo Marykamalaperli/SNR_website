@@ -1,5 +1,11 @@
 # Initial implementation report
 
+This records the historical foundation. The owner subsequently confirmed working
+Supabase login. The next release implements organization setup, audited employee
+onboarding/editing, the HR directory, own profile and assigned supervisor roster.
+Its separate activation steps are in [WORKFORCE_SETUP.md](WORKFORCE_SETUP.md);
+actual validation results are recorded in [VALIDATION.md](VALIDATION.md).
+
 The repository was an empty, unborn `work` checkout of
 `Marykamalaperli/SNR_website`. No earlier files or architecture decisions were
 overwritten. The initial files below were committed as `ff502f8` and subsequently

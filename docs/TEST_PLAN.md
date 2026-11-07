@@ -63,9 +63,26 @@ membership, wrong-password denial and the authenticated page's accessibility. Th
 are contract tests, not a live Supabase account test.
 
 Run `bash scripts/test-supabase.sh` for an actual disposable PostgreSQL database.
-It applies both migrations, exercises owner-only provisioning helpers and nine
+It applies all migrations, exercises owner-only provisioning helpers and nine
 authorization scenarios as anon/authenticated roles. The test-only Auth schema
 emulates PostgREST's trusted user-ID context; it does not test GoTrue or JWT signature
 verification. The container is private, accepts no live DB URL, and is removed after
 the run. Fixtures under `supabase/tests/` must never be applied to a real project.
 CI has a separate database job; standard frontend/API checks remain in place.
+
+## Workforce setup and directory
+
+Service tests verify allowed RPC inputs, snapshot versions, sanitized errors and
+absence of client identity/tenant authority. Component tests exercise search and
+pagination reset, denied saves without lost form input, role-specific controls,
+missing setup, in-flight dialogs and stale loader cancellation. The `workforce`
+Playwright project uses the real SDK with intercepted HTTP to cover HR setup,
+profile creation/editing, access filters, persistence, supervisor/employee screens,
+missing migrations and desktop/mobile accessibility (including modal forms).
+
+The additional actual PostgreSQL suite covers HR transactions and audit rollback,
+unconfirmed/missing/protected/cross-tenant accounts, direct-write/helper denial,
+normalized duplicates, IANA/overnight schedule validation, version conflicts,
+external access changes, self/team projections, bounded literal search/pagination,
+assigned-shift protection, supervisor reassignment and revoked/ambiguous users.
+Live Supabase/PostgREST and owner-account checks remain activation steps.

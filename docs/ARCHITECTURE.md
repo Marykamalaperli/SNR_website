@@ -3,8 +3,9 @@
 ## Current implementation and boundaries
 
 The public React site, login interface, isolated synthetic previews, and FastAPI
-health/session boundary run locally. Live workforce APIs and persistent business
-workflows are **not implemented**. Authentication now uses Supabase Auth plus the
+health/session boundary run locally. Organization setup and scoped employee
+profiles now use Supabase database functions; attendance/corrections/documents
+remain unimplemented. Authentication uses Supabase Auth plus the
 RLS-protected `current_workspace()` RPC. The optional FastAPI membership adapter
 calls the same RPC using a verified caller JWT. Missing configuration or assignment
 is denied. Live activation awaits project setup. No API returns demo data.
@@ -14,6 +15,7 @@ flowchart LR
   Browser[User browser] --> Pages[Cloudflare Pages · React]
   Pages -->|Bearer access token · HTTPS| API[Cloud Run · FastAPI]
   Pages -->|Sign in| Auth[Supabase Auth]
+  Pages -->|Caller JWT · narrow workforce RPCs| DB
   API -->|JWKS verification| Auth
   API -->|Scoped queries + RLS| DB[(Supabase PostgreSQL)]
   API -->|Authorized short-lived URLs| Storage[Supabase private Storage]
@@ -41,10 +43,13 @@ mode. The production route table and bundle omit those imports. The normal `/me`
    sessionStorage, rechecks membership on restoration/token refresh, and clears
    local credentials on logout. User metadata never determines permissions.
 
-The default path is browser → Supabase Auth/PostgREST → PostgreSQL RLS. Supabase is
-the server enforcing authorization; UI state is not an authority. FastAPI remains
-the planned business API layer. This hosting-independent auth decision is recorded
-in `DECISIONS.md`; no sensitive workforce mutations were moved into browser code.
+The default path is browser → Supabase Auth/PostgREST → PostgreSQL. Supabase is the
+server enforcing authorization; UI state is not an authority. The third migration
+adds bounded staff projections and HR-only, audited setup/profile save functions.
+These fixed-search-path definer functions derive one active organization from
+`auth.uid()` and enforce exact role/scope checks; no browser table-write grants
+are added. FastAPI remains available for future workflows. The selected hosted
+database path while Google Cloud is paused is recorded in `DECISIONS.md`.
 
 No request accepts a browser-supplied organization or role as authority. Organization
 selection, if later needed, must be checked against memberships. Auditor and owner
@@ -56,13 +61,16 @@ Auth owns identities/memberships. Employees owns scoped profiles. Shifts owns si
 and shift assignments. Attendance owns append-only punches. Corrections owns
 requests/recommendations/final decisions. Documents owns private metadata and access
 policy. Reports exposes approved projections, never unrestricted raw access.
-Each module has a boundary document; only health and the session interface are routed.
+Each module has a boundary document; FastAPI still routes only health/session.
+React workforce services call the separately documented Supabase RPC contracts.
 
 PostgreSQL organizations are the tenant boundary; composite tenant foreign keys
 prevent accidental cross-organization references. RLS is enabled on every application
 table. Initial policies allow narrowly scoped self/team/HR reads; browser writes are
-denied. The draft migration is not applied automatically. Production integration needs
-transactional service policies/functions and a scoped database adapter.
+denied. Migrations are not applied automatically. The workforce migration supports
+site/department/shift-template configuration, profile onboarding/editing and scoped
+directory reads. It does not assign shifts or record attendance. Activation steps
+and role checks are in `WORKFORCE_SETUP.md`.
 
 ## Attendance and review workflow (planned)
 

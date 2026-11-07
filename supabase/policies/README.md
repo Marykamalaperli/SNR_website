@@ -1,15 +1,15 @@
 # Isolation validation before enabling data access
 
-The migration is a **draft**, not applied by setup. It enables RLS, grants only
+The foundation migration is not applied automatically. It enables RLS, grants only
 authenticated SELECT, narrowly scopes profiles/events/requests, denies document
-metadata by default, and denies all browser mutations. No Storage bucket or public
+metadata by default, and denies direct browser table writes. No Storage bucket or public
 Storage policy is created. Keep `snr_private` outside exposed PostgREST schemas.
 
 In an isolated Supabase project, provision test Auth users and two organizations
 using an administrative test fixture. Run requests under real user JWTs (never a
 service role when testing RLS), then assert:
 
-1. Anonymous access returns no private data; no browser write succeeds.
+1. Anonymous access returns no private data; direct browser table writes fail.
 2. Employees see only their own organization membership, profile and events.
 3. Supervisors see only assigned department **and site**, never another team/org.
 4. HR sees only memberships' authorized organization records, never audit logs by
@@ -30,9 +30,17 @@ request. Attendance ordering, active shift/site checks, actor role checks and at
 auditing require transactional services; table constraints alone do not implement them.
 
 Local PostgreSQL validation is now automated by `bash scripts/test-supabase.sh`.
-It applies both migrations and tests actual RLS, role/tenant ownership, metadata
+It applies all migrations and tests actual RLS, role/tenant ownership, metadata
 spoofing, active-assignment revocation, multi-organization denial, browser-write
 denial and auditor/owner separation. Owner provisioning helpers are also exercised.
 Auth user contexts are emulated locally; live Supabase Auth/PostgREST verification
 still requires project setup. `current_workspace()` is SECURITY INVOKER, has no
 identity/role arguments, and grants no administrative mutation capability.
+
+The third migration adds checked-definer workforce functions: HR-only setup and
+audited profile transactions plus scoped directory reads. `workforce.sql` exercises
+confirmed-account checks, tenant/role tampering, protected accounts, version
+conflicts, atomic rollback/audit, pagination/search, supervisor reassignment,
+assigned-shift immutability and revoked/ambiguous access. Definer functions are
+tested as actual authenticated callers, not database-owner queries. Private helper
+execution and direct table writes remain denied. See `docs/WORKFORCE_SETUP.md`.

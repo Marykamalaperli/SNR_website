@@ -22,8 +22,9 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
 
 ## Implemented controls
 
-- Real workforce operations remain unconnected. Demo imports/routes exist only in development;
-  production bundle tests assert synthetic names and preview paths are absent.
+- Production setup/directory/profile screens use server-authorized Supabase records.
+  Attendance/corrections/documents remain unconnected. Demo imports/routes exist
+  only in development; production tests assert fixtures/preview paths are absent.
 - Supabase uses only a public publishable/anon key. Build/server configuration rejects
   service-role keys. No password/token logging. Auth `getUser` verifies identity;
   the database RPC confirms roles under RLS. Session restoration rechecks assignment.
@@ -43,6 +44,17 @@ Auditor/owner login has safe unsupported-workspace handling; neither maps to HR.
   reject update/delete. No public Storage policies or buckets.
 - Frontend avoids raw HTML injection, self-hosts fonts and ships restrictive headers.
   CSV export neutralizes spreadsheet formulas; current export is synthetic only.
+- Workforce functions derive one active tenant from the verified caller, use empty
+  search paths and check exact roles/scopes. HR saves atomically append audit
+  entries; direct table writes and private helper execution remain denied. HR
+  cannot read audit data or assign HR/auditor/owner. Staff projections enforce
+  self/department+site scope; other staff account emails are HR-only.
+- Onboarding requires a confirmed Auth account and valid tenant references.
+  Protected/cross-tenant/revoked accounts are not silently repurposed. Profile and
+  membership versions reject stale edits, including owner-made access changes.
+  Inactive profiles disable membership; requests with old tokens are denied.
+  Multi-assignment supervisor edits require owner review. Assigned/historical
+  shift hours cannot be rewritten. These are database-enforced rules.
 
 ## Before production private data
 
