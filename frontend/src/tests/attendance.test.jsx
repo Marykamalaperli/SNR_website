@@ -28,8 +28,29 @@ vi.mock('../services/locationService', () => ({
   captureAttendanceLocation: vi.fn(),
   LOCATION_NOTICE_VERSION: 'attendance-location-v1',
 }));
+const evidence = {
+  qr: 'snr-attendance:v1:20000000-0000-4000-8000-000000000001:a0000000-0000-4000-8000-000000000001',
+  photo: {
+    jpeg_base64: '/9j/2Q==',
+    captured_at: '2026-11-07T04:00:00Z',
+    consent_version: 'attendance-photo-location-v1',
+  },
+};
+vi.mock('../features/attendance/AttendanceCapture', () => ({
+  default: ({ onConfirm, busy }) => (
+    <button disabled={busy} onClick={() => onConfirm(evidence)}>
+      Confirm capture
+    </button>
+  ),
+}));
+async function punch(user, name) {
+  await user.click(screen.getByRole('button', { name, exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Confirm capture' }));
+}
 const workspace = {
   employee_id: 'employee',
+  evidence_required: true,
+  evidence_notice_version: 'attendance-photo-location-v1',
   location_required: true,
   location_notice_version: 'attendance-location-v1',
   store_geofence_required: true,
@@ -63,6 +84,8 @@ const receipt = {
   event_type: 'clock_in',
   occurred_at: '2026-11-07T04:00:00Z',
   location_saved: true,
+  photo_saved: true,
+  qr_verified: true,
 };
 beforeEach(() => {
   loadAttendanceLocations.mockResolvedValue({ timezone: 'UTC', clock_in: null, clock_out: null });
@@ -115,10 +138,10 @@ it('keeps an outside-area clock-out open and captures a new fix for a later atte
     />,
   );
   await user.click(screen.getByRole('checkbox', { name: /I agree to share/ }));
-  await user.click(screen.getByRole('button', { name: 'Clock out', exact: true }));
+  await punch(user, 'Clock out');
   expect(await screen.findByRole('alert')).toHaveTextContent('outside');
   expect(onRecorded).not.toHaveBeenCalled();
-  await user.click(screen.getByRole('button', { name: 'Clock out', exact: true }));
+  await punch(user, 'Clock out');
   await waitFor(() => expect(onRecorded).toHaveBeenCalledOnce());
   expect(captureAttendanceLocation).toHaveBeenCalledTimes(2);
   expect(recordAttendance.mock.calls[0][0].id).not.toBe(recordAttendance.mock.calls[1][0].id);
@@ -180,7 +203,7 @@ it('recovers an uncertain punch with the original request and snapshot, without 
   const user = userEvent.setup();
   render(<PunchCard workspace={workspace} onRecorded={saved} onRefresh={refresh} />);
   await user.click(screen.getByRole('checkbox'));
-  await user.click(screen.getByRole('button', { name: 'Clock in' }));
+  await punch(user, 'Clock in');
   expect(await screen.findByRole('button', { name: 'Check attendance request' })).toBeEnabled();
   expect(screen.getByRole('button', { name: 'Refresh status' })).toBeDisabled();
   await user.click(screen.getByRole('button', { name: 'Check attendance request' }));
@@ -190,6 +213,7 @@ it('recovers an uncertain punch with the original request and snapshot, without 
     previousId: 'previous',
     employeeId: 'employee',
     location: point,
+    evidence,
   });
   expect(captureAttendanceLocation).toHaveBeenCalledOnce();
   expect(saved).toHaveBeenCalledOnce();
@@ -207,7 +231,8 @@ it('does not treat a malformed receipt as a confirmed punch or issue a second ac
   const user = userEvent.setup();
   render(<PunchCard workspace={workspace} onRecorded={saved} onRefresh={vi.fn()} />);
   await user.click(screen.getByRole('checkbox'));
-  await user.dblClick(screen.getByRole('button', { name: 'Clock in' }));
+  await user.click(screen.getByRole('button', { name: 'Clock in' }));
+  await user.dblClick(screen.getByRole('button', { name: 'Confirm capture' }));
   expect(recordAttendance).toHaveBeenCalledOnce();
   resolve({ status: 'unexpected' });
   expect(await screen.findByRole('button', { name: 'Check attendance request' })).toBeVisible();
@@ -220,7 +245,7 @@ it('waits for explicit consent and never submits a punch after location permissi
   expect(screen.getByRole('button', { name: 'Clock in' })).toBeDisabled();
   expect(captureAttendanceLocation).not.toHaveBeenCalled();
   await user.click(screen.getByRole('checkbox'));
-  await user.click(screen.getByRole('button', { name: 'Clock in' }));
+  await punch(user, 'Clock in');
   expect(await screen.findByRole('alert')).toHaveTextContent('permission was denied');
   expect(recordAttendance).not.toHaveBeenCalled();
 });
@@ -235,7 +260,7 @@ it('discards a pending device fix after leaving the attendance screen', async ()
   const user = userEvent.setup();
   const view = render(<PunchCard workspace={workspace} onRecorded={vi.fn()} onRefresh={vi.fn()} />);
   await user.click(screen.getByRole('checkbox'));
-  await user.click(screen.getByRole('button', { name: 'Clock in' }));
+  await punch(user, 'Clock in');
   view.unmount();
   await act(async () => resolve(point));
   expect(recordAttendance).not.toHaveBeenCalled();

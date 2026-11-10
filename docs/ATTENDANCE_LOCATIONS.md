@@ -45,13 +45,13 @@ Device positions can be approximate or spoofed. The UI shows reported accuracy;
 this feature does not certify exact physical presence. Migration 0007 additionally
 enforces a store radius against the reported fix and accuracy; activate it using
 [store attendance areas](STORE_ATTENDANCE_AREAS.md).
-No altitude, heading, speed, selfie, movement history, reverse-geocoded address or
+No altitude, heading, speed, movement history, reverse-geocoded address or
 additional tracking identifier is requested. Location records are retained with
 attendance; this release adds no automatic retention purge.
 
-## View locations in SNR NEST
+## View photo and location in SNR NEST
 
-The employee and HR can use **Attendance → View locations** to see separate
+The employee and HR can use **Attendance → View photo and location** to see separate
 Clock-in/Clock-out coordinates, accuracy and timestamps. A map link opens the
 selected point in OpenStreetMap only when chosen, in a new tab without a referrer.
 The application does not load an external map or geocoding service automatically.

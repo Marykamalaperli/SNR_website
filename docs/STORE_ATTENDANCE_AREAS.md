@@ -47,7 +47,7 @@ store, enable precise location and request another fix when accuracy is poor.
 Each accepted event saves the location and its immutable store-centre, radius,
 policy version and calculated distance snapshot. A failed distance check rolls
 back the event, location and punch audit together; rejected fixes are not stored.
-Employee/HR **Attendance → View locations** shows the original distance, radius
+Employee/HR **Attendance → View photo & location** shows the original distance, radius
 and version. Earlier GPS displays **Recorded before store area checks** and is
 never backfilled or reclassified.
 

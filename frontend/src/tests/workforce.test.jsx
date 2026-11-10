@@ -12,6 +12,7 @@ import {
   saveOrganizationRecord,
   loadStoreArea,
   saveStoreArea,
+  saveAttendanceSite,
 } from '../services/workforceService';
 import useRemoteData from '../hooks/useRemoteData';
 
@@ -24,6 +25,8 @@ vi.mock('../services/workforceService', () => ({
   saveOrganizationRecord: vi.fn(),
   loadStoreArea: vi.fn(),
   saveStoreArea: vi.fn(),
+  saveAttendanceSite: vi.fn(),
+  loadStoreQr: vi.fn(),
 }));
 const organization = {
   organization: { name: 'Test organization', timezone: 'Asia/Kolkata' },
@@ -61,6 +64,7 @@ beforeEach(() => {
   loadDirectory.mockResolvedValue({ rows: [person], total: 1, page: 1, page_size: 20 });
   saveEmployee.mockResolvedValue('profile');
   saveOrganizationRecord.mockResolvedValue('site');
+  saveAttendanceSite.mockResolvedValue('site');
 });
 function mount(component) {
   return render(<MemoryRouter>{component}</MemoryRouter>);
@@ -165,7 +169,7 @@ it('offers site/department setup before onboarding and no mutation controls to s
 it('saves site setup and prevents dismissal during an in-flight save', async () => {
   const user = userEvent.setup();
   let complete;
-  saveOrganizationRecord.mockImplementation(
+  saveAttendanceSite.mockImplementation(
     () =>
       new Promise((resolve) => {
         complete = resolve;
@@ -174,14 +178,22 @@ it('saves site setup and prevents dismissal during an in-flight save', async () 
   mount(<OrganizationSetup />);
   await user.click(await screen.findByRole('button', { name: 'Add site', exact: true }));
   const dialog = within(screen.getByRole('dialog'));
-  await user.type(dialog.getByLabelText('Site name'), 'New office');
+  await user.type(await dialog.findByLabelText('Site name'), 'New office');
+  await user.type(dialog.getByLabelText('Store latitude'), '12.971599');
+  await user.type(dialog.getByLabelText('Store longitude'), '77.594566');
   await user.click(dialog.getByRole('button', { name: 'Add site', exact: true }));
   expect(dialog.getByRole('button', { name: 'Close dialog' })).toBeDisabled();
   expect(dialog.getByRole('button', { name: 'Saving…' })).toBeDisabled();
-  expect(saveOrganizationRecord).toHaveBeenCalledWith(
-    'site',
-    { name: 'New office', timezone: 'Asia/Kolkata' },
+  expect(saveAttendanceSite).toHaveBeenCalledWith(
+    {
+      name: 'New office',
+      timezone: 'Asia/Kolkata',
+      latitude: '12.971599',
+      longitude: '77.594566',
+      radius_meters: '100',
+    },
     null,
+    { version: null },
   );
   await act(async () => complete('saved-site'));
   expect(await screen.findByText('Site saved.')).toBeVisible();

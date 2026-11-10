@@ -3,6 +3,54 @@
   background: var(--white);
   margin-bottom: 1.5rem;
 }
+.attendance-capture-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0;
+  list-style: none;
+  margin: 0 0 1.3rem;
+}
+.attendance-capture-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  padding: 0.7rem;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+}
+.attendance-capture-steps li[aria-current] {
+  background: var(--soft-orange);
+  font-weight: 700;
+}
+.attendance-camera video {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  background: var(--charcoal);
+  border-radius: var(--radius-sm);
+}
+.attendance-camera p,
+.attendance-photo-review p {
+  margin: 1rem 0;
+}
+.attendance-photo-review img,
+.saved-attendance-photo img {
+  display: block;
+  max-width: 100%;
+  max-height: 280px;
+  border-radius: var(--radius-sm);
+}
+.store-attendance-qr {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+}
+.store-attendance-qr img {
+  width: min(100%, 300px);
+  height: auto;
+}
 .live-punch-top {
   display: flex;
   align-items: center;

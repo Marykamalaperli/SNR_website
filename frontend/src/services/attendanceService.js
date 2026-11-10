@@ -1,6 +1,11 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  attendance_evidence_required: 'Scan the store QR and take a photo before clocking in or out.',
+  invalid_attendance_qr:
+    'This QR does not match your store, or it has been replaced. Scan the current QR at your assigned store.',
+  invalid_attendance_photo: 'A camera JPEG photo of up to 150 KB is required. Retake your photo.',
+  stale_attendance_photo: 'Your photo has expired. Scan the store QR and take a fresh photo.',
   store_area_not_configured:
     'HR must set your store’s attendance area before you can clock in or out.',
   outside_store_area:
@@ -91,7 +96,8 @@ export function loadAttendanceRecords({
     p_page: page,
   });
 }
-export const recordAttendance = ({ type, id, previousId, employeeId, location }) =>
+export const verifyAttendanceQr = (qr) => request('verify_attendance_qr', { p_qr: qr });
+export const recordAttendance = ({ type, id, previousId, employeeId, location, evidence }) =>
   request('record_attendance', {
     p_event_type: type,
     p_request_id: id,
@@ -104,6 +110,16 @@ export const recordAttendance = ({ type, id, previousId, employeeId, location })
           accuracy_meters: location.accuracy_meters,
           captured_at: location.captured_at,
           consent_version: location.consent_version,
+        }
+      : null,
+    p_evidence: evidence
+      ? {
+          qr: evidence.qr,
+          photo: {
+            jpeg_base64: evidence.photo.jpeg_base64,
+            captured_at: evidence.photo.captured_at,
+            consent_version: evidence.photo.consent_version,
+          },
         }
       : null,
   });

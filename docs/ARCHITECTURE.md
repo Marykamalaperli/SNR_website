@@ -170,3 +170,19 @@ over speculative business policy. No payroll, leave calculations, background wor
 PWA, correction processing or private-document workflows are added here. Production
 activation, provider acceptance, consent/retention and later attendance policies
 remain explicit owner work.
+
+## QR and photo attendance
+
+Migration 0008 adds private store QR configuration and append-only photo evidence.
+The new site-save RPC atomically commits site details, the versioned store area
+and its initial QR. HR display/replacement is scoped and audited. An employee can
+verify a scanned QR against their server-derived store, but cannot fetch tokens.
+The writer checks it again under a shared lock, retaining the QR version with proof.
+
+The QR/photo browser flow has no elevated key or file-upload endpoint. It decodes
+QR pixels locally, captures/reviews a bounded canvas JPEG, and requests a fresh
+location only on final confirmation. The existing normal/GPS transaction plus
+photo evidence commit atomically. Exact replay binds all submitted proof, while
+legacy writers reject new punches. The audited employee-self/HR reader includes
+photos; ordinary lists and supervisor projections do not. See
+ATTENDANCE_PHOTO_QR.md for storage/retention tradeoffs, activation and limits.

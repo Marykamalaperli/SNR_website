@@ -12,6 +12,8 @@ test('HR configures a workplace, adds an employee, edits access, and reloads per
   await page.getByRole('button', { name: 'Add site', exact: true }).click();
   let dialog = page.getByRole('dialog');
   await dialog.getByLabel('Site name').fill('Main office');
+  await dialog.getByLabel('Store latitude').fill('12.971599');
+  await dialog.getByLabel('Store longitude').fill('77.594566');
   await dialog.getByRole('button', { name: 'Add site', exact: true }).click();
   await expect(page.getByText('Site saved.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Add department', exact: true }).click();

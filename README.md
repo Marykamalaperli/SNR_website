@@ -23,6 +23,12 @@ store’s centre and radius in **Sites & Shifts → Manage attendance area**; se
 [store attendance areas](docs/STORE_ATTENDANCE_AREAS.md) for activation. The default
 radius is 100 metres; unconfigured stores and uncertain/outside positions block punches.
 
+The next attendance release adds **store QR → photo → location** for each clock-in
+and clock-out. Store coordinates/radius are required while adding a site; HR can
+download or replace its QR. Apply migration **0008** after 0007 and release the
+frontend to activate [photo and QR attendance](docs/ATTENDANCE_PHOTO_QR.md).
+Photo/precise-location evidence stays private to the employee and authorized HR.
+
 ## Stack and architecture
 
 React + JavaScript/JSX, Vite, React Router, Lucide, CSS custom properties; ESLint,

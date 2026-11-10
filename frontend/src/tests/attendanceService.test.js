@@ -38,6 +38,7 @@ it('sends a punch intent and expected state without client-selected identity, te
     p_request_id: 'request',
     p_previous_event_id: 'previous',
     p_employee_id: 'employee',
+    p_evidence: null,
     p_location: {
       latitude: 12.97,
       longitude: 77.59,
@@ -72,6 +73,26 @@ it('uses authenticated read functions and forwards literal, bounded filter propo
       },
     ],
   ]);
+});
+it('sends only camera proof fields, excluding caller identity and extra photo data', async () => {
+  await recordAttendance({
+    type: 'clock_out',
+    id: 'retry',
+    evidence: {
+      qr: 'scanned',
+      organization_id: 'forged',
+      photo: {
+        jpeg_base64: 'jpeg',
+        captured_at: 'instant',
+        consent_version: 'notice',
+        user_id: 'forged',
+      },
+    },
+  });
+  expect(client.rpc.mock.calls[0][1].p_evidence).toEqual({
+    qr: 'scanned',
+    photo: { jpeg_base64: 'jpeg', captured_at: 'instant', consent_version: 'notice' },
+  });
 });
 it('checks employee/assignment snapshots and retains immutable shift/start fields during edits', async () => {
   const employee = { employee_id: 'employee', employee_version: 7 };

@@ -122,7 +122,9 @@ Approve document access/retention, upload validation/scanning, short-lived signe
 URLs and privacy notices. Per-punch location uses the approved scope and notice
 in `ATTENDANCE_LOCATIONS.md`; locations are retained with attendance without an
 automatic purge. Broader tracking/retention changes need a separate owner policy.
-Selfie evidence and facial recognition remain outside the MVP.
+The owner separately authorized per-punch photo evidence after scanning a store QR.
+See ATTENDANCE_PHOTO_QR.md for consent, private storage, exact replay and access
+rules. Facial recognition and background capture remain outside the MVP.
 
 Robots/noindex are crawler hints, not confidentiality. Service roles bypass RLS and
 must never be used in the frontend or as a shortcut for scoped reads. Never dump

@@ -9,12 +9,13 @@ export default function RecordForm({
   children,
   submitLabel = 'Save changes',
   lockFields = false,
+  blockSubmit = false,
 }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   async function submit(event) {
     event.preventDefault();
-    if (saving) return;
+    if (saving || blockSubmit) return;
     const values = Object.fromEntries(new FormData(event.currentTarget));
     setSaving(true);
     setError('');
@@ -40,7 +41,7 @@ export default function RecordForm({
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" disabled={saving || blockSubmit}>
             {saving ? 'Saving…' : submitLabel}
           </Button>
         </div>

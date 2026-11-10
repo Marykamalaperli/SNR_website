@@ -70,6 +70,23 @@ async function request(name, parameters = {}) {
 }
 
 export const loadOrganization = () => request('hr_organization_setup');
+export const loadStoreQr = (id, rotate = false, version = null) =>
+  request('hr_attendance_qr', {
+    p_site_id: id,
+    p_rotate: rotate,
+    p_version: version,
+  });
+export const saveAttendanceSite = (values, record, area) =>
+  request('hr_save_attendance_site', {
+    p_id: record?.id || null,
+    p_version: record?.version || null,
+    p_name: values.name.trim(),
+    p_timezone: values.timezone.trim(),
+    p_latitude: Number(values.latitude),
+    p_longitude: Number(values.longitude),
+    p_radius_meters: Number(values.radius_meters),
+    p_area_version: area?.version ?? null,
+  });
 export const loadStoreArea = (id) => request('hr_site_attendance_area', { p_site_id: id });
 export const saveStoreArea = (area, values) =>
   request('hr_save_site_attendance_area', {

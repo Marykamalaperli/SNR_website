@@ -73,6 +73,19 @@ function SavedPoint({ point, label, timezone, emptyText = 'Location not collecte
           </dd>
         </div>
       </dl>
+      {point.photo?.jpeg_base64 ? (
+        <div className="saved-attendance-photo">
+          <img
+            src={'data:image/jpeg;base64,' + point.photo.jpeg_base64}
+            alt={label + ' attendance photo'}
+          />
+          <p className="field-hint">
+            Photo captured {momentLabel(point.photo.captured_at, timezone)} · Store QR verified
+          </p>
+        </div>
+      ) : (
+        <p className="field-hint">Photo and QR evidence were not collected for this older event.</p>
+      )}
       <a className="text-link" href={map.href} target="_blank" rel="noopener noreferrer">
         View {label.toLowerCase()} on map
         <ExternalLink size={15} aria-hidden="true" />
@@ -85,12 +98,13 @@ export default function AttendanceLocationDetails({ row, onClose }) {
   const loader = useCallback(() => loadAttendanceLocations(row.id), [row.id]);
   const { data, error, loading, reload } = useRemoteData(loader);
   return (
-    <Modal title="Attendance locations" onClose={onClose}>
+    <Modal title="Attendance photo & location" onClose={onClose}>
       <p className="muted">
         {row.display_name} · {dateLabel(row.attendance_date)}
       </p>
       <p className="field-hint">
-        Saved device-reported positions. A map opens in a new tab when you choose its link.
+        Saved attendance photos and device-reported positions. A map opens only when you choose its
+        link.
       </p>
       {loading ? (
         <LoadingState label="Loading saved locations…" />

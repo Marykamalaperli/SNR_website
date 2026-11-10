@@ -13,7 +13,7 @@
 | Attendance is append-only, server-timed and idempotent | Required future contract                 | Preserve original evidence                                        |
 | Browser writes denied in initial RLS migration         | Draft security baseline                  | Mutations require audited transactional APIs                      |
 | Per-punch device location with notice and permission   | Authorized by owner request              | Employee/HR precise access; device-reported accuracy              |
-| No selfie collection or facial recognition             | Confirmed                                | Location approval does not authorize media or background tracking |
+| Per-punch photo after store QR scan; no facial recognition | Authorized by owner on 10 Nov 2026     | Fresh photo and location for each punch; employee/HR evidence access |
 | Self-host fonts; no external analytics                 | Implemented                              | Avoid runtime third-party requests                                |
 | No PWA, payroll or leave calculations                  | Deferred                                 | Not part of approved MVP foundation                               |
 | License                                                | Pending owner approval                   | No LICENSE file created                                           |
@@ -150,8 +150,9 @@ attendance verification. Notice `attendance-location-v1` requires staff
 acknowledgement and browser permission before a fresh high-accuracy fix. Device
 accuracy is retained; physical presence is not certified. The later store-area
 decision below adds a server-enforced radius check against this reported position.
-Location is collected only for the chosen punch, with no background movement or
-media capture. Its records are retained with attendance; no automatic purge is added.
+Location is collected only for the chosen punch, with no background movement.
+The later QR/photo decision below separately authorizes per-event camera capture.
+Records are retained with attendance; no automatic purge is added.
 
 Migration 0006 stores coordinates, reported accuracy, device capture time, server
 receipt time and notice version in a private RLS table without browser grants.
@@ -188,3 +189,20 @@ use an explicitly requested device fix or manually entered coordinates, reviewed
 before save. All routine configuration remains in the HR dashboard. Browser GPS
 can be spoofed; this policy compares the reported device position, not independent
 proof of physical presence. See `STORE_ATTENDANCE_AREAS.md` for activation/tests.
+
+## Store QR and per-punch photo (10 November 2026)
+
+The owner explicitly requested a store QR scan followed by photo and location for
+both clock-in and clock-out, with store coordinates entered during site creation.
+This supersedes the earlier location-only/no-selfie decision. Consent notice
+attendance-photo-location-v1 covers each event. No facial recognition is added.
+
+Migration 0008 keeps the caller-JWT PostgreSQL boundary, wraps the existing normal
+punch/GPS transaction, rejects location-only clients, and appends bounded camera
+JPEGs in a private evidence table. For this MVP, storing at most 150 KiB per punch
+avoids new public objects or hosting secrets; database growth is a known tradeoff.
+A future private-object-storage migration must preserve the same scopes/history.
+Static store QR codes are HR-only to display/rotate and rechecked at commit. They
+are not a liveness or physical-presence attestation. Existing employee/HR GPS-detail
+access also returns the photo, audits reads and denies supervisors. Original
+history remains unchanged. See ATTENDANCE_PHOTO_QR.md for activation and limits.

@@ -41,6 +41,8 @@ export async function workforceFixture(
     locationEnabled: true,
     storePolicyEnabled: true,
     storeAreas: new Map(),
+    storeQrs: new Map(),
+    evidenceEnabled: true,
     loseNextPunchResponse: false,
     today: new Date().toISOString().slice(0, 10),
   };
@@ -231,6 +233,8 @@ export async function workforceFixture(
         role,
         today: state.today,
         location_required: state.locationEnabled,
+        evidence_required: state.evidenceEnabled,
+        evidence_notice_version: 'attendance-photo-location-v1',
         location_notice_version: 'attendance-location-v1',
         store_geofence_required: state.storePolicyEnabled,
         store_geofence_policy: 'store-radius-v1',
@@ -275,12 +279,33 @@ export async function workforceFixture(
           : {}),
       });
     }
+    if (name === 'verify_attendance_qr') {
+      const siteId = state.people[0]?.site_id;
+      const qr =
+        state.storeQrs.get(siteId) ||
+        'snr-attendance:v1:' + siteId + ':a0000000-0000-4000-8000-000000000001';
+      if (parameters.p_qr !== qr)
+        return reply({ code: 'PT422', message: 'invalid_attendance_qr' }, 422);
+      return reply({ site_id: siteId, site_name: state.people[0]?.site_name });
+    }
     if (name === 'record_attendance') {
       if (role !== 'employee')
         return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
       const existing = state.punches.find((punch) => punch.request_id === parameters.p_request_id);
-      if (existing) return reply({ ...existing, replayed: true, location_saved: true });
+      if (existing)
+        return reply({
+          ...existing,
+          replayed: true,
+          location_saved: true,
+          photo_saved: true,
+          qr_verified: true,
+        });
       const person = state.people[0];
+      const qr =
+        state.storeQrs.get(person.site_id) ||
+        'snr-attendance:v1:' + person.site_id + ':a0000000-0000-4000-8000-000000000001';
+      if (parameters.p_evidence?.qr !== qr || !parameters.p_evidence?.photo?.jpeg_base64)
+        return reply({ code: 'PT422', message: 'attendance_evidence_required' }, 422);
       if (
         !parameters.p_location ||
         parameters.p_location.consent_version !== 'attendance-location-v1'
@@ -331,6 +356,7 @@ export async function workforceFixture(
         store_radius_meters: area.radius_meters,
         store_policy_version: area.version,
         store_rule_version: 'store-radius-v1',
+        photo: { ...parameters.p_evidence.photo, qr_verified: true, qr_version: 1 },
       });
       if (punch.event_type === 'clock_in')
         state.sessions.push({
@@ -362,7 +388,13 @@ export async function workforceFixture(
         state.loseNextPunchResponse = false;
         return route.abort('failed');
       }
-      return reply({ ...punch, replayed: false, location_saved: true });
+      return reply({
+        ...punch,
+        replayed: false,
+        location_saved: true,
+        photo_saved: true,
+        qr_verified: true,
+      });
     }
     if (name === 'attendance_location_details') {
       if (role === 'supervisor')
@@ -440,6 +472,22 @@ export async function workforceFixture(
         radius_meters: 100,
         version: null,
         ...state.storeAreas.get(site.id),
+      });
+    }
+    if (name === 'hr_attendance_qr') {
+      const site = state.sites.find((site) => site.id === parameters.p_site_id);
+      if (parameters.p_rotate)
+        state.storeQrs.set(
+          site.id,
+          'snr-attendance:v1:' + site.id + ':b0000000-0000-4000-8000-000000000001',
+        );
+      return reply({
+        site_id: site.id,
+        site_name: site.name,
+        version: state.storeQrs.has(site.id) ? 2 : 1,
+        qr:
+          state.storeQrs.get(site.id) ||
+          'snr-attendance:v1:' + site.id + ':a0000000-0000-4000-8000-000000000001',
       });
     }
     if (name === 'hr_save_site_attendance_area') {
@@ -524,7 +572,7 @@ export async function workforceFixture(
       }
       return reply(person.id);
     }
-    const type = name.replace('hr_save_', '');
+    const type = name === 'hr_save_attendance_site' ? 'site' : name.replace('hr_save_', '');
     const collection =
       type === 'site'
         ? state.sites
@@ -554,6 +602,13 @@ export async function workforceFixture(
       };
       if (index < 0) collection.push(record);
       else collection[index] = record;
+      if (name === 'hr_save_attendance_site')
+        state.storeAreas.set(record.id, {
+          latitude: parameters.p_latitude,
+          longitude: parameters.p_longitude,
+          radius_meters: parameters.p_radius_meters,
+          version: (state.storeAreas.get(record.id)?.version || 0) + 1,
+        });
       return reply(record.id);
     }
     throw new Error(`Unexpected workforce request: ${path}`);

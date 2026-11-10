@@ -48,7 +48,10 @@ done
 snr_psql < "$snr_project_root/supabase/tests/attendance-locations.sql"
 snr_psql < "$snr_project_root/supabase/tests/store-area-upgrade.sql"
 for snr_migration in "$snr_project_root"/supabase/migrations/*.sql; do
-  if [[ "$(basename "$snr_migration")" > '202611070006_attendance_locations.sql' ]]; then snr_psql < "$snr_migration"; fi
+  if [[ "$(basename "$snr_migration")" == '202611080007_store_attendance_areas.sql' ]]; then snr_psql < "$snr_migration"; fi
 done
 snr_psql < "$snr_project_root/supabase/tests/store-attendance-areas.sql"
 python3 "$snr_project_root/scripts/test_workspace_concurrency.py" "$snr_pg_container"
+snr_psql < "$snr_project_root/supabase/migrations/202611100008_attendance_photo_qr.sql"
+snr_psql < "$snr_project_root/supabase/tests/attendance-photo-qr.sql"
+python3 "$snr_project_root/scripts/test_photo_qr_concurrency.py" "$snr_pg_container"

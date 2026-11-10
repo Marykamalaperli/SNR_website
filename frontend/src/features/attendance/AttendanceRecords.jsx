@@ -109,15 +109,15 @@ export default function AttendanceRecords({ workspace, revision = 0, own = false
       ? [
           {
             key: 'location',
-            label: 'Location',
+            label: 'Photo & location',
             render: (row) =>
               row.clock_in_location_available || row.clock_out_location_available ? (
                 <Button
                   variant="text"
                   onClick={() => setLocationRow(row)}
-                  aria-label={`View locations ${row.employee_number} ${dateLabel(row.attendance_date)}`}
+                  aria-label={`View photo and location ${row.employee_number} ${dateLabel(row.attendance_date)}`}
                 >
-                  View locations
+                  View photo &amp; location
                 </Button>
               ) : (
                 <span className="muted">Not collected</span>
