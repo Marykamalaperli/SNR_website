@@ -115,7 +115,7 @@ for (const width of [1440, 390]) {
     state.people[0].display_name = 'demo';
     await signInWorkforce(page);
     await page.getByRole('link', { name: 'Employees', exact: true }).click();
-      await page.setViewportSize({ width, height: 1000 });
+    await page.setViewportSize({ width, height: 1000 });
     await page.getByRole('button', { name: 'Edit employee demo', exact: true }).click();
     const dialog = page.getByRole('dialog');
     const name = dialog.getByLabel('Full name');
