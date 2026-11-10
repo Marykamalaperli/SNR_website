@@ -48,10 +48,6 @@ function SiteForm({ record, area, organization, onClose, onSaved }) {
         onResolving={setResolving}
         resolveLink={resolveStoreMapLink}
       />
-      <p className="field-hint">
-        A store QR is created with this site. Download it from Sites &amp; Shifts and display it at
-        the store.
-      </p>
     </RecordForm>
   );
 }

@@ -42,15 +42,6 @@
   max-height: 280px;
   border-radius: var(--radius-sm);
 }
-.store-attendance-qr {
-  display: grid;
-  justify-items: start;
-  gap: 1rem;
-}
-.store-attendance-qr img {
-  width: min(100%, 300px);
-  height: auto;
-}
 .live-punch-top {
   display: flex;
   align-items: center;

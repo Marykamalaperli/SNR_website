@@ -13,7 +13,6 @@ import RecordForm from './RecordForm';
 import SelectField from './SelectField';
 import StoreAreaEditor from './StoreAreaEditor';
 import AttendanceSiteEditor from './AttendanceSiteEditor';
-import StoreAttendanceQr from './StoreAttendanceQr';
 
 function SetupForm({ kind, record, organization, onClose, onSaved }) {
   if (kind === 'site')
@@ -94,7 +93,6 @@ export default function OrganizationSetup() {
   const { data, loading, error, reload } = useRemoteData(loadOrganization);
   const [editor, setEditor] = useState(null);
   const [areaSite, setAreaSite] = useState(null);
-  const [qrSite, setQrSite] = useState(null);
   const [notice, setNotice] = useState('');
   const edit = (kind, record = null) => setEditor({ kind, record });
   return (
@@ -170,13 +168,6 @@ export default function OrganizationSetup() {
                         aria-label={`Manage attendance area for ${site.name}`}
                       >
                         Manage attendance area
-                      </Button>
-                      <Button
-                        variant="text"
-                        onClick={() => setQrSite(site)}
-                        aria-label={'Attendance QR for ' + site.name}
-                      >
-                        Store attendance QR
                       </Button>
                     </div>
                     <Button
@@ -307,7 +298,6 @@ export default function OrganizationSetup() {
               }}
             />
           )}
-          {qrSite && <StoreAttendanceQr site={qrSite} onClose={() => setQrSite(null)} />}
         </>
       )}
     </>

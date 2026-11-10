@@ -1,12 +1,9 @@
-export const DEMO_SITE_ID = '20000000-0000-4000-8000-000000000001';
-export const DEMO_QR =
-  'snr-attendance:v1:' + DEMO_SITE_ID + ':a0000000-0000-4000-8000-000000000001';
 export const INITIAL_SITE = {
   name: 'Bengaluru sample store',
   timezone: 'Asia/Kolkata',
   latitude: 12.971599,
   longitude: 77.594566,
-  radius_meters: 100,
+  radius_meters: 50,
 };
 
 export const SAMPLE_PHOTO =
@@ -23,13 +20,10 @@ export function distanceMeters(a, b) {
       Math.sin(radians(b.longitude - a.longitude) / 2) ** 2;
   return 12742000 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, value))));
 }
-export function checkDemoEvidence(site, point, qr) {
-  if (qr !== DEMO_QR)
-    throw new Error('This QR does not match your store. Scan the correct store QR.');
+export function checkDemoEvidence(site, point) {
   const distance = distanceMeters(site, point);
-  if (distance > site.radius_meters)
-    throw new Error('Outside the store area. Attendance was not recorded.');
-  if (distance + point.accuracy_meters > site.radius_meters)
+  if (distance > 50) throw new Error('Outside the store area. Attendance was not recorded.');
+  if (distance + point.accuracy_meters > 50)
     throw new Error('Location accuracy is too low. Attendance was not recorded.');
   return distance;
 }

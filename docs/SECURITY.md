@@ -134,3 +134,9 @@ environment values, request Authorization headers, or secret files into logs.
 
 Report vulnerabilities privately to the repository owner; do not post sensitive
 records publicly. No independent security audit or compliance certification is claimed.
+
+From migration 0010, QR is disabled for new punches. Every configured area and HR
+area save uses a fixed 50-metre radius; existing preflight and the commit-time
+location trigger enforce distance plus reported accuracy within that boundary.
+Photo upload, private access, consent and audit rules are unchanged. Historical
+QR verification is shown only for evidence that actually has a saved QR version.

@@ -29,7 +29,7 @@ const action = {
   type: 'clock_in',
   previousId: null,
   location: { latitude: 12.97 },
-  evidence: { qr: 'fixture-qr', photo },
+  evidence: { photo },
 };
 const filename = user + '_2026-11-11_09-30-00.123456_' + requestId + '.jpg';
 const path = 'e2000000-0000-4000-8000-000000000001/' + user + '/' + filename;
@@ -40,7 +40,13 @@ const intent = {
   object_path: path,
   sha256: hash,
 };
-const receipt = { id: 'event', storage_saved: true, photo_saved: true, qr_verified: true };
+const receipt = {
+  id: 'event',
+  storage_saved: true,
+  photo_saved: true,
+  qr_verified: false,
+  qr_required: false,
+};
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 function req(body = action, suffix = 'photos', headers = {}) {

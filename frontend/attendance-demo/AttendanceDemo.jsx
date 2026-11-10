@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import QRCode from 'qrcode';
 import {
   ArrowRight,
   Building2,
   Camera,
   Check,
   Clock3,
-  Download,
   Fingerprint,
   MapPin,
-  QrCode,
   RotateCcw,
-  ScanLine,
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
@@ -21,7 +17,7 @@ import FormField from '../src/components/forms/FormField';
 import AttendanceCapture from '../src/features/attendance/AttendanceCapture';
 import StoreLocationFields from '../src/features/workforce/StoreLocationFields';
 import { captureAttendanceLocation } from '../src/services/locationService';
-import { checkDemoEvidence, DEMO_QR, INITIAL_SITE, SAMPLE_PHOTO, samplePoint } from './model';
+import { checkDemoEvidence, INITIAL_SITE, SAMPLE_PHOTO, samplePoint } from './model';
 
 const nav = [
   ['employee', 'Employee attendance', Clock3],
@@ -35,17 +31,18 @@ const time = (value) =>
     timeZone: 'Asia/Kolkata',
   }).format(new Date(value));
 
-function SampleCapture({ site, scenario, qrImage, clockedIn, onClose, onConfirm }) {
-  const [step, setStep] = useState('qr');
+function SampleCapture({ site, scenario, clockedIn, onClose, onConfirm }) {
+  const [step, setStep] = useState('location');
   const [error, setError] = useState('');
   const point = samplePoint(site, scenario);
-  function scan() {
-    if (scenario === 'wrong-qr') {
-      setError('This QR does not match your store. Attendance was not recorded.');
-      return;
+  function verifyLocation() {
+    try {
+      checkDemoEvidence(site, point);
+      setError('');
+      setStep('photo');
+    } catch (failure) {
+      setError(failure.message);
     }
-    setError('');
-    setStep('photo');
   }
   function confirm() {
     try {
@@ -58,31 +55,25 @@ function SampleCapture({ site, scenario, qrImage, clockedIn, onClose, onConfirm 
     <Modal title={(clockedIn ? 'Clock out' : 'Clock in') + ' · guided sample'} onClose={onClose}>
       <p className="demo-modal-note">Sample camera and location. No device permissions needed.</p>
       <ol className="attendance-capture-steps" aria-label="Sample attendance steps">
-        <li aria-current={step === 'qr' ? 'step' : undefined}>
-          <QrCode size={18} />
-          Scan QR
-        </li>
-        <li aria-current={step === 'photo' ? 'step' : undefined}>
-          <Camera size={18} />
-          Photo
-        </li>
-        <li aria-current={step === 'location' ? 'step' : undefined}>
+        <li>
           <MapPin size={18} />
-          Location
+          Verify location within 50 metres
+        </li>
+        <li>
+          <Camera size={18} />
+          Take photo
         </li>
       </ol>
-      {step === 'qr' && (
+      {step === 'location' && (
         <div className="demo-step">
-          <div className="demo-qr-frame">
-            {qrImage && (
-              <img src={qrImage} alt="Sample store attendance QR" width="200" height="200" />
-            )}
-          </div>
-          <h3>{site.name}</h3>
-          <p>In the live flow, staff point their rear camera at the QR displayed in this store.</p>
-          <Button onClick={scan}>
-            <ScanLine size={18} />
-            Simulate QR scan
+          <h3>Check your store location</h3>
+          <p>
+            Sample position: {point.latitude.toFixed(6)}, {point.longitude.toFixed(6)}
+          </p>
+          <p>Accuracy ±{point.accuracy_meters} m · Allowed radius 50 m</p>
+          <Button onClick={verifyLocation}>
+            <MapPin size={18} />
+            Verify sample location
           </Button>
         </div>
       )}
@@ -90,7 +81,7 @@ function SampleCapture({ site, scenario, qrImage, clockedIn, onClose, onConfirm 
         <div className="demo-step">
           <span className="demo-positive">
             <Check size={16} />
-            Store QR matched
+            Location matched
           </span>
           <img
             className="demo-sample-photo"
@@ -101,26 +92,17 @@ function SampleCapture({ site, scenario, qrImage, clockedIn, onClose, onConfirm 
             Review a fresh photo before continuing. Use camera mode on the main screen to try your
             own device.
           </p>
-          <Button onClick={() => setStep('location')}>
+          <Button onClick={() => setStep('review')}>
             <Camera size={18} />
             Use sample photo
           </Button>
         </div>
       )}
-      {step === 'location' && (
+      {step === 'review' && (
         <div className="demo-step">
-          <span className="demo-feature-circle">
-            <MapPin size={30} />
-          </span>
-          <h3>Check your store location</h3>
-          <p>
-            Sample position: {point.latitude.toFixed(6)}, {point.longitude.toFixed(6)}
-          </p>
-          <p>
-            Accuracy ±{point.accuracy_meters} m · Allowed radius {site.radius_meters} m
-          </p>
+          <h3>Ready to save your photo and location</h3>
           <div className="modal-actions">
-            <Button variant="secondary" onClick={() => setStep('photo')}>
+            <Button variant="secondary" onClick={() => setStep('location')}>
               Retake sample photo
             </Button>
             <Button onClick={confirm}>Confirm sample {clockedIn ? 'clock-out' : 'clock-in'}</Button>
@@ -136,7 +118,7 @@ function SampleCapture({ site, scenario, qrImage, clockedIn, onClose, onConfirm 
   );
 }
 
-function SiteSetup({ site, qrImage, onSaved }) {
+function SiteSetup({ site, onSaved }) {
   const [locating, setLocating] = useState(false);
   const [notice, setNotice] = useState('');
   function save(event) {
@@ -156,8 +138,7 @@ function SiteSetup({ site, qrImage, onSaved }) {
       Math.abs(next.latitude) > 90 ||
       Math.abs(next.longitude) > 180 ||
       !Number.isInteger(next.radius_meters) ||
-      next.radius_meters < 10 ||
-      next.radius_meters > 1000
+      next.radius_meters !== 50
     )
       return;
     onSaved(next);
@@ -199,29 +180,16 @@ function SiteSetup({ site, qrImage, onSaved }) {
           </p>
         )}
       </section>
-      <section className="demo-card demo-qr-card">
-        <p className="demo-eyebrow">DISPLAY AT THE STORE</p>
-        <h2>Your store QR</h2>
+      <section className="demo-card">
+        <p className="demo-eyebrow">LOCATION BEFORE CAMERA</p>
+        <h2>Within 50 metres of your store</h2>
         <p>
-          In device mode, scan this QR from a second screen or a printed copy. It belongs only to
-          this isolated demo.
+          Both clock-in and clock-out check your location before opening the camera and again when
+          taking the photo.
         </p>
-        {qrImage && (
-          <>
-            <img src={qrImage} alt="Downloadable demo store QR" width="280" height="280" />
-            <a
-              className="button button-secondary"
-              href={qrImage}
-              download="snr-attendance-demo-qr.png"
-            >
-              <Download size={18} />
-              Download demo QR
-            </a>
-          </>
-        )}
         <p className="field-hint">
-          Set your current location as the store centre to try camera mode where you are. Review the
-          accuracy and radius before saving.
+          Set your current location as the store centre to try camera mode where you are. Review its
+          accuracy before saving.
         </p>
       </section>
     </div>
@@ -270,10 +238,6 @@ function Evidence({ records }) {
                   {Math.round(record.distance)} m / {record.site.radius_meters} m allowed
                 </dd>
               </div>
-              <div>
-                <dt>Store QR</dt>
-                <dd>Matched</dd>
-              </div>
             </dl>
           </div>
         </article>
@@ -286,7 +250,6 @@ export default function AttendanceDemo() {
   const [view, setView] = useState('employee');
   const [site, setSite] = useState(INITIAL_SITE);
   const [records, setRecords] = useState([]);
-  const [qrImage, setQrImage] = useState('');
   const [mode, setMode] = useState('guided');
   const [scenario, setScenario] = useState('inside');
   const [consent, setConsent] = useState(false);
@@ -298,36 +261,18 @@ export default function AttendanceDemo() {
   const locked = useRef(false);
   useEffect(() => {
     active.current = true;
-    QRCode.toDataURL(DEMO_QR, { width: 600, margin: 4, errorCorrectionLevel: 'M' }).then(
-      (image) => {
-        if (active.current) setQrImage(image);
-      },
-      () => {
-        if (active.current) setError('The demo QR could not be generated. Reload to try again.');
-      },
-    );
     return () => {
       active.current = false;
     };
   }, []);
   const clockedIn = records.at(-1)?.kind === 'clock_in';
-  const verifyQr = useCallback(
-    async (value) => {
-      if (value !== DEMO_QR)
-        throw new Error(
-          'This QR does not match the demo store. Scan its demo QR from Sites & Shifts.',
-        );
-      return { site_name: site.name };
-    },
-    [site.name],
-  );
   const checkLocation = useCallback(async () => {
     const point = await captureAttendanceLocation();
-    checkDemoEvidence(site, point, DEMO_QR);
+    checkDemoEvidence(site, point);
     return point;
   }, [site]);
   function saveRecord(point, photo, captureMode) {
-    const distance = checkDemoEvidence(site, point, DEMO_QR);
+    const distance = checkDemoEvidence(site, point);
     const kind = clockedIn ? 'clock_out' : 'clock_in';
     setRecords((previous) => [
       ...previous,
@@ -355,7 +300,6 @@ export default function AttendanceDemo() {
     locked.current = true;
     setBusy(true);
     try {
-      await verifyQr(evidence.qr);
       const point = evidence.photo.location_at_capture;
       if (!point) throw new Error('Enable location and retake your photo.');
       if (!active.current) return;
@@ -381,7 +325,7 @@ export default function AttendanceDemo() {
   const headings = {
     employee: [
       'A better way to begin your day.',
-      'One store QR. A fresh photo. A location that matches.',
+      'Location first. Within 50 metres. A fresh photo.',
     ],
     site: [
       'Every store has its place.',
@@ -503,9 +447,8 @@ export default function AttendanceDemo() {
                 </div>
                 <div className="demo-flow">
                   {[
-                    [QrCode, 'Scan QR'],
-                    [Camera, 'Take photo'],
                     [MapPin, 'Check location'],
+                    [Camera, 'Take photo'],
                   ].map(([Icon, text]) => (
                     <div key={text}>
                       <Icon size={22} />
@@ -528,13 +471,12 @@ export default function AttendanceDemo() {
                       <option value="inside">Inside store — accepted</option>
                       <option value="outside">Outside store — blocked</option>
                       <option value="inaccurate">Inaccurate location — blocked</option>
-                      <option value="wrong-qr">Wrong store QR — blocked</option>
                     </select>
                   </label>
                 ) : (
                   <p className="demo-device-note">
-                    First set your location in Sites &amp; Shifts, then display its QR on another
-                    screen or print it. Camera/location permissions are requested only when needed.
+                    First set your location in Sites &amp; Shifts. Allow location access; the camera
+                    opens only within 50 metres of the store.
                   </p>
                 )}
                 <label className="demo-consent">
@@ -549,7 +491,7 @@ export default function AttendanceDemo() {
                 </label>
                 <Button
                   className="demo-primary-action"
-                  disabled={!consent || !qrImage}
+                  disabled={!consent}
                   onClick={() => {
                     setError('');
                     setMessage('');
@@ -570,7 +512,8 @@ export default function AttendanceDemo() {
                   </span>
                   <h2>Your store, verified.</h2>
                   <p>
-                    Each punch must match the store QR and fit inside its saved attendance area.
+                    Each punch must be within 50 metres of the store, with sufficient location
+                    accuracy.
                   </p>
                   <dl className="demo-store-info">
                     <div>
@@ -589,7 +532,7 @@ export default function AttendanceDemo() {
                     </div>
                   </dl>
                   <Button variant="secondary" onClick={() => setView('site')}>
-                    Review site &amp; QR
+                    Review store location
                     <ArrowRight size={16} />
                   </Button>
                 </section>
@@ -607,7 +550,7 @@ export default function AttendanceDemo() {
               </div>
             </div>
           )}
-          {view === 'site' && <SiteSetup site={site} qrImage={qrImage} onSaved={setSite} />}
+          {view === 'site' && <SiteSetup site={site} onSaved={setSite} />}
           {view === 'records' && <Evidence records={records} />}
         </main>
         <footer className="demo-footer">
@@ -619,7 +562,6 @@ export default function AttendanceDemo() {
         (mode === 'guided' ? (
           <SampleCapture
             site={site}
-            qrImage={qrImage}
             scenario={scenario}
             clockedIn={clockedIn}
             onClose={() => setCapture(false)}
@@ -628,7 +570,6 @@ export default function AttendanceDemo() {
         ) : (
           <AttendanceCapture
             checkLocation={checkLocation}
-            verifyQr={verifyQr}
             siteName={site.name}
             clockedIn={clockedIn}
             busy={busy}

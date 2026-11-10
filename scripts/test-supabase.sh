@@ -59,3 +59,6 @@ python3 "$snr_project_root/scripts/test_photo_qr_concurrency.py" "$snr_pg_contai
 snr_psql < "$snr_project_root/supabase/tests/storage-bootstrap.sql"
 snr_psql < "$snr_project_root/supabase/migrations/202611110009_attendance_storage_location.sql"
 snr_psql < "$snr_project_root/supabase/tests/attendance-storage.sql"
+
+snr_psql < "$snr_project_root/supabase/migrations/202611110010_attendance_location_photo_only.sql"
+snr_psql < "$snr_project_root/supabase/tests/attendance-photo-only.sql"

@@ -180,7 +180,7 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       image[image.length - 1] !== 217
     )
       throw new Failure(422, 'invalid_attendance_photo');
-    // PostgreSQL validates JPEG structure, consent, shutter fix, QR and expected
+    // PostgreSQL validates JPEG structure, consent, shutter fix and expected
     // employee/state, and derives a unique bucket/path and immutable intent.
     const intent = await rpc('prepare_attendance_photo', { p_action: action });
     if (intent.receipt) return json(intent.receipt);

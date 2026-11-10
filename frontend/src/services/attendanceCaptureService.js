@@ -1,6 +1,4 @@
 export const EVIDENCE_NOTICE_VERSION = 'attendance-photo-location-v1';
-export const STORE_QR_PATTERN =
-  /^snr-attendance:v1:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function openAttendanceCamera(facingMode) {
   if (!globalThis.isSecureContext)

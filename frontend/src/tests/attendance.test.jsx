@@ -23,7 +23,6 @@ vi.mock('../services/attendanceService', () => ({
   loadAttendanceWorkspace: vi.fn(),
   loadAttendanceLocations: vi.fn(),
   recordAttendance: vi.fn(),
-  verifyAttendanceQr: vi.fn(),
   validateAttendanceLocation: vi.fn(),
 }));
 vi.mock('../services/locationService', () => ({
@@ -31,7 +30,6 @@ vi.mock('../services/locationService', () => ({
   LOCATION_NOTICE_VERSION: 'attendance-location-v1',
 }));
 const evidence = {
-  qr: 'snr-attendance:v1:20000000-0000-4000-8000-000000000001:a0000000-0000-4000-8000-000000000001',
   photo: {
     jpeg_base64: '/9j/2Q==',
     captured_at: '2026-11-07T04:00:00Z',
@@ -59,7 +57,9 @@ const workspace = {
   location_notice_version: 'attendance-location-v1',
   store_geofence_required: true,
   store_geofence_policy: 'store-radius-v1',
-  attendance_area: { configured: true, radius_meters: 100, site_name: 'Main office' },
+  qr_required: false,
+  attendance_capture_policy: 'store-50m-photo-v1',
+  attendance_area: { configured: true, radius_meters: 50, site_name: 'Main office' },
   today: '2026-11-07',
   timezone: 'Asia/Kolkata',
   site_name: 'Main office',
@@ -90,7 +90,7 @@ const receipt = {
   location_saved: true,
   storage_saved: true,
   photo_saved: true,
-  qr_verified: true,
+  qr_required: false,
 };
 beforeEach(() => {
   evidence.photo.location_at_capture = point;
@@ -302,4 +302,16 @@ it('formats work dates independently of browser time zones and preserves open-se
   expect(momentLabel('2026-11-06T23:30:00Z', 'Asia/Kolkata')).toContain('7 Nov');
   expect(durationLabel(null)).toBe('In progress');
   expect(durationLabel(7200)).toBe('2 h 0 min');
+});
+
+it('blocks older QR workspaces until the photo-only 50-metre policy is installed', async () => {
+  render(
+    <PunchCard
+      workspace={{ ...workspace, qr_required: true, attendance_capture_policy: undefined }}
+      onRecorded={vi.fn()}
+      onRefresh={vi.fn()}
+    />,
+  );
+  expect(screen.getByRole('button', { name: 'Clock in' })).toBeDisabled();
+  expect(screen.getByText(/requires migration 0010/)).toBeVisible();
 });

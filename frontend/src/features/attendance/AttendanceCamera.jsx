@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import jsQR from 'jsqr';
 import { Camera } from 'lucide-react';
 import Button from '../../components/common/Button';
 import {
@@ -8,13 +7,7 @@ import {
   takeAttendancePhoto,
 } from '../../services/attendanceCaptureService';
 
-export default function AttendanceCamera({
-  scanning = false,
-  onScan,
-  onPhoto,
-  beforeOpen,
-  beforePhoto,
-}) {
+export default function AttendanceCamera({ onPhoto, beforeOpen, beforePhoto }) {
   const video = useRef(null);
   const canvas = useRef(null);
   const [ready, setReady] = useState(false);
@@ -29,7 +22,6 @@ export default function AttendanceCamera({
   useEffect(() => {
     let active = true;
     let stream;
-    let timer;
     let monitor;
     let permission;
     let checking = false;
@@ -38,7 +30,6 @@ export default function AttendanceCamera({
     live.current = true;
     function halt(message) {
       locationAllowed.current = false;
-      clearTimeout(timer);
       clearInterval(monitor);
       stopAttendanceCamera(stream);
       if (active) {
@@ -47,7 +38,6 @@ export default function AttendanceCamera({
       }
     }
     stopMonitor.current = () => {
-      clearTimeout(timer);
       clearInterval(monitor);
     };
     const visibilityChanged = () => {
@@ -70,7 +60,6 @@ export default function AttendanceCamera({
         await beforeOpen();
       } catch (failure) {
         halt(failure.message);
-        clearTimeout(timer);
         clearInterval(monitor);
       } finally {
         checking = false;
@@ -93,7 +82,7 @@ export default function AttendanceCamera({
         if (revoked || document.hidden)
           throw new Error('Enable location and keep this page open before using the camera.');
         setCheckingLocation(false);
-        stream = await openAttendanceCamera(scanning ? 'environment' : 'user');
+        stream = await openAttendanceCamera('user');
         if (!active) return stopAttendanceCamera(stream);
         if (revoked || document.hidden)
           throw new Error('Location access changed or the page was hidden. Reopen the camera.');
@@ -106,29 +95,6 @@ export default function AttendanceCamera({
         setReady(true);
         locationAllowed.current = true;
         monitor = setInterval(recheck, 10000);
-        if (scanning) {
-          const scan = () => {
-            if (!active) return;
-            const v = video.current;
-            const c = canvas.current;
-            if (v.videoWidth && v.videoHeight) {
-              const scale = Math.min(1, 800 / Math.max(v.videoWidth, v.videoHeight));
-              c.width = Math.round(v.videoWidth * scale);
-              c.height = Math.round(v.videoHeight * scale);
-              const context = c.getContext('2d', { willReadFrequently: true });
-              context.drawImage(v, 0, 0, c.width, c.height);
-              const pixels = context.getImageData(0, 0, c.width, c.height);
-              const code = jsQR(pixels.data, pixels.width, pixels.height);
-              if (code?.data) {
-                stopAttendanceCamera(stream);
-                onScan(code.data);
-                return;
-              }
-            }
-            timer = setTimeout(scan, 250);
-          };
-          timer = setTimeout(scan, 250);
-        }
       } catch (failure) {
         stopAttendanceCamera(stream);
         if (active) {
@@ -143,13 +109,12 @@ export default function AttendanceCamera({
       live.current = false;
       generation.current = session + 1;
       locationAllowed.current = false;
-      clearTimeout(timer);
       clearInterval(monitor);
       permission?.removeEventListener('change', permissionChanged);
       document.removeEventListener('visibilitychange', visibilityChanged);
       stopAttendanceCamera(stream);
     };
-  }, [scanning, onScan, attempt, beforeOpen]);
+  }, [attempt, beforeOpen]);
   async function photograph() {
     const session = generation.current;
     try {
@@ -178,19 +143,10 @@ export default function AttendanceCamera({
   }
   return (
     <div className="attendance-camera">
-      <video
-        ref={video}
-        autoPlay
-        muted
-        playsInline
-        aria-label={scanning ? 'QR scanner camera' : 'Photo camera'}
-      />
+      <video ref={video} autoPlay muted playsInline aria-label="Photo camera" />
       <canvas ref={canvas} hidden />
       {!ready && !error && (
         <p role="status">{checkingLocation ? 'Verifying store location…' : 'Opening camera…'}</p>
-      )}
-      {scanning && !error && (
-        <p role="status">Point the rear camera at the QR displayed at your store.</p>
       )}
       {error && (
         <p className="form-error" role="alert">
@@ -209,12 +165,10 @@ export default function AttendanceCamera({
           Retry camera
         </Button>
       ) : (
-        !scanning && (
-          <Button onClick={photograph} disabled={!ready || checkingLocation}>
-            <Camera size={18} aria-hidden="true" />
-            {checkingLocation ? 'Verifying location…' : 'Take photo'}
-          </Button>
-        )
+        <Button onClick={photograph} disabled={!ready || checkingLocation}>
+          <Camera size={18} aria-hidden="true" />
+          {checkingLocation ? 'Verifying location…' : 'Take photo'}
+        </Button>
       )}
     </div>
   );

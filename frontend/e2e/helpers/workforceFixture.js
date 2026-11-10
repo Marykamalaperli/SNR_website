@@ -41,9 +41,9 @@ export async function workforceFixture(
     locationEnabled: true,
     storePolicyEnabled: true,
     storeAreas: new Map(),
-    storeQrs: new Map(),
     evidenceEnabled: true,
     storageEnabled: true,
+    photoOnlyEnabled: true,
     photoFiles: new Map(),
     loseNextPunchResponse: false,
     today: new Date().toISOString().slice(0, 10),
@@ -101,13 +101,11 @@ export async function workforceFixture(
         location_saved: true,
         storage_saved: true,
         photo_saved: true,
-        qr_verified: true,
+        qr_verified: false,
+        qr_required: false,
       });
     const person = state.people[0];
-    const qr =
-      state.storeQrs.get(person.site_id) ||
-      'snr-attendance:v1:' + person.site_id + ':a0000000-0000-4000-8000-000000000001';
-    if (parameters.p_evidence?.qr !== qr || !parameters.p_evidence?.photo?.jpeg_base64)
+    if (!parameters.p_evidence?.photo?.jpeg_base64)
       return reply({ code: 'PT422', message: 'attendance_evidence_required' }, 422);
     if (
       !parameters.p_location ||
@@ -176,8 +174,9 @@ export async function workforceFixture(
         bucket_id: bucket,
         object_path: objectPath,
         captured_at: parameters.p_evidence.photo.captured_at,
-        qr_verified: true,
-        qr_version: 1,
+        qr_verified: false,
+        qr_required: false,
+        qr_version: null,
       },
     });
     if (punch.event_type === 'clock_in')
@@ -216,7 +215,8 @@ export async function workforceFixture(
       location_saved: true,
       storage_saved: true,
       photo_saved: true,
-      qr_verified: true,
+      qr_verified: false,
+      qr_required: false,
     });
   }
   await page.route('**/api/attendance/photos', async (route) => {
@@ -391,6 +391,9 @@ export async function workforceFixture(
         evidence_required: state.evidenceEnabled,
         storage_required: state.storageEnabled,
         camera_location_policy: 'location-before-camera-v1',
+        qr_required: !state.photoOnlyEnabled,
+        attendance_capture_policy: state.photoOnlyEnabled ? 'store-50m-photo-v1' : null,
+        attendance_radius_meters: 50,
         evidence_notice_version: 'attendance-photo-location-v1',
         location_notice_version: 'attendance-location-v1',
         store_geofence_required: state.storePolicyEnabled,
@@ -452,15 +455,6 @@ export async function workforceFixture(
         distance_meters: distance,
         radius_meters: area.radius_meters,
       });
-    }
-    if (name === 'verify_attendance_qr') {
-      const siteId = state.people[0]?.site_id;
-      const qr =
-        state.storeQrs.get(siteId) ||
-        'snr-attendance:v1:' + siteId + ':a0000000-0000-4000-8000-000000000001';
-      if (parameters.p_qr !== qr)
-        return reply({ code: 'PT422', message: 'invalid_attendance_qr' }, 422);
-      return reply({ site_id: siteId, site_name: state.people[0]?.site_name });
     }
     if (name === 'record_attendance') return handlePhoto(route, parameters, reply);
     if (name === 'attendance_location_details') {
@@ -536,25 +530,9 @@ export async function workforceFixture(
         configured: state.storeAreas.has(site.id),
         latitude: null,
         longitude: null,
-        radius_meters: 100,
+        radius_meters: 50,
         version: null,
         ...state.storeAreas.get(site.id),
-      });
-    }
-    if (name === 'hr_attendance_qr') {
-      const site = state.sites.find((site) => site.id === parameters.p_site_id);
-      if (parameters.p_rotate)
-        state.storeQrs.set(
-          site.id,
-          'snr-attendance:v1:' + site.id + ':b0000000-0000-4000-8000-000000000001',
-        );
-      return reply({
-        site_id: site.id,
-        site_name: site.name,
-        version: state.storeQrs.has(site.id) ? 2 : 1,
-        qr:
-          state.storeQrs.get(site.id) ||
-          'snr-attendance:v1:' + site.id + ':a0000000-0000-4000-8000-000000000001',
       });
     }
     if (name === 'hr_save_site_attendance_area') {

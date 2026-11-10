@@ -147,17 +147,11 @@ export default function StoreLocationFields({ area, onLocating, resolveLink, onR
           }}
         />
       </div>
-      <FormField
-        label="Allowed radius (metres)"
-        name="radius_meters"
-        type="number"
-        min={10}
-        max={1000}
-        step={1}
-        required
-        defaultValue={area?.radius_meters ?? 100}
-        hint="Choose 10–1,000 metres. Location accuracy must fit inside the boundary."
-      />
+      <input type="hidden" name="radius_meters" value="50" />
+      <p className="notice">
+        Attendance radius: 50 metres. Location accuracy must fit inside this boundary for both
+        clock-in and clock-out.
+      </p>
       {notice && (
         <p className="notice" role="status">
           {notice}

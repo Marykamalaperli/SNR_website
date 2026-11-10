@@ -95,8 +95,8 @@ it('sends only camera proof fields, excluding caller identity and extra photo da
     type: 'clock_out',
     id: 'retry',
     evidence: {
-      qr: 'scanned',
       organization_id: 'forged',
+      qr: 'obsolete-client-qr',
       photo: {
         jpeg_base64: 'jpeg',
         captured_at: 'instant',
@@ -106,7 +106,6 @@ it('sends only camera proof fields, excluding caller identity and extra photo da
     },
   });
   expect(JSON.parse(fetch.mock.calls[0][1].body).evidence).toEqual({
-    qr: 'scanned',
     photo: { jpeg_base64: 'jpeg', captured_at: 'instant', consent_version: 'notice' },
   });
 });

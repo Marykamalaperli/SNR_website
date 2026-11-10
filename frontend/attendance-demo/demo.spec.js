@@ -1,15 +1,15 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { capturePunch, installAttendanceCamera } from '../e2e/helpers/attendanceCamera';
-import { DEMO_SITE_ID, INITIAL_SITE } from './model';
+import { INITIAL_SITE } from './model';
 
 async function startSample(page, scenario = 'inside') {
   await page.goto('/');
   await page.getByLabel('Sample scenario').selectOption(scenario);
   await page.getByRole('checkbox', { name: /I understand/ }).check();
   await page.getByRole('button', { name: 'Clock in', exact: true }).click();
-  await page.getByRole('button', { name: 'Simulate QR scan' }).click();
-  if (scenario !== 'wrong-qr') {
+  await page.getByRole('button', { name: 'Verify sample location' }).click();
+  if (scenario === 'inside') {
     await page.getByRole('button', { name: 'Use sample photo' }).click();
     await page.getByRole('button', { name: 'Confirm sample clock-in' }).click();
   }
@@ -25,7 +25,7 @@ test('guided clock-in/out records evidence in this tab and resets on reload', as
   await page.getByRole('button', { name: 'Employee attendance', exact: true }).click();
   await page.getByRole('checkbox', { name: /I understand/ }).check();
   await page.getByRole('button', { name: 'Clock out', exact: true }).click();
-  await page.getByRole('button', { name: 'Simulate QR scan' }).click();
+  await page.getByRole('button', { name: 'Verify sample location' }).click();
   await page.getByRole('button', { name: 'Use sample photo' }).click();
   await page.getByRole('button', { name: 'Confirm sample clock-out' }).click();
   await page.getByRole('button', { name: 'Recorded evidence', exact: true }).click();
@@ -40,7 +40,6 @@ test('guided clock-in/out records evidence in this tab and resets on reload', as
 for (const [scenario, error] of [
   ['outside', 'Outside the store area'],
   ['inaccurate', 'accuracy is too low'],
-  ['wrong-qr', 'does not match your store'],
 ]) {
   test('rejects the ' + scenario + ' sample without an attendance record', async ({ page }) => {
     await startSample(page, scenario);
@@ -51,17 +50,15 @@ for (const [scenario, error] of [
   });
 }
 
-test('site setup and QR download are usable on desktop and mobile', async ({ page }) => {
+test('site setup with a fixed 50-metre radius are usable on desktop and mobile', async ({
+  page,
+}) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Sites & Shifts', exact: true }).click();
   await page.getByLabel('Site name').fill('Sample review store');
-  await page.getByLabel('Allowed radius (metres)').fill('150');
+  await expect(page.getByText(/Attendance radius: 50 metres/)).toBeVisible();
   await page.getByRole('button', { name: 'Save demo site' }).click();
   await expect(page.getByRole('status')).toContainText('Demo site saved');
-  await expect(page.getByRole('link', { name: 'Download demo QR' })).toHaveAttribute(
-    'download',
-    'snr-attendance-demo-qr.png',
-  );
   await page.getByRole('button', { name: 'Employee attendance', exact: true }).click();
   await expect(page.getByText('Sample review store', { exact: true })).toBeVisible();
   for (const width of [1440, 390]) {
@@ -84,11 +81,8 @@ test('site setup and QR download are usable on desktop and mobile', async ({ pag
   }
 });
 
-test('uses the real QR decoder, camera capture and geolocation without contacting an API', async ({
-  page,
-  context,
-}) => {
-  await installAttendanceCamera(page, DEMO_SITE_ID);
+test('uses location-first camera capture without QR or an API', async ({ page, context }) => {
+  await installAttendanceCamera(page);
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({
     latitude: INITIAL_SITE.latitude,

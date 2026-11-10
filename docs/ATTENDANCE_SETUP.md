@@ -1,5 +1,8 @@
 # Attendance and employee shifts
 
+> Migration 0010 fixes the radius at 50 metres and disables QR scanning.
+> See [current photo-only attendance](ATTENDANCE_PHOTO_ONLY.md) for activation.
+
 The owner subsequently requested location on both punches. Activate the additional
 [location migration 0006](ATTENDANCE_LOCATIONS.md) after the attendance setup below.
 It preserves existing attendance and requires a fresh permitted device fix for

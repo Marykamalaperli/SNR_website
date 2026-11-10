@@ -201,3 +201,20 @@ commits the normal punch/GPS/reference/audit transaction. Duplicate uploads must
 match their reserved digest. The employee/HR reader and Storage RLS govern short-lived
 signed photo URLs; old database photos remain intact. See ATTENDANCE_STORAGE_LOCATION.md
 for transaction boundaries, lifecycle, activation and verification limits.
+
+## Photo-only attendance within 50 metres (0010)
+
+The owner replaced QR scanning with location-first selfie capture for both normal
+punches. Migration 0010 fixes every configured store area at 50 metres, increments
+changed area versions, and enforces that radius on all area saves. Native precise
+location and caller-JWT preflight precede the front camera; the shutter obtains
+another checked fix. Uncertain, denied, unavailable or outside positions stop it.
+
+New upload intents and attendance commits require photo/GPS without QR. The existing
+private action buckets, server-derived filenames, verified upload, atomic event/GPS/
+reference/audit transaction and replay semantics remain. Legacy QR input is accepted
+only as inert bounded payload metadata so exact older retries keep their fingerprint;
+new storage proof has null QR version and never claims QR verification. Old evidence
+is retained with its original metadata. HR QR actions and QR provisioning are disabled.
+The browser requires the new server policy flag before enabling normal punches.
+See ATTENDANCE_PHOTO_ONLY.md for activation and validation boundaries.

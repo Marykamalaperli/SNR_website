@@ -13,11 +13,9 @@ const messages = {
   map_coordinates_unavailable:
     'This map link could not be resolved. Copy a full link containing coordinates, or enter them manually.',
   sign_in_required: 'Your session has expired. Sign out and sign in again.',
-  attendance_evidence_required: 'Scan the store QR and take a photo before clocking in or out.',
-  invalid_attendance_qr:
-    'This QR does not match your store, or it has been replaced. Scan the current QR at your assigned store.',
+  attendance_evidence_required: 'Take a photo and share your location before clocking in or out.',
   invalid_attendance_photo: 'A camera JPEG photo of up to 150 KB is required. Retake your photo.',
-  stale_attendance_photo: 'Your photo has expired. Scan the store QR and take a fresh photo.',
+  stale_attendance_photo: 'Your photo has expired. Take a fresh photo at your store.',
   store_area_not_configured:
     'HR must set your store’s attendance area before you can clock in or out.',
   outside_store_area:
@@ -108,7 +106,6 @@ export function loadAttendanceRecords({
     p_page: page,
   });
 }
-export const verifyAttendanceQr = (qr) => request('verify_attendance_qr', { p_qr: qr });
 export const validateAttendanceLocation = ({ type, previousId, employeeId }, location) =>
   request('validate_attendance_location', {
     p_employee_id: employeeId,
@@ -173,7 +170,6 @@ export const recordAttendance = ({ type, id, previousId, employeeId, location, e
       : null,
     evidence: evidence
       ? {
-          qr: evidence.qr,
           photo: {
             jpeg_base64: evidence.photo.jpeg_base64,
             captured_at: evidence.photo.captured_at,

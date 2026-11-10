@@ -20,10 +20,11 @@ browser permission. Activate migration 0006 using
 coordinates, accuracy and map links; attendance timestamps remain server-generated.
 Migration 0007 adds required store distance checks for both punches. HR sets each
 store’s centre and radius in **Sites & Shifts → Manage attendance area**; see
-[store attendance areas](docs/STORE_ATTENDANCE_AREAS.md) for activation. The default
-radius is 100 metres; unconfigured stores and uncertain/outside positions block punches.
+[store attendance areas](docs/STORE_ATTENDANCE_AREAS.md) for activation. Migration
+0007 originally used a configurable radius; unconfigured stores and
+uncertain/outside positions block punches.
 
-The next attendance release adds **store QR → photo → location** for each clock-in
+Migration 0008 originally added **store QR → photo → location** for each clock-in
 and clock-out. Store coordinates/radius are required while adding a site; HR can
 download or replace its QR. Apply migration **0008** after 0007 and release the
 frontend to activate [photo and QR attendance](docs/ATTENDANCE_PHOTO_QR.md).
@@ -33,6 +34,14 @@ Migration **0009** adds pasted map links, location checks before each camera and
 at the shutter, and separate private Supabase buckets for clock-in/out photos.
 Files use the verified user ID plus server date/time and request ID.
 See [Storage and location-first activation](docs/ATTENDANCE_STORAGE_LOCATION.md).
+
+Migration **0010** replaces the QR step with **location → photo**. Both clock-in
+and clock-out require a fresh, sufficiently accurate position within **50 metres**
+before opening the selfie camera and at the shutter. All configured store areas
+become 50 metres; old evidence keeps its original radius and QR metadata. QR
+controls and new QR provisioning are disabled. The private buckets and filenames
+from 0009 are unchanged. Apply 0010 after 0001–0009, then deploy the frontend;
+see [photo-only attendance activation](docs/ATTENDANCE_PHOTO_ONLY.md).
 
 ## Stack and architecture
 
@@ -135,8 +144,8 @@ writes remain denied. The third migration adds scoped directory reads and audite
 HR save functions without Cloud Run. It needs separate live activation; see
 [data model](docs/DATA_MODEL.md) and [workforce setup](docs/WORKFORCE_SETUP.md).
 
-The Pages account gateway alone uses a Cloudflare Production secret binding named
-`SUPABASE_ADMIN_KEY`. Vite never reads it; it is absent from source/build artifacts.
+The Pages account and attendance gateways use a Cloudflare Production secret
+binding named `SUPABASE_ADMIN_KEY`. Vite never reads it; it is absent from source/build artifacts.
 Existing public URL/key settings generate an ignored server config. Scoped data
 queries still use the caller JWT, never the elevated key.
 

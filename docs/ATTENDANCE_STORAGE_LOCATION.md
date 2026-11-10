@@ -1,5 +1,8 @@
 # Store map links, location-first cameras and private photo buckets
 
+> The current flow is **location → photo within 50 metres**, with QR disabled.
+> Apply migration 0010 after earlier migrations. See [photo-only attendance](ATTENDANCE_PHOTO_ONLY.md).
+
 Owner request: 11 November 2026. Migration 0009 extends 0008; it never rewrites
 existing attendance or removes old database photos.
 

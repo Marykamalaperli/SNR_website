@@ -3,7 +3,7 @@ import { attendanceGatewayRequest } from './attendanceService';
 export const resolveStoreMapLink = (url) => attendanceGatewayRequest('resolve-map-link', { url });
 
 const messages = {
-  invalid_store_area: 'Enter valid store coordinates and a radius between 10 and 1,000 metres.',
+  invalid_store_area: 'Enter valid store coordinates and the fixed 50-metre radius.',
   open_attendance_session: 'Clock out before changing this person’s site, department or role.',
   record_changed:
     'This record changed while you were editing. Close this form, refresh the page and try again.',
@@ -72,12 +72,6 @@ async function request(name, parameters = {}) {
 }
 
 export const loadOrganization = () => request('hr_organization_setup');
-export const loadStoreQr = (id, rotate = false, version = null) =>
-  request('hr_attendance_qr', {
-    p_site_id: id,
-    p_rotate: rotate,
-    p_version: version,
-  });
 export const saveAttendanceSite = (values, record, area) =>
   request('hr_save_attendance_site', {
     p_id: record?.id || null,
@@ -86,7 +80,7 @@ export const saveAttendanceSite = (values, record, area) =>
     p_timezone: values.timezone.trim(),
     p_latitude: Number(values.latitude),
     p_longitude: Number(values.longitude),
-    p_radius_meters: Number(values.radius_meters),
+    p_radius_meters: 50,
     p_area_version: area?.version ?? null,
     p_map_url: values.map_url || '',
   });
@@ -97,7 +91,7 @@ export const saveStoreArea = (area, values) =>
     p_version: area.version,
     p_latitude: Number(values.latitude),
     p_longitude: Number(values.longitude),
-    p_radius_meters: Number(values.radius_meters),
+    p_radius_meters: 50,
     p_map_url: values.map_url || '',
   });
 export const loadWorkspaceSettings = () => request('hr_workspace_settings');

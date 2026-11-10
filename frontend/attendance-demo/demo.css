@@ -244,7 +244,7 @@
 }
 .demo-flow {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   margin-bottom: 24px;
 }
@@ -382,22 +382,6 @@
 .demo-card-heading .demo-eyebrow {
   margin-bottom: 5px;
 }
-.demo-qr-card {
-  display: grid;
-  justify-items: start;
-  gap: 16px;
-}
-.demo-qr-card h2 {
-  margin: 0;
-}
-.demo-qr-card .demo-eyebrow {
-  margin: 0;
-}
-.demo-qr-card img {
-  width: min(100%, 280px);
-  height: auto;
-  justify-self: center;
-}
 .demo-evidence-list {
   display: grid;
   gap: 20px;
@@ -453,15 +437,6 @@
 }
 .demo-modal-note {
   margin-bottom: 22px;
-}
-.demo-qr-frame {
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-}
-.demo-qr-frame img {
-  max-width: 100%;
-  height: auto;
 }
 .demo-sample-photo {
   width: min(100%, 280px);

@@ -13,7 +13,7 @@
 | Attendance is append-only, server-timed and idempotent | Required future contract                 | Preserve original evidence                                        |
 | Browser writes denied in initial RLS migration         | Draft security baseline                  | Mutations require audited transactional APIs                      |
 | Per-punch device location with notice and permission   | Authorized by owner request              | Employee/HR precise access; device-reported accuracy              |
-| Per-punch photo after store QR scan; no facial recognition | Authorized by owner on 10 Nov 2026     | Fresh photo and location for each punch; employee/HR evidence access |
+| Per-punch photo after location within 50 metres; QR disabled | Authorized by owner on 11 Nov 2026 | Fresh photo and location for each punch; employee/HR evidence access |
 | Self-host fonts; no external analytics                 | Implemented                              | Avoid runtime third-party requests                                |
 | No PWA, payroll or leave calculations                  | Deferred                                 | Not part of approved MVP foundation                               |
 | License                                                | Pending owner approval                   | No LICENSE file created                                           |
@@ -224,3 +224,20 @@ not falsely described as one transaction; unattached uploads remain private and
 are not blindly removed on an uncertain response. Staff use scoped, audited evidence
 reads and sixty-second signed URLs. Old database photos remain readable. See
 ATTENDANCE_STORAGE_LOCATION.md for concrete contracts and owner activation steps.
+
+## Disable store QR and require 50 metres (11 November 2026)
+
+The owner replaced QR scanning with location-first selfie capture for both normal
+punches. Migration 0010 fixes every configured store area at 50 metres, increments
+changed area versions, and enforces that radius on all area saves. Native precise
+location and caller-JWT preflight precede the front camera; the shutter obtains
+another checked fix. Uncertain, denied, unavailable or outside positions stop it.
+
+New upload intents and attendance commits require photo/GPS without QR. The existing
+private action buckets, server-derived filenames, verified upload, atomic event/GPS/
+reference/audit transaction and replay semantics remain. Legacy QR input is accepted
+only as inert bounded payload metadata so exact older retries keep their fingerprint;
+new storage proof has null QR version and never claims QR verification. Old evidence
+is retained with its original metadata. HR QR actions and QR provisioning are disabled.
+The browser requires the new server policy flag before enabling normal punches.
+See ATTENDANCE_PHOTO_ONLY.md for activation and validation boundaries.

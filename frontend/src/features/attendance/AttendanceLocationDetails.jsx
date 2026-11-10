@@ -80,7 +80,8 @@ function SavedPoint({ point, label, timezone, emptyText = 'Location not collecte
             alt={label + ' attendance photo'}
           />
           <p className="field-hint">
-            Photo captured {momentLabel(point.photo.captured_at, timezone)} · Store QR verified
+            Photo captured {momentLabel(point.photo.captured_at, timezone)}
+            {point.photo.qr_verified && ' · Store QR verified'}
             {point.photo.object_path && (
               <>
                 <br />
@@ -90,7 +91,7 @@ function SavedPoint({ point, label, timezone, emptyText = 'Location not collecte
           </p>
         </div>
       ) : (
-        <p className="field-hint">Photo and QR evidence were not collected for this older event.</p>
+        <p className="field-hint">Photo evidence was not collected for this older event.</p>
       )}
       <a className="text-link" href={map.href} target="_blank" rel="noopener noreferrer">
         View {label.toLowerCase()} on map

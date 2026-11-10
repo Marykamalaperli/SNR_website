@@ -1,5 +1,8 @@
 # Store attendance areas
 
+> Migration 0010 fixes the radius at 50 metres and disables QR scanning.
+> See [current photo-only attendance](ATTENDANCE_PHOTO_ONLY.md) for activation.
+
 Both clock-in and clock-out require a fresh device position inside the assigned
 store’s attendance area. HR sets the actual store centre and allowed radius in
 the dashboard. The default is **100 metres**, adjustable from 10–1,000 metres.

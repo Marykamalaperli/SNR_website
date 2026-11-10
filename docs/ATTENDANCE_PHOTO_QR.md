@@ -1,5 +1,8 @@
 # Store QR, photo and location attendance
 
+> The current flow is **location → photo within 50 metres**, with QR disabled.
+> Apply migration 0010 after earlier migrations. See [photo-only attendance](ATTENDANCE_PHOTO_ONLY.md).
+
 Migration 0009 supersedes the photo-storage and capture-order details below for
 new punches. See [private buckets and location-first cameras](ATTENDANCE_STORAGE_LOCATION.md).
 Older 0008 photos remain readable.

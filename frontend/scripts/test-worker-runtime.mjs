@@ -210,7 +210,6 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
           previousId: null,
           location: { latitude: 12.97 },
           evidence: {
-            qr: 'fixture',
             photo: {
               jpeg_base64: photoBytes.toString('base64'),
               captured_at: new Date().toISOString(),

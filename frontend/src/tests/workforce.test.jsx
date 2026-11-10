@@ -26,7 +26,6 @@ vi.mock('../services/workforceService', () => ({
   loadStoreArea: vi.fn(),
   saveStoreArea: vi.fn(),
   saveAttendanceSite: vi.fn(),
-  loadStoreQr: vi.fn(),
   resolveStoreMapLink: vi.fn(),
 }));
 const organization = {
@@ -56,7 +55,7 @@ beforeEach(() => {
     configured: false,
     latitude: null,
     longitude: null,
-    radius_meters: 100,
+    radius_meters: 50,
     version: null,
   });
   saveStoreArea.mockResolvedValue({ site_id: 'site', version: 1 });
@@ -82,12 +81,12 @@ it('configures a store area in the dashboard with real coordinates and a version
   expect(latitude).toHaveValue(null);
   await user.type(latitude, '12.971599');
   await user.type(dialog.getByLabelText('Store longitude'), '77.594566');
-  expect(dialog.getByLabelText('Allowed radius (metres)')).toHaveValue(100);
+  expect(dialog.getByText(/Attendance radius: 50 metres/)).toBeVisible();
   await user.click(dialog.getByRole('button', { name: 'Save attendance area' }));
   await waitFor(() =>
     expect(saveStoreArea).toHaveBeenCalledWith(
       expect.objectContaining({ version: null, site_id: 'site' }),
-      { latitude: '12.971599', longitude: '77.594566', radius_meters: '100', map_url: '' },
+      { latitude: '12.971599', longitude: '77.594566', radius_meters: '50', map_url: '' },
     ),
   );
   expect(await screen.findByText(/Store attendance area saved/)).toBeVisible();
@@ -101,7 +100,7 @@ it('keeps a stale store-area edit visible for review without claiming success', 
     configured: true,
     latitude: 12.971599,
     longitude: 77.594566,
-    radius_meters: 100,
+    radius_meters: 50,
     version: 3,
   });
   saveStoreArea.mockRejectedValueOnce(new Error('This record changed while you were editing.'));
@@ -191,7 +190,7 @@ it('saves site setup and prevents dismissal during an in-flight save', async () 
       timezone: 'Asia/Kolkata',
       latitude: '12.971599',
       longitude: '77.594566',
-      radius_meters: '100',
+      radius_meters: '50',
       map_url: '',
     },
     null,
