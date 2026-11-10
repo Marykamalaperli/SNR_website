@@ -77,7 +77,9 @@ outside the caller's access. Supervisor history also requires matching immutable
 event scope; current profile reassignment alone cannot expose old-site records.
 History remains append-only, and every successful normal punch has one atomic
 audit event. Revocation remains possible during an open session; HR profile/role
-reassignment waits for checkout. No elevated key is used by attendance.
+reassignment waits for checkout. Attendance decisions use caller JWTs. From 0009,
+the existing server-only binding uploads validated photo bytes to reserved private
+Storage paths; it cannot replace caller-scoped punch authorization.
 
 Owner-authorized per-punch location additionally requires the versioned employee
 notice and browser permission. Browser positions are untrusted device reports;

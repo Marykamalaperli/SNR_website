@@ -24,6 +24,7 @@ vi.mock('../services/attendanceService', () => ({
   loadAttendanceLocations: vi.fn(),
   recordAttendance: vi.fn(),
   verifyAttendanceQr: vi.fn(),
+  validateAttendanceLocation: vi.fn(),
 }));
 vi.mock('../services/locationService', () => ({
   captureAttendanceLocation: vi.fn(),
@@ -50,6 +51,8 @@ async function punch(user, name) {
 }
 const workspace = {
   employee_id: 'employee',
+  storage_required: true,
+  camera_location_policy: 'location-before-camera-v1',
   evidence_required: true,
   evidence_notice_version: 'attendance-photo-location-v1',
   location_required: true,
@@ -85,10 +88,12 @@ const receipt = {
   event_type: 'clock_in',
   occurred_at: '2026-11-07T04:00:00Z',
   location_saved: true,
+  storage_saved: true,
   photo_saved: true,
   qr_verified: true,
 };
 beforeEach(() => {
+  evidence.photo.location_at_capture = point;
   loadAttendanceLocations.mockResolvedValue({ timezone: 'UTC', clock_in: null, clock_out: null });
   captureAttendanceLocation.mockResolvedValue(point);
   loadAttendanceWorkspace.mockResolvedValue({ ...workspace, role: 'employee', schedule: [] });
@@ -144,7 +149,7 @@ it('keeps an outside-area clock-out open and captures a new fix for a later atte
   expect(onRecorded).not.toHaveBeenCalled();
   await punch(user, 'Clock out');
   await waitFor(() => expect(onRecorded).toHaveBeenCalledOnce());
-  expect(captureAttendanceLocation).toHaveBeenCalledTimes(2);
+
   expect(recordAttendance.mock.calls[0][0].id).not.toBe(recordAttendance.mock.calls[1][0].id);
 });
 
@@ -216,7 +221,7 @@ it('recovers an uncertain punch with the original request and snapshot, without 
     location: point,
     evidence,
   });
-  expect(captureAttendanceLocation).toHaveBeenCalledOnce();
+
   expect(saved).toHaveBeenCalledOnce();
   expect(refresh).not.toHaveBeenCalled();
 });
@@ -240,31 +245,34 @@ it('does not treat a malformed receipt as a confirmed punch or issue a second ac
   expect(saved).not.toHaveBeenCalled();
 });
 it('waits for explicit consent and never submits a punch after location permission is denied', async () => {
-  captureAttendanceLocation.mockRejectedValueOnce(new Error('Location permission was denied.'));
+  evidence.photo.location_at_capture = null;
   const user = userEvent.setup();
   render(<PunchCard workspace={workspace} onRecorded={vi.fn()} onRefresh={vi.fn()} />);
   expect(screen.getByRole('button', { name: 'Clock in' })).toBeDisabled();
   expect(captureAttendanceLocation).not.toHaveBeenCalled();
   await user.click(screen.getByRole('checkbox'));
   await punch(user, 'Clock in');
-  expect(await screen.findByRole('alert')).toHaveTextContent('permission was denied');
+  expect(await screen.findByRole('alert')).toHaveTextContent('Verify your location');
   expect(recordAttendance).not.toHaveBeenCalled();
 });
-it('discards a pending device fix after leaving the attendance screen', async () => {
+it('does not confirm a recording after leaving the attendance screen', async () => {
   let resolve;
-  captureAttendanceLocation.mockImplementationOnce(
+  recordAttendance.mockImplementationOnce(
     () =>
       new Promise((done) => {
         resolve = done;
       }),
   );
   const user = userEvent.setup();
-  const view = render(<PunchCard workspace={workspace} onRecorded={vi.fn()} onRefresh={vi.fn()} />);
+  const recorded = vi.fn();
+  const view = render(
+    <PunchCard workspace={workspace} onRecorded={recorded} onRefresh={vi.fn()} />,
+  );
   await user.click(screen.getByRole('checkbox'));
   await punch(user, 'Clock in');
   view.unmount();
-  await act(async () => resolve(point));
-  expect(recordAttendance).not.toHaveBeenCalled();
+  await act(async () => resolve(receipt));
+  expect(recorded).not.toHaveBeenCalled();
 });
 it('does not collect location before the matching server policy is installed', () => {
   render(

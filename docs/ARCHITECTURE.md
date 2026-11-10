@@ -186,3 +186,18 @@ photo evidence commit atomically. Exact replay binds all submitted proof, while
 legacy writers reject new punches. The audited employee-self/HR reader includes
 photos; ordinary lists and supervisor projections do not. See
 ATTENDANCE_PHOTO_QR.md for storage/retention tradeoffs, activation and limits.
+
+## Location-first capture and private Storage (0009)
+
+Store setup accepts reviewed map links and preserves their coordinates/version.
+The browser obtains a fresh fix and caller-JWT server validation before either
+camera and again at the shutter. Location checks stop with the capture dialog.
+
+The existing Pages hosting adapter now also routes /api/attendance/*: an HR-only
+map-link resolver and an authenticated photo endpoint. SQL freezes a scoped upload
+intent, hash and server-derived bucket/path. The existing server binding uploads
+those exact bytes without overwrite and certifies metadata; the caller JWT alone
+commits the normal punch/GPS/reference/audit transaction. Duplicate uploads must
+match their reserved digest. The employee/HR reader and Storage RLS govern short-lived
+signed photo URLs; old database photos remain intact. See ATTENDANCE_STORAGE_LOCATION.md
+for transaction boundaries, lifecycle, activation and verification limits.

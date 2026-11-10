@@ -12,6 +12,7 @@ export default function AttendanceCapture({
   onClose,
   busy,
   verifyQr,
+  checkLocation,
 }) {
   const [stage, setStage] = useState('intro');
   const [qr, setQr] = useState('');
@@ -57,17 +58,17 @@ export default function AttendanceCapture({
       busy={busy}
     >
       <ol className="attendance-capture-steps" aria-label="Attendance steps">
-        <li aria-current={stage === 'intro' || stage === 'scan' ? 'step' : undefined}>
+        <li aria-current={stage === 'intro' ? 'step' : undefined}>
+          <MapPin size={18} />
+          Verify location
+        </li>
+        <li aria-current={stage === 'scan' ? 'step' : undefined}>
           <QrCode size={18} />
           Scan QR
         </li>
         <li aria-current={stage === 'photo' || stage === 'review' ? 'step' : undefined}>
           <Camera size={18} />
           Take photo
-        </li>
-        <li>
-          <MapPin size={18} />
-          Verify location
         </li>
       </ol>
       <p className="muted">
@@ -76,8 +77,8 @@ export default function AttendanceCapture({
       {stage === 'intro' && (
         <>
           <p>
-            Scan the QR displayed at this store. Then take a fresh photo of yourself before we
-            request your precise location.
+            Enable precise location first. Your location must match this store before either camera
+            opens and again when you take the photo.
           </p>
           <Button
             onClick={() => {
@@ -90,12 +91,16 @@ export default function AttendanceCapture({
           </Button>
         </>
       )}
-      {stage === 'scan' && <AttendanceCamera scanning onScan={scanned} />}
+      {stage === 'scan' && (
+        <AttendanceCamera scanning onScan={scanned} beforeOpen={checkLocation} />
+      )}
       {stage === 'photo' && (
         <>
           <p className="success-notice">Store QR verified.</p>
           <p>Face the camera and take a clear photo of yourself for this attendance event.</p>
           <AttendanceCamera
+            beforeOpen={checkLocation}
+            beforePhoto={checkLocation}
             onPhoto={(value) => {
               setPhoto(value);
               setStage('review');
@@ -110,8 +115,8 @@ export default function AttendanceCapture({
             alt="Your attendance photo for review"
           />
           <p>
-            Your photo and a fresh device location will be saved with this punch. The location must
-            fit inside the store’s saved attendance area.
+            Your photo and its capture location will be saved with this punch. The location must fit
+            inside the store’s saved attendance area.
           </p>
           <div className="modal-actions">
             <Button

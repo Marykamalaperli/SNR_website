@@ -27,6 +27,7 @@ vi.mock('../services/workforceService', () => ({
   saveStoreArea: vi.fn(),
   saveAttendanceSite: vi.fn(),
   loadStoreQr: vi.fn(),
+  resolveStoreMapLink: vi.fn(),
 }));
 const organization = {
   organization: { name: 'Test organization', timezone: 'Asia/Kolkata' },
@@ -86,7 +87,7 @@ it('configures a store area in the dashboard with real coordinates and a version
   await waitFor(() =>
     expect(saveStoreArea).toHaveBeenCalledWith(
       expect.objectContaining({ version: null, site_id: 'site' }),
-      { latitude: '12.971599', longitude: '77.594566', radius_meters: '100' },
+      { latitude: '12.971599', longitude: '77.594566', radius_meters: '100', map_url: '' },
     ),
   );
   expect(await screen.findByText(/Store attendance area saved/)).toBeVisible();
@@ -191,6 +192,7 @@ it('saves site setup and prevents dismissal during an in-flight save', async () 
       latitude: '12.971599',
       longitude: '77.594566',
       radius_meters: '100',
+      map_url: '',
     },
     null,
     { version: null },

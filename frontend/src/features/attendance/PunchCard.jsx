@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Clock3, LogIn, LogOut, RefreshCw } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import StatusBadge from '../../components/common/StatusBadge';
-import { recordAttendance, verifyAttendanceQr } from '../../services/attendanceService';
+import {
+  recordAttendance,
+  verifyAttendanceQr,
+  validateAttendanceLocation,
+} from '../../services/attendanceService';
 import { captureAttendanceLocation, LOCATION_NOTICE_VERSION } from '../../services/locationService';
 import { dateLabel, momentLabel } from './attendanceFormat';
 import AttendanceCapture from './AttendanceCapture';
@@ -39,12 +43,28 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
     workspace.evidence_notice_version === EVIDENCE_NOTICE_VERSION;
   const areaReady =
     storePolicyReady && area?.configured === true && Number.isFinite(area.radius_meters);
+  const storageReady =
+    workspace.storage_required === true &&
+    workspace.camera_location_policy === 'location-before-camera-v1';
+  const checkLocation = useCallback(async () => {
+    const location = await captureAttendanceLocation();
+    await validateAttendanceLocation(
+      {
+        type: workspace.status === 'clocked_in' ? 'clock_out' : 'clock_in',
+        previousId: workspace.last_event_id,
+        employeeId: workspace.employee_id,
+      },
+      location,
+    );
+    return location;
+  }, [workspace.status, workspace.last_event_id, workspace.employee_id]);
   async function punch(evidence) {
     if (
       busy.current ||
       !locationReady ||
       !storePolicyReady ||
       !evidenceReady ||
+      !storageReady ||
       (!pending && (!consent || blocked || !areaReady))
     )
       return;
@@ -56,7 +76,8 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
     try {
       if (!action) {
         setLocating(true);
-        const location = await captureAttendanceLocation();
+        const location = evidence?.photo?.location_at_capture;
+        if (!location) throw new Error('Verify your location and retake the photo before saving.');
         if (!active.current) return;
         setLocating(false);
         action = {
@@ -76,6 +97,7 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
         receipt.location_saved !== true ||
         receipt.photo_saved !== true ||
         receipt.qr_verified !== true ||
+        receipt.storage_saved !== true ||
         !Number.isFinite(Date.parse(receipt.occurred_at))
       ) {
         setPending(action);
@@ -174,7 +196,9 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
         <div className="attendance-location-consent">
           <p>
             Your photo and device location are saved with this attendance event for attendance
-            verification. You and HR can view them. Accuracy depends on your device.
+            verification. You and HR can view them. Accuracy depends on your device. Location is
+            checked while the camera is open and at the shutter; only the chosen capture location is
+            saved.
           </p>
           <label>
             <input
@@ -196,6 +220,12 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
         <p className="notice">
           QR and photo attendance is not installed yet. Ask your project administrator to apply
           attendance migration 0008 and deploy the latest frontend.
+        </p>
+      )}
+      {!storageReady && (
+        <p className="notice">
+          Private photo buckets and location-first capture require migration 0009 and the latest
+          frontend.
         </p>
       )}
       {notice && (
@@ -222,6 +252,7 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
             !locationReady ||
             !storePolicyReady ||
             !evidenceReady ||
+            !storageReady ||
             ((!areaReady || blocked || !consent) && !pending)
           }
         >
@@ -256,6 +287,7 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
       {capturing && (
         <AttendanceCapture
           verifyQr={verifyAttendanceQr}
+          checkLocation={checkLocation}
           clockedIn={clockedIn}
           siteName={area.site_name}
           onConfirm={punch}

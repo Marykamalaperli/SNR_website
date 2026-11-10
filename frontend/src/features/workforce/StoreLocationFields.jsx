@@ -3,12 +3,16 @@ import { LocateFixed } from 'lucide-react';
 import Button from '../../components/common/Button';
 import FormField from '../../components/forms/FormField';
 import { captureDeviceLocation } from '../../services/locationService';
+import { parseStoreMapLink } from '../../services/storeMapLink';
 
-export default function StoreLocationFields({ area, onLocating }) {
+export default function StoreLocationFields({ area, onLocating, resolveLink, onResolving }) {
   const [latitude, setLatitude] = useState(area?.latitude ?? '');
   const [longitude, setLongitude] = useState(area?.longitude ?? '');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [mapLink, setMapLink] = useState(area?.map_url || '');
+  const [resolving, setResolving] = useState(false);
+  const linkRequest = useRef(0);
   const active = useRef(true);
   const busy = useRef(false);
   useEffect(() => {
@@ -17,9 +21,51 @@ export default function StoreLocationFields({ area, onLocating }) {
       active.current = false;
     };
   }, []);
+  async function readLink(value) {
+    setMapLink(value);
+    const request = ++linkRequest.current;
+    setError('');
+    setNotice('');
+    if (!value.trim()) {
+      setResolving(false);
+      onResolving?.(false);
+      return;
+    }
+    // Never save a new link alongside coordinates left over from another pin.
+    setLatitude('');
+    setLongitude('');
+    setResolving(true);
+    onResolving?.(true);
+    try {
+      const point = parseStoreMapLink(value) || (resolveLink ? await resolveLink(value) : null);
+      if (!active.current || request !== linkRequest.current) return;
+      if (!point)
+        throw new Error(
+          'This link has no coordinates. Copy a full map link containing the store’s pin, or enter the coordinates.',
+        );
+      setLatitude(point.latitude);
+      setLongitude(point.longitude);
+      setMapLink(point.map_url);
+      setNotice(
+        'Store coordinates filled from the ' +
+          point.source +
+          '. Review the location before saving.',
+      );
+    } catch (failure) {
+      if (active.current && request === linkRequest.current) setError(failure.message);
+    } finally {
+      if (active.current && request === linkRequest.current) {
+        setResolving(false);
+        onResolving?.(false);
+      }
+    }
+  }
   async function locate() {
     if (busy.current) return;
     busy.current = true;
+    ++linkRequest.current;
+    setResolving(false);
+    onResolving?.(false);
     onLocating(true);
     setError('');
     try {
@@ -27,6 +73,7 @@ export default function StoreLocationFields({ area, onLocating }) {
       if (!active.current) return;
       setLatitude(point.latitude);
       setLongitude(point.longitude);
+      setMapLink('');
       setNotice(
         'Device accuracy: ±' +
           Math.ceil(point.accuracy_meters) +
@@ -42,6 +89,16 @@ export default function StoreLocationFields({ area, onLocating }) {
   return (
     <>
       <h3>Store attendance location</h3>
+      <FormField
+        label="Store location link"
+        name="map_url"
+        type="url"
+        maxLength={4096}
+        value={mapLink}
+        onChange={(event) => readLink(event.target.value)}
+        hint="Paste a Google Maps, Apple Maps or OpenStreetMap link to fill latitude and longitude automatically. Review the extracted pin before saving."
+      />
+      {resolving && <p role="status">Reading map link…</p>}
       <p className="field-hint">
         Enter the store centre, or use your current location while at the store. Both clock-in and
         clock-out must be inside this area.
@@ -60,7 +117,15 @@ export default function StoreLocationFields({ area, onLocating }) {
           step="any"
           required
           value={latitude}
-          onChange={(event) => setLatitude(event.target.value)}
+          onChange={(event) => {
+            ++linkRequest.current;
+            setResolving(false);
+            onResolving?.(false);
+            setMapLink('');
+            setNotice('');
+            setError('');
+            setLatitude(event.target.value);
+          }}
         />
         <FormField
           label="Store longitude"
@@ -71,7 +136,15 @@ export default function StoreLocationFields({ area, onLocating }) {
           step="any"
           required
           value={longitude}
-          onChange={(event) => setLongitude(event.target.value)}
+          onChange={(event) => {
+            ++linkRequest.current;
+            setResolving(false);
+            onResolving?.(false);
+            setMapLink('');
+            setNotice('');
+            setError('');
+            setLongitude(event.target.value);
+          }}
         />
       </div>
       <FormField

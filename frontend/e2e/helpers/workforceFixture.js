@@ -43,6 +43,8 @@ export async function workforceFixture(
     storeAreas: new Map(),
     storeQrs: new Map(),
     evidenceEnabled: true,
+    storageEnabled: true,
+    photoFiles: new Map(),
     loseNextPunchResponse: false,
     today: new Date().toISOString().slice(0, 10),
   };
@@ -88,6 +90,150 @@ export async function workforceFixture(
     state.people.push(person);
     return person;
   }
+  async function handlePhoto(route, parameters, reply) {
+    if (role !== 'employee')
+      return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
+    const existing = state.punches.find((punch) => punch.request_id === parameters.p_request_id);
+    if (existing)
+      return reply({
+        ...existing,
+        replayed: true,
+        location_saved: true,
+        storage_saved: true,
+        photo_saved: true,
+        qr_verified: true,
+      });
+    const person = state.people[0];
+    const qr =
+      state.storeQrs.get(person.site_id) ||
+      'snr-attendance:v1:' + person.site_id + ':a0000000-0000-4000-8000-000000000001';
+    if (parameters.p_evidence?.qr !== qr || !parameters.p_evidence?.photo?.jpeg_base64)
+      return reply({ code: 'PT422', message: 'attendance_evidence_required' }, 422);
+    if (
+      !parameters.p_location ||
+      parameters.p_location.consent_version !== 'attendance-location-v1'
+    )
+      return reply({ code: 'PT422', message: 'attendance_location_required' }, 422);
+    if (parameters.p_employee_id !== person.id)
+      return reply({ code: 'PT409', message: 'attendance_changed' }, 409);
+    const plan = state.assignments.find(
+      (assignment) => assignment.employee_id === person.id && !assignment.cancelled,
+    );
+    if (!plan) return reply({ code: 'PT409', message: 'shift_not_assigned' }, 409);
+    const last = state.punches.at(-1);
+    if ((last?.id || null) !== parameters.p_previous_event_id)
+      return reply({ code: 'PT409', message: 'attendance_changed' }, 409);
+    const area = state.storeAreas.get(person.site_id);
+    if (!area) return reply({ code: 'PT409', message: 'store_area_not_configured' }, 409);
+    const radians = (degrees) => (degrees * Math.PI) / 180;
+    const fix = parameters.p_location;
+    const distance =
+      12742000 *
+      Math.asin(
+        Math.sqrt(
+          Math.min(
+            1,
+            Math.sin(radians(fix.latitude - area.latitude) / 2) ** 2 +
+              Math.cos(radians(area.latitude)) *
+                Math.cos(radians(fix.latitude)) *
+                Math.sin(radians(fix.longitude - area.longitude) / 2) ** 2,
+          ),
+        ),
+      );
+    if (distance > area.radius_meters)
+      return reply({ code: 'PT409', message: 'outside_store_area' }, 409);
+    if (distance + fix.accuracy_meters > area.radius_meters)
+      return reply({ code: 'PT409', message: 'store_location_uncertain' }, 409);
+    const punch = {
+      id: id('9', state.punches.length + 1),
+      request_id: parameters.p_request_id,
+      event_type: parameters.p_event_type,
+      occurred_at: `${state.today}T${parameters.p_event_type === 'clock_in' ? '04' : '12'}:00:00Z`,
+    };
+    state.punches.push(punch);
+    const bucket = punch.event_type === 'clock_in' ? 'attendance-clock-in' : 'attendance-clock-out';
+    const filename =
+      userId +
+      '_' +
+      new Date().toISOString().replace('T', '_').replace('Z', '').replaceAll(':', '-') +
+      '_' +
+      parameters.p_request_id +
+      '.jpg';
+    const objectPath = state.organization.id + '/' + userId + '/' + filename;
+    state.photoFiles.set(
+      bucket + '/' + objectPath,
+      Buffer.from(parameters.p_evidence.photo.jpeg_base64, 'base64'),
+    );
+    state.locations.set(punch.id, {
+      ...parameters.p_location,
+      recorded_at: punch.occurred_at,
+      event_type: punch.event_type,
+      store_distance_meters: distance,
+      store_radius_meters: area.radius_meters,
+      store_policy_version: area.version,
+      store_rule_version: 'store-radius-v1',
+      photo: {
+        bucket_id: bucket,
+        object_path: objectPath,
+        captured_at: parameters.p_evidence.photo.captured_at,
+        qr_verified: true,
+        qr_version: 1,
+      },
+    });
+    if (punch.event_type === 'clock_in')
+      state.sessions.push({
+        id: punch.id,
+        employee_id: person.id,
+        display_name: person.display_name,
+        employee_number: person.employee_number,
+        site_id: person.site_id,
+        department_id: person.department_id,
+        site_name: person.site_name,
+        department_name: person.department_name,
+        shift_name: plan.name,
+        timezone: plan.timezone,
+        assignment_id: plan.id,
+        attendance_date: state.today,
+        clock_in: punch.occurred_at,
+        clock_out: null,
+        status: 'open',
+        duration_seconds: null,
+      });
+    else
+      Object.assign(state.sessions.at(-1), {
+        clock_out: punch.occurred_at,
+        status: 'closed',
+        duration_seconds: 28800,
+        clock_out_event_id: punch.id,
+      });
+    if (state.loseNextPunchResponse) {
+      state.loseNextPunchResponse = false;
+      return route.abort('failed');
+    }
+    return reply({
+      ...punch,
+      replayed: false,
+      location_saved: true,
+      storage_saved: true,
+      photo_saved: true,
+      qr_verified: true,
+    });
+  }
+  await page.route('**/api/attendance/photos', async (route) => {
+    const body = route.request().postDataJSON();
+    const parameters = {
+      p_event_type: body.type,
+      p_request_id: body.id,
+      p_previous_event_id: body.previousId,
+      p_employee_id: body.employeeId,
+      p_location: body.location,
+      p_evidence: body.evidence,
+    };
+    state.calls.push({ name: 'record_attendance', parameters });
+    return handlePhoto(route, parameters, (json, status = 200) =>
+      route.fulfill({ status, json, headers: { 'Cache-Control': 'no-store' } }),
+    );
+  });
   await page.route('**/api/admin/staff**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     const parameters = route.request().postDataJSON();
@@ -164,6 +310,15 @@ export async function workforceFixture(
         team_ids: [],
         site_ids: [],
       });
+    if (path.startsWith('/storage/v1/object/sign/')) {
+      const key = path.replace('/storage/v1/object/sign/', '');
+      if (route.request().method() === 'POST')
+        return reply({ signedURL: '/object/sign/' + key + '?token=fixture' });
+      return route.fulfill({
+        headers: { ...headers, 'Content-Type': 'image/jpeg' },
+        body: state.photoFiles.get(key),
+      });
+    }
     const name = path.replace('/rest/v1/rpc/', '');
     const parameters = route.request().postDataJSON();
     state.calls.push({ name, parameters });
@@ -234,6 +389,8 @@ export async function workforceFixture(
         today: state.today,
         location_required: state.locationEnabled,
         evidence_required: state.evidenceEnabled,
+        storage_required: state.storageEnabled,
+        camera_location_policy: 'location-before-camera-v1',
         evidence_notice_version: 'attendance-photo-location-v1',
         location_notice_version: 'attendance-location-v1',
         store_geofence_required: state.storePolicyEnabled,
@@ -279,6 +436,23 @@ export async function workforceFixture(
           : {}),
       });
     }
+    if (name === 'validate_attendance_location') {
+      const area = state.storeAreas.get(state.people[0]?.site_id);
+      if (!area) return reply({ code: 'PT409', message: 'store_area_not_configured' }, 409);
+      const distance = Math.hypot(
+        (parameters.p_location.latitude - area.latitude) * 111195,
+        (parameters.p_location.longitude - area.longitude) * 108000,
+      );
+      if (distance > area.radius_meters)
+        return reply({ code: 'PT409', message: 'outside_store_area' }, 409);
+      if (distance + parameters.p_location.accuracy_meters > area.radius_meters)
+        return reply({ code: 'PT409', message: 'store_location_uncertain' }, 409);
+      return reply({
+        site_id: state.people[0].site_id,
+        distance_meters: distance,
+        radius_meters: area.radius_meters,
+      });
+    }
     if (name === 'verify_attendance_qr') {
       const siteId = state.people[0]?.site_id;
       const qr =
@@ -288,114 +462,7 @@ export async function workforceFixture(
         return reply({ code: 'PT422', message: 'invalid_attendance_qr' }, 422);
       return reply({ site_id: siteId, site_name: state.people[0]?.site_name });
     }
-    if (name === 'record_attendance') {
-      if (role !== 'employee')
-        return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
-      const existing = state.punches.find((punch) => punch.request_id === parameters.p_request_id);
-      if (existing)
-        return reply({
-          ...existing,
-          replayed: true,
-          location_saved: true,
-          photo_saved: true,
-          qr_verified: true,
-        });
-      const person = state.people[0];
-      const qr =
-        state.storeQrs.get(person.site_id) ||
-        'snr-attendance:v1:' + person.site_id + ':a0000000-0000-4000-8000-000000000001';
-      if (parameters.p_evidence?.qr !== qr || !parameters.p_evidence?.photo?.jpeg_base64)
-        return reply({ code: 'PT422', message: 'attendance_evidence_required' }, 422);
-      if (
-        !parameters.p_location ||
-        parameters.p_location.consent_version !== 'attendance-location-v1'
-      )
-        return reply({ code: 'PT422', message: 'attendance_location_required' }, 422);
-      if (parameters.p_employee_id !== person.id)
-        return reply({ code: 'PT409', message: 'attendance_changed' }, 409);
-      const plan = state.assignments.find(
-        (assignment) => assignment.employee_id === person.id && !assignment.cancelled,
-      );
-      if (!plan) return reply({ code: 'PT409', message: 'shift_not_assigned' }, 409);
-      const last = state.punches.at(-1);
-      if ((last?.id || null) !== parameters.p_previous_event_id)
-        return reply({ code: 'PT409', message: 'attendance_changed' }, 409);
-      const area = state.storeAreas.get(person.site_id);
-      if (!area) return reply({ code: 'PT409', message: 'store_area_not_configured' }, 409);
-      const radians = (degrees) => (degrees * Math.PI) / 180;
-      const fix = parameters.p_location;
-      const distance =
-        12742000 *
-        Math.asin(
-          Math.sqrt(
-            Math.min(
-              1,
-              Math.sin(radians(fix.latitude - area.latitude) / 2) ** 2 +
-                Math.cos(radians(area.latitude)) *
-                  Math.cos(radians(fix.latitude)) *
-                  Math.sin(radians(fix.longitude - area.longitude) / 2) ** 2,
-            ),
-          ),
-        );
-      if (distance > area.radius_meters)
-        return reply({ code: 'PT409', message: 'outside_store_area' }, 409);
-      if (distance + fix.accuracy_meters > area.radius_meters)
-        return reply({ code: 'PT409', message: 'store_location_uncertain' }, 409);
-      const punch = {
-        id: id('9', state.punches.length + 1),
-        request_id: parameters.p_request_id,
-        event_type: parameters.p_event_type,
-        occurred_at: `${state.today}T${parameters.p_event_type === 'clock_in' ? '04' : '12'}:00:00Z`,
-      };
-      state.punches.push(punch);
-      state.locations.set(punch.id, {
-        ...parameters.p_location,
-        recorded_at: punch.occurred_at,
-        event_type: punch.event_type,
-        store_distance_meters: distance,
-        store_radius_meters: area.radius_meters,
-        store_policy_version: area.version,
-        store_rule_version: 'store-radius-v1',
-        photo: { ...parameters.p_evidence.photo, qr_verified: true, qr_version: 1 },
-      });
-      if (punch.event_type === 'clock_in')
-        state.sessions.push({
-          id: punch.id,
-          employee_id: person.id,
-          display_name: person.display_name,
-          employee_number: person.employee_number,
-          site_id: person.site_id,
-          department_id: person.department_id,
-          site_name: person.site_name,
-          department_name: person.department_name,
-          shift_name: plan.name,
-          timezone: plan.timezone,
-          assignment_id: plan.id,
-          attendance_date: state.today,
-          clock_in: punch.occurred_at,
-          clock_out: null,
-          status: 'open',
-          duration_seconds: null,
-        });
-      else
-        Object.assign(state.sessions.at(-1), {
-          clock_out: punch.occurred_at,
-          status: 'closed',
-          duration_seconds: 28800,
-          clock_out_event_id: punch.id,
-        });
-      if (state.loseNextPunchResponse) {
-        state.loseNextPunchResponse = false;
-        return route.abort('failed');
-      }
-      return reply({
-        ...punch,
-        replayed: false,
-        location_saved: true,
-        photo_saved: true,
-        qr_verified: true,
-      });
-    }
+    if (name === 'record_attendance') return handlePhoto(route, parameters, reply);
     if (name === 'attendance_location_details') {
       if (role === 'supervisor')
         return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
@@ -495,6 +562,7 @@ export async function workforceFixture(
       if ((previous?.version ?? null) !== parameters.p_version)
         return reply({ code: 'PT409', message: 'record_changed' }, 409);
       const area = {
+        map_url: parameters.p_map_url || '',
         latitude: parameters.p_latitude,
         longitude: parameters.p_longitude,
         radius_meters: parameters.p_radius_meters,
@@ -604,6 +672,7 @@ export async function workforceFixture(
       else collection[index] = record;
       if (name === 'hr_save_attendance_site')
         state.storeAreas.set(record.id, {
+          map_url: parameters.p_map_url || '',
           latitude: parameters.p_latitude,
           longitude: parameters.p_longitude,
           radius_meters: parameters.p_radius_meters,

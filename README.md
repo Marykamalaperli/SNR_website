@@ -29,6 +29,11 @@ download or replace its QR. Apply migration **0008** after 0007 and release the
 frontend to activate [photo and QR attendance](docs/ATTENDANCE_PHOTO_QR.md).
 Photo/precise-location evidence stays private to the employee and authorized HR.
 
+Migration **0009** adds pasted map links, location checks before each camera and
+at the shutter, and separate private Supabase buckets for clock-in/out photos.
+Files use the verified user ID plus server date/time and request ID.
+See [Storage and location-first activation](docs/ATTENDANCE_STORAGE_LOCATION.md).
+
 ## Stack and architecture
 
 React + JavaScript/JSX, Vite, React Router, Lucide, CSS custom properties; ESLint,

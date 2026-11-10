@@ -2,6 +2,14 @@ import { test, expect } from '@playwright/test';
 import { installAttendanceCamera, capturePunch } from './helpers/attendanceCamera';
 import AxeBuilder from '@axe-core/playwright';
 import { workforceFixture, signInWorkforce } from './helpers/workforceFixture';
+test.beforeEach(async ({ context }) => {
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({ latitude: 12.971599, longitude: 77.594566, accuracy: 8 });
+});
+async function openCameraAttempt(page, action) {
+  await page.getByRole('button', { name: action, exact: true }).click();
+  await page.getByRole('button', { name: 'Start QR scanner', exact: true }).click();
+}
 
 function seedShift(state, assigned = false) {
   state.storeAreas.set(state.sites[0].id, {
@@ -86,10 +94,12 @@ test('outside and inaccurate clock-ins are rejected, and an unconfigured store b
   await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
   await page.getByRole('checkbox', { name: /I agree to share/ }).check();
   await page.context().setGeolocation({ latitude: 13, longitude: 77.594566, accuracy: 8 });
-  await capturePunch(page, 'Clock in');
+  await openCameraAttempt(page, 'Clock in');
   await expect(page.getByRole('alert')).toContainText('outside your store');
+  expect(await page.evaluate(() => window.attendanceCameraRequests)).toBe(0);
+  await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await page.context().setGeolocation({ latitude: 12.971599, longitude: 77.594566, accuracy: 101 });
-  await capturePunch(page, 'Clock in');
+  await openCameraAttempt(page, 'Clock in');
   await expect(page.getByRole('alert')).toContainText('accuracy is too low');
   expect(state.punches).toHaveLength(0);
   expect(state.locations.size).toBe(0);
@@ -163,14 +173,15 @@ test('employee clocks in/out, keeps history on reload and recovers a lost respon
   const attempts = state.calls.filter((call) => call.name === 'record_attendance');
   expect(attempts[0].parameters).toEqual(attempts[1].parameters);
   expect(state.locations.size).toBe(1);
-  expect(await page.evaluate(() => window.locationRequests)).toBe(1);
+  expect(await page.evaluate(() => window.locationRequests)).toBeGreaterThanOrEqual(3);
   expect(state.locations.get(state.punches[0].id).latitude).toBe(12.971599);
   await page.reload();
   await page.context().setGeolocation({ latitude: 12.975, longitude: 77.6, accuracy: 11 });
   await expect(page.getByRole('button', { name: 'Clock out', exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: /I agree to share my photo and location/ }).check();
-  await capturePunch(page, 'Clock out');
+  await openCameraAttempt(page, 'Clock out');
   await expect(page.getByRole('alert')).toContainText('outside your store');
+  await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
   expect(state.punches).toHaveLength(1);
   expect(state.locations.size).toBe(1);
   await page.context().setGeolocation({ latitude: 12.9717, longitude: 77.5946, accuracy: 11 });
@@ -221,6 +232,49 @@ test('QR and photo capture is gated on migration 0008', async ({ page }) => {
   await expect(page.getByText(/apply attendance migration 0008/)).toBeVisible();
   expect(state.calls.some((call) => call.name === 'record_attendance')).toBe(false);
 });
+test('moving outside the store after the camera opens blocks the shutter and closes the stream', async ({
+  page,
+  context,
+}) => {
+  const state = await workforceFixture(page, { populated: true, role: 'employee' });
+  seedShift(state, true);
+  await installAttendanceCamera(page, state.sites[0].id);
+  await signInWorkforce(page);
+  await page.getByRole('checkbox', { name: /I agree to share/ }).check();
+  await openCameraAttempt(page, 'Clock in');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('button', { name: 'Take photo', exact: true })).toBeEnabled();
+  await context.setGeolocation({ latitude: 13, longitude: 77.594566, accuracy: 8 });
+  await dialog.getByRole('button', { name: 'Take photo', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('outside your store');
+  expect(await page.evaluate(() => window.attendanceCameraTracks)).toBe(0);
+  expect(state.punches).toHaveLength(0);
+  expect(state.photoFiles.size).toBe(0);
+});
+test('pasting a store pin fills exact coordinates and persists the map link with site setup', async ({
+  page,
+}) => {
+  const state = await workforceFixture(page, { populated: true });
+  await signInWorkforce(page);
+  await page.getByRole('link', { name: 'Sites & Shifts', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit site Main office', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Store location link').fill('https://example.com/store');
+  await expect(dialog.getByRole('alert')).toContainText('Use an HTTPS');
+  await expect(dialog.getByLabel('Store latitude')).toHaveValue('');
+  await expect(dialog.getByLabel('Store longitude')).toHaveValue('');
+  const link = 'https://www.google.com/maps/place/store/@13,78,15z/data=!3d12.971599!4d77.594566';
+  await dialog.getByLabel('Store location link').fill(link);
+  await expect(dialog.getByLabel('Store latitude')).toHaveValue('12.971599');
+  await expect(dialog.getByLabel('Store longitude')).toHaveValue('77.594566');
+  await dialog.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(page.getByText('Site saved.', { exact: true })).toBeVisible();
+  expect(state.storeAreas.get(state.sites[0].id).map_url).toBe(link);
+  await page.getByRole('button', { name: 'Edit site Main office', exact: true }).click();
+  await expect(dialog.getByLabel('Store location link')).toHaveValue(link);
+  await dialog.getByLabel('Store latitude').fill('12.97');
+  await expect(dialog.getByLabel('Store location link')).toHaveValue('');
+});
 
 test('a wrong-store QR and a denied camera cannot record attendance', async ({ page }) => {
   const state = await workforceFixture(page, { populated: true, role: 'employee' });
@@ -244,15 +298,18 @@ test('a wrong-store QR and a denied camera cannot record attendance', async ({ p
   expect(state.calls.some((call) => call.name === 'record_attendance')).toBe(false);
 });
 
-test('photo review supports retake and cancellation stops the camera without requesting location', async ({
+test('photo review verifies location before camera and cancellation stops the camera', async ({
   page,
 }) => {
   const state = await workforceFixture(page, { populated: true, role: 'employee' });
   seedShift(state, true);
   await installAttendanceCamera(page, state.sites[0].id);
   await page.addInitScript(() => {
-    navigator.geolocation.getCurrentPosition = () => {
-      throw new Error('Location must not run before confirmation');
+    const original = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+    window.shutterLocationRequests = 0;
+    navigator.geolocation.getCurrentPosition = (...args) => {
+      window.shutterLocationRequests++;
+      return original(...args);
     };
   });
   await signInWorkforce(page);
@@ -399,7 +456,7 @@ test('location denial leaves attendance unchanged and no fix is requested before
   await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toBeDisabled();
   expect(await page.evaluate(() => window.locationRequests)).toBe(0);
   await page.getByRole('checkbox', { name: /I agree to share my photo and location/ }).check();
-  await capturePunch(page, 'Clock in');
+  await openCameraAttempt(page, 'Clock in');
   await expect(page.getByRole('alert')).toContainText('Location permission was denied');
   expect(state.punches).toHaveLength(0);
   expect(state.locations.size).toBe(0);

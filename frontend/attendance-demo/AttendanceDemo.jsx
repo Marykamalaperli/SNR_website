@@ -149,6 +149,7 @@ function SiteSetup({ site, qrImage, onSaved }) {
       latitude: Number(values.latitude),
       longitude: Number(values.longitude),
       radius_meters: Number(values.radius_meters),
+      map_url: values.map_url || '',
     };
     if (
       !next.name ||
@@ -320,6 +321,11 @@ export default function AttendanceDemo() {
     },
     [site.name],
   );
+  const checkLocation = useCallback(async () => {
+    const point = await captureAttendanceLocation();
+    checkDemoEvidence(site, point, DEMO_QR);
+    return point;
+  }, [site]);
   function saveRecord(point, photo, captureMode) {
     const distance = checkDemoEvidence(site, point, DEMO_QR);
     const kind = clockedIn ? 'clock_out' : 'clock_in';
@@ -350,7 +356,8 @@ export default function AttendanceDemo() {
     setBusy(true);
     try {
       await verifyQr(evidence.qr);
-      const point = await captureAttendanceLocation();
+      const point = evidence.photo.location_at_capture;
+      if (!point) throw new Error('Enable location and retake your photo.');
       if (!active.current) return;
       saveRecord(point, 'data:image/jpeg;base64,' + evidence.photo.jpeg_base64, 'device');
     } catch (failure) {
@@ -620,6 +627,7 @@ export default function AttendanceDemo() {
           />
         ) : (
           <AttendanceCapture
+            checkLocation={checkLocation}
             verifyQr={verifyQr}
             siteName={site.name}
             clockedIn={clockedIn}

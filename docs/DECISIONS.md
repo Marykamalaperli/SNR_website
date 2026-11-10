@@ -206,3 +206,21 @@ Static store QR codes are HR-only to display/rotate and rechecked at commit. The
 are not a liveness or physical-presence attestation. Existing employee/HR GPS-detail
 access also returns the photo, audits reads and denies supervisors. Original
 history remains unchanged. See ATTENDANCE_PHOTO_QR.md for activation and limits.
+
+## Private buckets and location-first cameras (11 November 2026)
+
+The owner requested pasted store map links and separate clock-in/clock-out photo
+buckets with Auth user ID/date/time filenames. They also required location to be
+available and match the store before opening a camera and at photo capture.
+Migration 0009 implements that change without editing migrations 0001–0008 or old
+history. Map links fill explicit coordinates; unresolved links require review/manual
+coordinates. The camera is gated on fresh server-checked fixes, including the shutter.
+
+New images use private attendance-clock-in/attendance-clock-out buckets and
+server-reserved UTC filenames. The existing private Pages binding uploads verified
+bytes while SQL keeps caller-scoped authority over attendance. No new public
+privileges or elevated browser key is introduced. Storage/DB operations are staged,
+not falsely described as one transaction; unattached uploads remain private and
+are not blindly removed on an uncertain response. Staff use scoped, audited evidence
+reads and sixty-second signed URLs. Old database photos remain readable. See
+ATTENDANCE_STORAGE_LOCATION.md for concrete contracts and owner activation steps.

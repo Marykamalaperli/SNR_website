@@ -50,9 +50,31 @@ const body = {
   },
 };
 const handler = await readFile(new URL('../server/staffAccounts.js', import.meta.url), 'utf8');
+const attendanceHandler = await readFile(
+  new URL('../server/attendance.js', import.meta.url),
+  'utf8',
+);
+const mapParser = await readFile(
+  new URL('../src/services/storeMapLink.js', import.meta.url),
+  'utf8',
+);
+const photoFixture = await readFile(
+  new URL('../../supabase/tests/attendance-photo-qr.sql', import.meta.url),
+  'utf8',
+);
+const photoBytes = Buffer.from(
+  photoFixture.match(/'jpeg_base64','([A-Za-z0-9+/=]+)'/)[1],
+  'base64',
+);
+const photoHash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', photoBytes))]
+  .map((n) => n.toString(16).padStart(2, '0'))
+  .join('');
+const photoPath =
+  organization + '/' + actor + '/' + actor + '_2026-11-11_09-30-00.000000_' + operation + '.jpg';
 const config = await readFile(new URL('./public-auth-config.mjs', import.meta.url), 'utf8');
 const entry = `import { handleStaffAccounts } from './server/staffAccounts.js';
-export default { fetch(request) { return handleStaffAccounts(request, ${JSON.stringify(settings)}); } };`;
+import { handleAttendance } from './server/attendance.js';
+export default { fetch(request) { return new URL(request.url).pathname.startsWith('/api/attendance/') ? handleAttendance(request, ${JSON.stringify(settings)}) : handleStaffAccounts(request, ${JSON.stringify(settings)}); } };`;
 
 for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
   let redirectPath;
@@ -68,6 +90,8 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
             modules: {
               'worker.js': { type: 'esm', contents: entry },
               'server/staffAccounts.js': { type: 'esm', contents: handler },
+              'server/attendance.js': { type: 'esm', contents: attendanceHandler },
+              'src/services/storeMapLink.js': { type: 'esm', contents: mapParser },
               'scripts/public-auth-config.mjs': { type: 'esm', contents: config },
             },
           },
@@ -84,7 +108,12 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
               calls.push(call);
               if (url.origin !== settings.supabaseUrl)
                 return RuntimeResponse.json({ unexpected_destination: true }, { status: 502 });
-              const data = request.method === 'GET' ? null : await request.json();
+              const data =
+                request.method === 'GET'
+                  ? null
+                  : request.headers.get('Content-Type') === 'image/jpeg'
+                    ? await request.arrayBuffer()
+                    : await request.json();
               call.data = data;
               if (path === redirectPath)
                 return new RuntimeResponse(null, {
@@ -93,6 +122,22 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
                 });
               const json = (value) => RuntimeResponse.json(value);
               if (path === '/auth/v1/user') return json({ id: actor });
+              if (path === '/rest/v1/rpc/prepare_attendance_photo')
+                return json({
+                  intent_id: operation,
+                  user_id: actor,
+                  bucket_id: 'attendance-clock-in',
+                  object_path: photoPath,
+                  sha256: photoHash,
+                });
+              if (path === '/storage/v1/object/attendance-clock-in/' + photoPath) {
+                assert.deepEqual(Buffer.from(data), photoBytes);
+                assert.equal(request.headers.get('apikey'), settings.adminKey);
+                return json({ Key: photoPath });
+              }
+              if (path === '/rest/v1/rpc/verify_attendance_photo_upload') return json(null);
+              if (path === '/rest/v1/rpc/record_attendance_storage')
+                return json({ id: operation, storage_saved: true });
               if (path === '/rest/v1/rpc/hr_begin_staff_account') return json(context);
               if (path === '/rest/v1/rpc/hr_staff_account_context') return json(context);
               if (path === '/auth/v1/admin/users') {
@@ -151,6 +196,40 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
       );
       console.log(`PASS Worker ${compatibilityDate}: upstream redirect refused at ${path}`);
     }
+    redirectPath = undefined;
+    calls = [];
+    const uploaded = await runtime.dispatchFetch(
+      'https://workspace.snr-nest.test/api/attendance/photos',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer fixture-user-token' },
+        body: JSON.stringify({
+          id: operation,
+          employeeId: employee,
+          type: 'clock_in',
+          previousId: null,
+          location: { latitude: 12.97 },
+          evidence: {
+            qr: 'fixture',
+            photo: {
+              jpeg_base64: photoBytes.toString('base64'),
+              captured_at: new Date().toISOString(),
+              consent_version: 'attendance-photo-location-v1',
+            },
+          },
+        }),
+      },
+    );
+    assert.equal(uploaded.status, 200);
+    assert.equal((await uploaded.json()).storage_saved, true);
+    assert.ok(
+      calls.some((call) => call.path === '/storage/v1/object/attendance-clock-in/' + photoPath),
+    );
+    console.log(
+      'PASS Worker ' +
+        compatibilityDate +
+        ': verified private attendance photo upload and caller-scoped commit',
+    );
   } finally {
     await runtime.dispose();
   }

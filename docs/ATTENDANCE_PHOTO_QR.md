@@ -1,5 +1,9 @@
 # Store QR, photo and location attendance
 
+Migration 0009 supersedes the photo-storage and capture-order details below for
+new punches. See [private buckets and location-first cameras](ATTENDANCE_STORAGE_LOCATION.md).
+Older 0008 photos remain readable.
+
 Authorized by the owner's SNR request on 10 November 2026. This replaces the
 location-only punch flow after migration 0008 and the frontend release.
 

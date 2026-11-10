@@ -3,19 +3,24 @@ import Modal from '../../components/common/Modal';
 import FormField from '../../components/forms/FormField';
 import { ErrorState, LoadingState } from '../../components/common/States';
 import useRemoteData from '../../hooks/useRemoteData';
-import { loadStoreArea, saveAttendanceSite } from '../../services/workforceService';
+import {
+  loadStoreArea,
+  saveAttendanceSite,
+  resolveStoreMapLink,
+} from '../../services/workforceService';
 import RecordForm from './RecordForm';
 import StoreLocationFields from './StoreLocationFields';
 
 function SiteForm({ record, area, organization, onClose, onSaved }) {
   const [locating, setLocating] = useState(false);
+  const [resolving, setResolving] = useState(false);
   return (
     <RecordForm
       title={record ? 'Edit site' : 'Add site'}
       onClose={onClose}
       submitLabel={record ? 'Save changes' : 'Add site'}
       lockFields={locating}
-      blockSubmit={locating}
+      blockSubmit={locating || resolving}
       onSave={async (values) => {
         await saveAttendanceSite(values, record, area);
         onSaved('Site saved.');
@@ -37,7 +42,12 @@ function SiteForm({ record, area, organization, onClose, onSaved }) {
         defaultValue={record?.timezone || organization.organization.timezone}
         hint="Use an IANA time zone, such as Asia/Kolkata. Shifts retain their saved time zone."
       />
-      <StoreLocationFields area={area} onLocating={setLocating} />
+      <StoreLocationFields
+        area={area}
+        onLocating={setLocating}
+        onResolving={setResolving}
+        resolveLink={resolveStoreMapLink}
+      />
       <p className="field-hint">
         A store QR is created with this site. Download it from Sites &amp; Shifts and display it at
         the store.

@@ -1,19 +1,34 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { getAuthClient } from '../services/authService';
 import {
   loadAttendanceRecords,
   loadAttendanceWorkspace,
   loadEmployeeShifts,
+  loadAttendanceLocations,
   recordAttendance,
   saveEmployeeShift,
 } from '../services/attendanceService';
 vi.mock('../services/authService', () => ({ getAuthClient: vi.fn() }));
 let client;
 beforeEach(() => {
-  client = { rpc: vi.fn().mockResolvedValue({ data: {}, error: null }) };
+  client = {
+    rpc: vi.fn().mockResolvedValue({ data: {}, error: null }),
+    auth: {
+      getSession: vi
+        .fn()
+        .mockResolvedValue({ data: { session: { access_token: 'fixture-user-token' } } }),
+    },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(new Response('{}', { headers: { 'Content-Type': 'application/json' } })),
+  );
   getAuthClient.mockResolvedValue(client);
 });
 
+afterEach(() => vi.unstubAllGlobals());
 it('sends a punch intent and expected state without client-selected identity, tenant or timestamps', async () => {
   await recordAttendance({
     type: 'clock_in',
@@ -33,13 +48,14 @@ it('sends a punch intent and expected state without client-selected identity, te
     organization_id: 'forged',
     occurred_at: 'historical',
   });
-  expect(client.rpc).toHaveBeenCalledWith('record_attendance', {
-    p_event_type: 'clock_in',
-    p_request_id: 'request',
-    p_previous_event_id: 'previous',
-    p_employee_id: 'employee',
-    p_evidence: null,
-    p_location: {
+  expect(fetch.mock.calls[0][0]).toBe('/api/attendance/photos');
+  expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+    type: 'clock_in',
+    id: 'request',
+    previousId: 'previous',
+    employeeId: 'employee',
+    evidence: null,
+    location: {
       latitude: 12.97,
       longitude: 77.59,
       accuracy_meters: 9,
@@ -89,7 +105,7 @@ it('sends only camera proof fields, excluding caller identity and extra photo da
       },
     },
   });
-  expect(client.rpc.mock.calls[0][1].p_evidence).toEqual({
+  expect(JSON.parse(fetch.mock.calls[0][1].body).evidence).toEqual({
     qr: 'scanned',
     photo: { jpeg_base64: 'jpeg', captured_at: 'instant', consent_version: 'notice' },
   });
@@ -130,22 +146,39 @@ it.each([
   'sanitizes %s / %s without confusing a definitive denial with a lost response',
   async (code, message, expected, retryable) => {
     client.rpc.mockResolvedValue({ data: null, error: { code, message } });
-    const failure = recordAttendance({ type: 'clock_in', id: 'request' });
+    const failure = loadAttendanceWorkspace();
     await expect(failure).rejects.toThrow(expected);
     await expect(failure).rejects.toMatchObject({ retryable });
   },
 );
-it('keeps network/503 outcomes retryable using the same idempotency key', async () => {
-  client.rpc.mockRejectedValueOnce(new Error('PRIVATE TOKEN'));
-  await expect(recordAttendance({ type: 'clock_in', id: 'request' })).rejects.toMatchObject({
-    retryable: true,
-  });
+it('keeps lost upload responses retryable with the same request ID', async () => {
+  fetch.mockRejectedValueOnce(new Error('PRIVATE TOKEN'));
+  const action = { type: 'clock_in', id: 'request' };
+  await expect(recordAttendance(action)).rejects.toMatchObject({ retryable: true });
+  fetch.mockResolvedValueOnce(
+    new Response(JSON.stringify({ error: { code: 'attendance_request_failed' } }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  );
+  await expect(recordAttendance(action)).rejects.toMatchObject({ retryable: true });
+  expect(fetch.mock.calls[0][1].body).toBe(fetch.mock.calls[1][1].body);
+});
+it('loads private photos through short-lived signed Storage URLs', async () => {
   client.rpc.mockResolvedValue({
-    data: null,
-    error: { code: 'unexpected', message: 'PRIVATE DATA' },
-    status: 503,
+    data: {
+      clock_in: { photo: { bucket_id: 'attendance-clock-in', object_path: 'org/user/file.jpg' } },
+      clock_out: null,
+    },
+    error: null,
   });
-  await expect(recordAttendance({ type: 'clock_in', id: 'request' })).rejects.toMatchObject({
-    retryable: true,
+  const signed = vi.fn().mockResolvedValue({
+    data: { signedUrl: 'https://storage.example.invalid/photo?token=fixture' },
+    error: null,
   });
+  client.storage = { from: vi.fn().mockReturnValue({ createSignedUrl: signed }) };
+  const result = await loadAttendanceLocations('session');
+  expect(client.storage.from).toHaveBeenCalledWith('attendance-clock-in');
+  expect(signed).toHaveBeenCalledWith('org/user/file.jpg', 60);
+  expect(result.clock_in.photo.signed_url).toContain('token=fixture');
 });

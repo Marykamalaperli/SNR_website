@@ -73,14 +73,20 @@ function SavedPoint({ point, label, timezone, emptyText = 'Location not collecte
           </dd>
         </div>
       </dl>
-      {point.photo?.jpeg_base64 ? (
+      {point.photo?.jpeg_base64 || point.photo?.signed_url ? (
         <div className="saved-attendance-photo">
           <img
-            src={'data:image/jpeg;base64,' + point.photo.jpeg_base64}
+            src={point.photo.signed_url || 'data:image/jpeg;base64,' + point.photo.jpeg_base64}
             alt={label + ' attendance photo'}
           />
           <p className="field-hint">
             Photo captured {momentLabel(point.photo.captured_at, timezone)} · Store QR verified
+            {point.photo.object_path && (
+              <>
+                <br />
+                Stored file: {point.photo.object_path.split('/').at(-1)}
+              </>
+            )}
           </p>
         </div>
       ) : (

@@ -1,4 +1,6 @@
 import { getAuthClient } from './authService';
+import { attendanceGatewayRequest } from './attendanceService';
+export const resolveStoreMapLink = (url) => attendanceGatewayRequest('resolve-map-link', { url });
 
 const messages = {
   invalid_store_area: 'Enter valid store coordinates and a radius between 10 and 1,000 metres.',
@@ -86,6 +88,7 @@ export const saveAttendanceSite = (values, record, area) =>
     p_longitude: Number(values.longitude),
     p_radius_meters: Number(values.radius_meters),
     p_area_version: area?.version ?? null,
+    p_map_url: values.map_url || '',
   });
 export const loadStoreArea = (id) => request('hr_site_attendance_area', { p_site_id: id });
 export const saveStoreArea = (area, values) =>
@@ -95,6 +98,7 @@ export const saveStoreArea = (area, values) =>
     p_latitude: Number(values.latitude),
     p_longitude: Number(values.longitude),
     p_radius_meters: Number(values.radius_meters),
+    p_map_url: values.map_url || '',
   });
 export const loadWorkspaceSettings = () => request('hr_workspace_settings');
 export const saveWorkspaceSettings = (values, version) =>

@@ -1,6 +1,18 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  attendance_storage_required:
+    'Photo Storage is not installed yet. Ask your administrator to apply migration 0009.',
+  attendance_upload_unavailable:
+    'Photo upload is unavailable. Your administrator must configure the private Supabase server binding in Cloudflare Pages.',
+  attendance_photo_expired: 'This photo request expired. Refresh attendance and take a new photo.',
+  attendance_photo_not_uploaded:
+    'The photo upload is not confirmed. Check the same attendance request.',
+  attendance_photo_rate_limit: 'Too many photo requests. Wait a minute and try again.',
+  invalid_store_map_link: 'Use a supported HTTPS map link for the store.',
+  map_coordinates_unavailable:
+    'This map link could not be resolved. Copy a full link containing coordinates, or enter them manually.',
+  sign_in_required: 'Your session has expired. Sign out and sign in again.',
   attendance_evidence_required: 'Scan the store QR and take a photo before clocking in or out.',
   invalid_attendance_qr:
     'This QR does not match your store, or it has been replaced. Scan the current QR at your assigned store.',
@@ -97,13 +109,60 @@ export function loadAttendanceRecords({
   });
 }
 export const verifyAttendanceQr = (qr) => request('verify_attendance_qr', { p_qr: qr });
-export const recordAttendance = ({ type, id, previousId, employeeId, location, evidence }) =>
-  request('record_attendance', {
+export const validateAttendanceLocation = ({ type, previousId, employeeId }, location) =>
+  request('validate_attendance_location', {
+    p_employee_id: employeeId,
     p_event_type: type,
-    p_request_id: id,
     p_previous_event_id: previousId || null,
-    p_employee_id: employeeId || null,
-    p_location: location
+    p_location: location,
+  });
+export async function attendanceGatewayRequest(path, body) {
+  const client = await getAuthClient();
+  const { data, error } = (await client?.auth.getSession()) || {};
+  if (error || !data?.session?.access_token) throw new Error(messages.sign_in_required);
+  let response, result;
+  try {
+    response = await fetch('/api/attendance/' + path, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + data.session.access_token,
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(35000),
+    });
+    if (!response.headers.get('Content-Type')?.includes('application/json'))
+      throw new Error('Invalid server response');
+    result = await response.json();
+  } catch {
+    throw Object.assign(
+      new Error(
+        'The upload could not be confirmed. Check the same attendance request to avoid a duplicate.',
+      ),
+      { retryable: true },
+    );
+  }
+  if (!response.ok) {
+    const code = result.error?.code;
+    throw Object.assign(
+      new Error(
+        Object.hasOwn(messages, code)
+          ? messages[code]
+          : 'This request could not be completed. Please try again.',
+      ),
+      { retryable: response.status >= 500 },
+    );
+  }
+  return result;
+}
+export const recordAttendance = ({ type, id, previousId, employeeId, location, evidence }) =>
+  attendanceGatewayRequest('photos', {
+    type,
+    id,
+    previousId: previousId || null,
+    employeeId: employeeId || null,
+    location: location
       ? {
           latitude: location.latitude,
           longitude: location.longitude,
@@ -112,7 +171,7 @@ export const recordAttendance = ({ type, id, previousId, employeeId, location, e
           consent_version: location.consent_version,
         }
       : null,
-    p_evidence: evidence
+    evidence: evidence
       ? {
           qr: evidence.qr,
           photo: {
@@ -123,8 +182,24 @@ export const recordAttendance = ({ type, id, previousId, employeeId, location, e
         }
       : null,
   });
-export const loadAttendanceLocations = (id) =>
-  request('attendance_location_details', { p_session_id: id });
+export async function loadAttendanceLocations(id) {
+  const result = await request('attendance_location_details', { p_session_id: id });
+  const client = await getAuthClient();
+  for (const kind of ['clock_in', 'clock_out']) {
+    const photo = result[kind]?.photo;
+    if (photo?.bucket_id && photo.object_path) {
+      if (!['attendance-clock-in', 'attendance-clock-out'].includes(photo.bucket_id))
+        throw new Error('Invalid saved photo bucket.');
+      const { data, error } = await client.storage
+        .from(photo.bucket_id)
+        .createSignedUrl(photo.object_path, 60);
+      if (error || !data?.signedUrl)
+        throw new Error('The saved photo could not be opened. Refresh its details and try again.');
+      photo.signed_url = data.signedUrl;
+    }
+  }
+  return result;
+}
 export const loadEmployeeShifts = (id) => request('hr_employee_shifts', { p_employee_id: id });
 export const saveEmployeeShift = (employee, values, assignment = null, cancel = false) =>
   request('hr_save_employee_shift', {
