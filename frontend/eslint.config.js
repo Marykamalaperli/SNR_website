@@ -7,6 +7,7 @@ export default [
   {
     ignores: [
       'dist/**',
+      'attendance-demo-dist/**',
       'node_modules/**',
       'test-results/**',
       'playwright-report/**',
@@ -28,7 +29,7 @@ export default [
     },
   },
   {
-    files: ['src/**/*.{js,jsx}'],
+    files: ['src/**/*.{js,jsx}', 'attendance-demo/**/*.{js,jsx}'],
     plugins: { 'react-hooks': hooks, 'react-refresh': refresh },
     rules: {
       ...hooks.configs.recommended.rules,

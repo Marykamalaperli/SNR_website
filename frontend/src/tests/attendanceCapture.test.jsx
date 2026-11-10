@@ -28,7 +28,14 @@ beforeEach(() => {
 it('requires QR verification and reviewed photo before confirming a punch; supports retaking', async () => {
   const user = userEvent.setup();
   const confirm = vi.fn();
-  render(<AttendanceCapture siteName="Main store" onClose={vi.fn()} onConfirm={confirm} />);
+  render(
+    <AttendanceCapture
+      verifyQr={verifyAttendanceQr}
+      siteName="Main store"
+      onClose={vi.fn()}
+      onConfirm={confirm}
+    />,
+  );
   expect(verifyAttendanceQr).not.toHaveBeenCalled();
   await user.click(screen.getByRole('button', { name: 'Start QR scanner' }));
   await user.click(screen.getByRole('button', { name: 'Scan synthetic QR' }));
@@ -48,7 +55,14 @@ it.each([
   scanned = value;
   if (failure) verifyAttendanceQr.mockRejectedValueOnce(failure);
   const user = userEvent.setup();
-  render(<AttendanceCapture siteName="Main store" onClose={vi.fn()} onConfirm={vi.fn()} />);
+  render(
+    <AttendanceCapture
+      verifyQr={verifyAttendanceQr}
+      siteName="Main store"
+      onClose={vi.fn()}
+      onConfirm={vi.fn()}
+    />,
+  );
   await user.click(screen.getByRole('button', { name: 'Start QR scanner' }));
   await user.click(screen.getByRole('button', { name: 'Scan synthetic QR' }));
   expect(await screen.findByRole('alert')).toBeVisible();
@@ -66,7 +80,12 @@ it('discards QR verification that resolves after closing the dialog', async () =
   const user = userEvent.setup();
   const confirm = vi.fn();
   const view = render(
-    <AttendanceCapture siteName="Main store" onClose={vi.fn()} onConfirm={confirm} />,
+    <AttendanceCapture
+      verifyQr={verifyAttendanceQr}
+      siteName="Main store"
+      onClose={vi.fn()}
+      onConfirm={confirm}
+    />,
   );
   await user.click(screen.getByRole('button', { name: 'Start QR scanner' }));
   await user.click(screen.getByRole('button', { name: 'Scan synthetic QR' }));

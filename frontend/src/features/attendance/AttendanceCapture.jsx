@@ -4,9 +4,15 @@ import Modal from '../../components/common/Modal';
 import Button from '../../components/common/Button';
 import AttendanceCamera from './AttendanceCamera';
 import { STORE_QR_PATTERN } from '../../services/attendanceCaptureService';
-import { verifyAttendanceQr } from '../../services/attendanceService';
 
-export default function AttendanceCapture({ clockedIn, siteName, onConfirm, onClose, busy }) {
+export default function AttendanceCapture({
+  clockedIn,
+  siteName,
+  onConfirm,
+  onClose,
+  busy,
+  verifyQr,
+}) {
   const [stage, setStage] = useState('intro');
   const [qr, setQr] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -20,26 +26,29 @@ export default function AttendanceCapture({ clockedIn, siteName, onConfirm, onCl
       active.current = false;
     };
   }, []);
-  const scanned = useCallback(async (value) => {
-    if (verifying.current) return;
-    verifying.current = true;
-    setStage('intro');
-    setError('');
-    setChecking(true);
-    try {
-      if (!STORE_QR_PATTERN.test(value))
-        throw new Error('Scan the SNR attendance QR displayed at your store.');
-      await verifyAttendanceQr(value);
-      if (!active.current) return;
-      setQr(value);
-      setStage('photo');
-    } catch (failure) {
-      if (active.current) setError(failure.message);
-    } finally {
-      verifying.current = false;
-      if (active.current) setChecking(false);
-    }
-  }, []);
+  const scanned = useCallback(
+    async (value) => {
+      if (verifying.current) return;
+      verifying.current = true;
+      setStage('intro');
+      setError('');
+      setChecking(true);
+      try {
+        if (!STORE_QR_PATTERN.test(value))
+          throw new Error('Scan the SNR attendance QR displayed at your store.');
+        await verifyQr(value);
+        if (!active.current) return;
+        setQr(value);
+        setStage('photo');
+      } catch (failure) {
+        if (active.current) setError(failure.message);
+      } finally {
+        verifying.current = false;
+        if (active.current) setChecking(false);
+      }
+    },
+    [verifyQr],
+  );
   const action = clockedIn ? 'clock out' : 'clock in';
   return (
     <Modal

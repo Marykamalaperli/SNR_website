@@ -3,7 +3,7 @@ import { ArrowRight, Clock3, LogIn, LogOut, RefreshCw } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import StatusBadge from '../../components/common/StatusBadge';
-import { recordAttendance } from '../../services/attendanceService';
+import { recordAttendance, verifyAttendanceQr } from '../../services/attendanceService';
 import { captureAttendanceLocation, LOCATION_NOTICE_VERSION } from '../../services/locationService';
 import { dateLabel, momentLabel } from './attendanceFormat';
 import AttendanceCapture from './AttendanceCapture';
@@ -255,6 +255,7 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
       </p>
       {capturing && (
         <AttendanceCapture
+          verifyQr={verifyAttendanceQr}
           clockedIn={clockedIn}
           siteName={area.site_name}
           onConfirm={punch}

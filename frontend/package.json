@@ -7,6 +7,9 @@
     "node": ">=24.0.0 <25"
   },
   "scripts": {
+    "demo:build": "vite build --config attendance-demo/vite.config.js",
+    "demo:preview": "vite preview --config attendance-demo/vite.config.js",
+    "demo:test": "npm run demo:build && playwright test --config playwright.demo.config.js",
     "dev": "vite",
     "build": "vite build && node scripts/generate-sitemap.mjs && node scripts/generate-server-config.mjs",
     "test:server": "node --test server/*.test.mjs",

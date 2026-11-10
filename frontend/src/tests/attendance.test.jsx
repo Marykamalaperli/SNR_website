@@ -23,6 +23,7 @@ vi.mock('../services/attendanceService', () => ({
   loadAttendanceWorkspace: vi.fn(),
   loadAttendanceLocations: vi.fn(),
   recordAttendance: vi.fn(),
+  verifyAttendanceQr: vi.fn(),
 }));
 vi.mock('../services/locationService', () => ({
   captureAttendanceLocation: vi.fn(),

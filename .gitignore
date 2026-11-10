@@ -21,3 +21,4 @@ frontend/.dev.vars
 frontend/.wrangler/
 gha-creds-*.json
 /.local/
+frontend/attendance-demo-dist/
