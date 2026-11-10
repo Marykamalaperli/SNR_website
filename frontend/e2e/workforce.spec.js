@@ -107,6 +107,42 @@ test('HR searches, filters and pages records with accessible desktop and mobile 
   }
 });
 
+for (const width of [1440, 390]) {
+  test(`HR can replace an existing employee name and reopen the saved profile at ${width}px`, async ({
+    page,
+  }) => {
+    const state = await workforceFixture(page, { populated: true });
+    state.people[0].display_name = 'demo';
+    await signInWorkforce(page);
+    await page.getByRole('link', { name: 'Employees', exact: true }).click();
+      await page.setViewportSize({ width, height: 1000 });
+    await page.getByRole('button', { name: 'Edit employee demo', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    const name = dialog.getByLabel('Full name');
+    await expect(name).toBeEditable();
+    await expect(name).toHaveValue('demo');
+    await expect(dialog.getByLabel('Account email')).not.toBeEditable();
+    await name.fill('Mary Kamal');
+    await expect(name).toHaveValue('Mary Kamal');
+    await dialog.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText('Employee changes saved.', { exact: true })).toBeVisible();
+    expect(
+      state.calls.find((call) => call.name === 'hr_save_employee').parameters.p_display_name,
+    ).toBe('Mary Kamal');
+    expect(state.people[0].display_name).toBe('Mary Kamal');
+    await page.reload();
+    await page.getByRole('button', { name: 'Edit employee Mary Kamal', exact: true }).click();
+    await expect(dialog.getByLabel('Full name')).toHaveValue('Mary Kamal');
+    await expect(dialog.getByLabel('Full name')).toBeEditable();
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Edit employee Directory Person 02', exact: true })
+      .click();
+    await expect(dialog.getByLabel('Full name')).toHaveValue('Directory Person 02');
+  });
+}
+
 test('a rejected save keeps entered fields and exposes no privileged role choices', async ({
   page,
 }) => {

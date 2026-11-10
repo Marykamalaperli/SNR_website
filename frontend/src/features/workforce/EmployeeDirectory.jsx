@@ -331,6 +331,7 @@ export default function EmployeeDirectory({ manage = false }) {
       </Card>
       {editor && organization.data && (
         <EmployeeForm
+          key={editor.record?.id || 'new-employee'}
           record={editor.record}
           organization={organization.data}
           onClose={() => {

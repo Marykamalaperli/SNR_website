@@ -112,6 +112,41 @@ it('links an existing account through the same server flow without requiring its
     'existing',
   );
 });
+it('edits an existing employee name, keeps the typed value after a failed save and submits the replacement', async () => {
+  const user = userEvent.setup();
+  const record = {
+    ...person,
+    employee_number: 'SNR-1',
+    site_id: 'site',
+    department_id: 'department',
+    role: 'employee',
+    active: true,
+  };
+  const onSaved = vi.fn();
+  const props = { record, organization, onClose: vi.fn(), onSaved };
+  const view = render(<EmployeeForm {...props} />);
+  const name = screen.getByLabelText('Full name');
+  expect(name).toBeEnabled();
+  expect(name).not.toHaveAttribute('readonly');
+  expect(name).toHaveValue('Team Person');
+  expect(screen.getByLabelText('Account email')).toHaveAttribute('readonly');
+  await user.clear(name);
+  await user.type(name, 'Mary Kamal');
+  // An unrelated parent render must not replace the edit with the old record value.
+  view.rerender(<EmployeeForm {...props} record={{ ...record }} />);
+  expect(name).toHaveValue('Mary Kamal');
+  saveEmployee.mockRejectedValueOnce(new Error('The connection failed. Try saving again.'));
+  await user.click(screen.getByRole('button', { name: 'Save changes' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('connection failed');
+  expect(name).toHaveValue('Mary Kamal');
+  await user.click(screen.getByRole('button', { name: 'Save changes' }));
+  await waitFor(() => expect(onSaved).toHaveBeenCalledWith('Employee changes saved.'));
+  expect(saveEmployee).toHaveBeenLastCalledWith(
+    expect.objectContaining({ display_name: 'Mary Kamal', email: person.email }),
+    record,
+  );
+  expect(createStaffAccount).not.toHaveBeenCalled();
+});
 it('checks an interrupted account setup instead of creating another account', async () => {
   const user = userEvent.setup();
   const onSaved = vi.fn();

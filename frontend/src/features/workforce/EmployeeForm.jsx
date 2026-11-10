@@ -9,6 +9,7 @@ import PasswordField from './PasswordField';
 export default function EmployeeForm({ record, organization, onClose, onSaved }) {
   const [mode, setMode] = useState('create');
   const [pending, setPending] = useState(null);
+  const [fullName, setFullName] = useState(record?.display_name || '');
   const requestId = useRef(crypto.randomUUID());
   const nameField = (
     <FormField
@@ -17,9 +18,15 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
       required
       pattern=".*\S.*"
       maxLength={120}
-      defaultValue={record?.display_name || ''}
+      value={fullName}
+      onChange={(event) => setFullName(event.target.value)}
+      readOnly={false}
       autoComplete="off"
-      hint="Required. This name identifies the employee and is used for attendance photo filenames."
+      hint={
+        record
+          ? 'Edit the employee’s name here, then select Save changes. New attendance photos use the saved name.'
+          : 'Required. This name identifies the employee and is used for attendance photo filenames.'
+      }
     />
   );
   async function submit(values) {
@@ -60,7 +67,7 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
       lockFields={Boolean(pending)}
       onSave={submit}
     >
-      {!record && nameField}
+      {nameField}
       {!record && (
         <FormField label="Account setup">
           {(attributes) => (
@@ -105,17 +112,14 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
           requests in the directory.
         </p>
       )}
-      <div className={record ? 'form-grid' : undefined}>
-        {record && nameField}
-        <FormField
-          label="Employee number"
-          name="employee_number"
-          required
-          maxLength={40}
-          defaultValue={record?.employee_number || ''}
-          autoComplete="off"
-        />
-      </div>
+      <FormField
+        label="Employee number"
+        name="employee_number"
+        required
+        maxLength={40}
+        defaultValue={record?.employee_number || ''}
+        autoComplete="off"
+      />
       <div className="form-grid">
         <SelectField
           label="Site"

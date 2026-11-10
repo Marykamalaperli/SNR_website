@@ -13,11 +13,24 @@ attendance-clock-out/
 
 ## Account name
 
-Add employee asks for Full name first, before login details. A nonblank name is
-required for creating or linking an account. Edit employee keeps the saved name
-and employee number together. HR can correct the name through the existing
-versioned profile save. Attendance takes the name from this saved employee
-profile, never from a name submitted with a punch.
+Add employee and Edit employee both show Full name first, before login details.
+A nonblank name is required. The field has explicit editable state and keeps a
+replacement name through parent rerenders and a failed save. Each selected
+employee opens a fresh form, so edits cannot carry over to another person.
+HR saves the name through the existing versioned profile update. Attendance
+takes the name from this saved employee profile, never from a name submitted
+with a punch.
+
+To rename an existing employee, open Employees → Edit employee, replace the
+first Full name field and select Save changes. The refreshed directory and
+reopened profile show the saved name. New photo reservations use it; previously
+reserved files keep their original names. Account email stays read-only here
+and is changed separately through Manage account.
+
+The edit-form update requires a frontend deployment; it adds no SQL migration.
+Follow-up verification: 153 unit tests and 14 employee/account/production browser
+checks passed, including desktop/mobile name replacement, save, reload, reopening
+the profile and selecting a different employee. Formatting, lint and build passed.
 
 ## Folder, time and safe filename
 
