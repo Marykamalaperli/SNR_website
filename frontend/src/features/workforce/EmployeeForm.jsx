@@ -10,6 +10,18 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
   const [mode, setMode] = useState('create');
   const [pending, setPending] = useState(null);
   const requestId = useRef(crypto.randomUUID());
+  const nameField = (
+    <FormField
+      label="Full name"
+      name="display_name"
+      required
+      pattern=".*\S.*"
+      maxLength={120}
+      defaultValue={record?.display_name || ''}
+      autoComplete="off"
+      hint="Required. This name identifies the employee and is used for attendance photo filenames."
+    />
+  );
   async function submit(values) {
     try {
       if (record) await saveEmployee(values, record);
@@ -48,6 +60,7 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
       lockFields={Boolean(pending)}
       onSave={submit}
     >
+      {!record && nameField}
       {!record && (
         <FormField label="Account setup">
           {(attributes) => (
@@ -92,15 +105,8 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
           requests in the directory.
         </p>
       )}
-      <div className="form-grid">
-        <FormField
-          label="Full name"
-          name="display_name"
-          required
-          maxLength={120}
-          defaultValue={record?.display_name || ''}
-          autoComplete="off"
-        />
+      <div className={record ? 'form-grid' : undefined}>
+        {record && nameField}
         <FormField
           label="Employee number"
           name="employee_number"

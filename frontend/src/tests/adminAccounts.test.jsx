@@ -61,6 +61,7 @@ it('creates the account and profile in one dashboard form without Supabase instr
   await waitFor(() => expect(onSaved).toHaveBeenCalled());
   expect(createStaffAccount).toHaveBeenCalledWith(
     expect.objectContaining({
+      display_name: 'New Person',
       email: 'new@example.invalid',
       password: 'Synthetic-Password-17',
       role: 'employee',
@@ -70,6 +71,28 @@ it('creates the account and profile in one dashboard form without Supabase instr
   );
   expect(saveEmployee).not.toHaveBeenCalled();
 });
+it.each(['create', 'existing'])(
+  'requires an employee name before %s account setup',
+  async (mode) => {
+    const user = userEvent.setup();
+    render(<EmployeeForm organization={organization} onClose={vi.fn()} onSaved={vi.fn()} />);
+    await fillEmployee(user);
+    await user.selectOptions(screen.getByLabelText('Account setup'), mode);
+    const name = screen.getByLabelText('Full name');
+    expect(name).toBeRequired();
+    expect(
+      name.compareDocumentPosition(screen.getByLabelText('Account email')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await user.clear(name);
+    await user.type(name, '   ');
+    await user.click(
+      screen.getByRole('button', { name: mode === 'create' ? 'Create employee' : 'Link employee' }),
+    );
+    expect(name).toBeInvalid();
+    expect(createStaffAccount).not.toHaveBeenCalled();
+  },
+);
 it('links an existing account through the same server flow without requiring its password', async () => {
   const user = userEvent.setup();
   const onSaved = vi.fn();

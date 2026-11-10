@@ -43,6 +43,11 @@ controls and new QR provisioning are disabled. The private buckets and filenames
 from 0009 are unchanged. Apply 0010 after 0001–0009, then deploy the frontend;
 see [photo-only attendance activation](docs/ATTENDANCE_PHOTO_ONLY.md).
 
+Migration **0011** places new clock-in/out photos in date folders, with the saved
+employee name, local date/time and request UUID in the filename. Add employee asks
+for Full name first. See [attendance photo names](docs/ATTENDANCE_PHOTO_NAMES.md)
+for the naming format, store time zone, safe-name rules and activation.
+
 ## Stack and architecture
 
 React + JavaScript/JSX, Vite, React Router, Lucide, CSS custom properties; ESLint,

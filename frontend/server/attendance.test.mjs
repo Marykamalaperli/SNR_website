@@ -68,6 +68,7 @@ function upstream({
   replay = false,
   denied = false,
   verificationNoContent = false,
+  photoIntent = intent,
 } = {}) {
   const calls = [];
   return {
@@ -78,7 +79,7 @@ function upstream({
       assert.equal(options.redirect, 'manual');
       if (target.pathname === '/auth/v1/user') return json({ id: user });
       if (target.pathname.endsWith('prepare_attendance_photo'))
-        return json(replay ? { receipt } : intent);
+        return json(replay ? { receipt } : photoIntent);
       if (target.pathname.endsWith('hr_workspace_settings'))
         return denied ? json({ code: 'PT403', message: 'workforce_access_denied' }, 403) : json({});
       if (target.pathname.endsWith('verify_attendance_photo_upload'))
@@ -94,7 +95,9 @@ function upstream({
           assert.deepEqual(Buffer.from(options.body), image);
           assert.equal(options.headers['x-upsert'], 'false');
           assert.equal(options.headers.apikey, settings.adminKey);
-          return duplicate ? json({ error: 'Duplicate' }, 409) : json({ Key: path });
+          return duplicate
+            ? json({ error: 'Duplicate' }, 409)
+            : json({ Key: photoIntent.object_path });
         }
         return new Response(mismatch ? Buffer.from('wrong bytes') : image);
       }
@@ -139,6 +142,42 @@ test('accepts the no-content verification response before committing attendance'
     );
     assert.equal(fixture.calls.at(-1).options.headers.Authorization, 'Bearer fixture-user-token');
   }
+});
+test('uploads profile-named photos under date folders in both action buckets and rejects unsafe reservations', async () => {
+  const namedPath = '2026-11-11/Mary_Kamal_2026-11-11_15-00-00.123456_' + requestId + '.jpg';
+  for (const type of ['clock_in', 'clock_out']) {
+    const bucket = type === 'clock_in' ? 'attendance-clock-in' : 'attendance-clock-out';
+    const fixture = upstream({
+      photoIntent: { ...intent, object_path: namedPath, bucket_id: bucket },
+      verificationNoContent: true,
+    });
+    assert.equal((await handleAttendance(req({ ...action, type }), settings, fixture)).status, 200);
+    assert.ok(
+      fixture.calls.some((call) => call.path === '/storage/v1/object/' + bucket + '/' + namedPath),
+    );
+  }
+  for (const objectPath of [
+    '../' + namedPath,
+    namedPath.replace('Mary_Kamal', 'Mary/../Kamal'),
+    namedPath.replace('Mary_Kamal', 'Mary%2FKamal'),
+    namedPath.replace('/Mary_Kamal_2026-11-11_', '/Mary_Kamal_2026-11-12_'),
+    namedPath.replace(requestId, 'ec000000-0000-4000-8000-000000000009'),
+  ]) {
+    const fixture = upstream({ photoIntent: { ...intent, object_path: objectPath } });
+    assert.equal((await handleAttendance(req(), settings, fixture)).status, 503);
+    assert.equal(
+      fixture.calls.some((call) => call.path.startsWith('/storage/')),
+      false,
+    );
+  }
+  const fixture = upstream({
+    photoIntent: { ...intent, object_path: namedPath, user_id: employee },
+  });
+  assert.equal((await handleAttendance(req(), settings, fixture)).status, 503);
+  assert.equal(
+    fixture.calls.some((call) => call.path.startsWith('/storage/')),
+    false,
+  );
 });
 test('requires JSON receipts for preparation and commit and never commits after a rejected verification', async () => {
   for (const stage of ['prepare_attendance_photo', 'record_attendance_storage']) {

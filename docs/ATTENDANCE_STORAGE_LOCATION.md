@@ -1,5 +1,8 @@
 # Store map links, location-first cameras and private photo buckets
 
+> Migration 0011 adds date folders and saved employee names to new photo filenames.
+> See [employee-name photo storage](ATTENDANCE_PHOTO_NAMES.md) for the current format.
+
 > The current flow is **location → photo within 50 metres**, with QR disabled.
 > Apply migration 0010 after earlier migrations. See [photo-only attendance](ATTENDANCE_PHOTO_ONLY.md).
 

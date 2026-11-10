@@ -69,8 +69,7 @@ const photoBytes = Buffer.from(
 const photoHash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', photoBytes))]
   .map((n) => n.toString(16).padStart(2, '0'))
   .join('');
-const photoPath =
-  organization + '/' + actor + '/' + actor + '_2026-11-11_09-30-00.000000_' + operation + '.jpg';
+const photoPath = '2026-11-11/Runtime_Person_2026-11-11_09-30-00.000000_' + operation + '.jpg';
 const config = await readFile(new URL('./public-auth-config.mjs', import.meta.url), 'utf8');
 const entry = `import { handleStaffAccounts } from './server/staffAccounts.js';
 import { handleAttendance } from './server/attendance.js';

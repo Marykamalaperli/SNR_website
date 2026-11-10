@@ -1,6 +1,8 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  employee_name_required:
+    'Ask HR to save your full name in your employee profile before clocking in or out.',
   attendance_storage_required:
     'Photo Storage is not installed yet. Ask your administrator to apply migration 0009.',
   attendance_upload_unavailable:

@@ -241,3 +241,18 @@ new storage proof has null QR version and never claims QR verification. Old evid
 is retained with its original metadata. HR QR actions and QR provisioning are disabled.
 The browser requires the new server policy flag before enabling normal punches.
 See ATTENDANCE_PHOTO_ONLY.md for activation and validation boundaries.
+
+## Date folders and saved employee names (11 November 2026)
+
+The owner requested employee names during creation and date-first bucket folders
+with name/date/time photo identifiers. The existing Full name field is required
+and appears first in account creation; HR's saved profile is the naming authority.
+Migration 0011 derives a safe name and the reservation's local calendar date/time
+from the caller's profile and assigned/open-session attendance time zone. A unique
+request suffix prevents overwrites. The private intent snapshots the full name and
+zone and freezes the path for retries; existing files/references are retained.
+
+The Pages handler accepts both trusted naming formats and retains caller/request/
+bucket/digest validation. Storage authorization follows committed scoped evidence,
+not folder structure. The 50-metre, photo-only and HTTP 204 confirmation rules
+continue to apply. See ATTENDANCE_PHOTO_NAMES.md for rollout and safe-name limits.

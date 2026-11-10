@@ -1,5 +1,8 @@
 # Photo-only attendance within 50 metres
 
+> Migration 0011 adds date folders and saved employee names to new photo filenames.
+> See [employee-name photo storage](ATTENDANCE_PHOTO_NAMES.md) for the current format.
+
 Migration 0010 implements the owner's 11 November 2026 instruction to disable
 store QR scanning. It extends 0009 and preserves original attendance history.
 

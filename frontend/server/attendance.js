@@ -190,20 +190,27 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
     const expectedBucket =
       body.type === 'clock_in' ? 'attendance-clock-in' : 'attendance-clock-out';
     const path = intent.object_path;
+    const legacyPath = new RegExp(
+      '^[0-9a-f-]{36}/' +
+        identity.id +
+        '/' +
+        identity.id +
+        '_[0-9-]+_[0-9.-]+_' +
+        body.id +
+        '[.]jpg$',
+    );
+    const namedPath = new RegExp(
+      '^(\\d{4}-\\d{2}-\\d{2})/[A-Za-z0-9][A-Za-z0-9_]{0,79}_\\1_' +
+        '\\d{2}-\\d{2}-\\d{2}[.]\\d{6}_' +
+        body.id +
+        '[.]jpg$',
+    );
     if (
       intent.user_id !== identity.id ||
       intent.intent_id !== body.id ||
       intent.bucket_id !== expectedBucket ||
       typeof path !== 'string' ||
-      !new RegExp(
-        '^[0-9a-f-]{36}/' +
-          identity.id +
-          '/' +
-          identity.id +
-          '_[0-9-]+_[0-9.-]+_' +
-          body.id +
-          '[.]jpg$',
-      ).test(path) ||
+      !(legacyPath.test(path) || namedPath.test(path)) ||
       intent.sha256 !== (await digest(image))
     )
       throw new Failure(503, 'attendance_upload_unavailable');

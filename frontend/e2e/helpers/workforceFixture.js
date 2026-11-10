@@ -150,14 +150,26 @@ export async function workforceFixture(
     };
     state.punches.push(punch);
     const bucket = punch.event_type === 'clock_in' ? 'attendance-clock-in' : 'attendance-clock-out';
-    const filename =
-      userId +
-      '_' +
-      new Date().toISOString().replace('T', '_').replace('Z', '').replaceAll(':', '-') +
-      '_' +
-      parameters.p_request_id +
-      '.jpg';
-    const objectPath = state.organization.id + '/' + userId + '/' + filename;
+    const local = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: plan.timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    }).format(new Date());
+    const date = local.split(' ')[0];
+    const time = local.split(' ')[1].replaceAll(':', '-') + '.000000';
+    const name =
+      person.display_name
+        .replace(/[^A-Za-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 80)
+        .replace(/_+$/g, '') || 'Employee';
+    const filename = name + '_' + date + '_' + time + '_' + parameters.p_request_id + '.jpg';
+    const objectPath = date + '/' + filename;
     state.photoFiles.set(
       bucket + '/' + objectPath,
       Buffer.from(parameters.p_evidence.photo.jpeg_base64, 'base64'),

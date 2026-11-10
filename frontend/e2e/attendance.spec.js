@@ -189,6 +189,16 @@ test('employee clocks in/out, keeps history on reload and recovers a lost respon
   await expect(page.getByRole('cell', { name: '8 h 0 min', exact: true })).toBeVisible();
   expect(state.punches).toHaveLength(2);
   expect(state.locations.size).toBe(2);
+  for (const event of state.punches) {
+    const photo = state.locations.get(event.id).photo;
+    expect(photo.bucket_id).toBe(
+      event.event_type === 'clock_in' ? 'attendance-clock-in' : 'attendance-clock-out',
+    );
+    expect(photo.object_path).toMatch(
+      /^(\d{4}-\d{2}-\d{2})\/Directory_Person_01_\1_\d{2}-\d{2}-\d{2}[.]\d{6}_[0-9a-f-]+[.]jpg$/,
+    );
+  }
+
   expect(state.locations.get(state.punches[1].id).latitude).toBe(12.9717);
   await page.getByRole('button', { name: /^View photo and location/ }).click();
   const locationDialog = page.getByRole('dialog');

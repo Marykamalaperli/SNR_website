@@ -42,6 +42,9 @@
   max-height: 280px;
   border-radius: var(--radius-sm);
 }
+.saved-attendance-photo .field-hint {
+  overflow-wrap: anywhere;
+}
 .live-punch-top {
   display: flex;
   align-items: center;

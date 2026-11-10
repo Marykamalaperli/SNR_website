@@ -62,3 +62,7 @@ snr_psql < "$snr_project_root/supabase/tests/attendance-storage.sql"
 
 snr_psql < "$snr_project_root/supabase/migrations/202611110010_attendance_location_photo_only.sql"
 snr_psql < "$snr_project_root/supabase/tests/attendance-photo-only.sql"
+
+snr_psql < "$snr_project_root/supabase/tests/photo-name-upgrade.sql"
+snr_psql < "$snr_project_root/supabase/migrations/202611110011_attendance_photo_names.sql"
+snr_psql < "$snr_project_root/supabase/tests/attendance-photo-names.sql"
