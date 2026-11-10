@@ -135,9 +135,15 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
                 assert.equal(request.headers.get('apikey'), settings.adminKey);
                 return json({ Key: photoPath });
               }
-              if (path === '/rest/v1/rpc/verify_attendance_photo_upload') return json(null);
-              if (path === '/rest/v1/rpc/record_attendance_storage')
+              if (path === '/rest/v1/rpc/verify_attendance_photo_upload') {
+                assert.equal(request.headers.get('apikey'), settings.adminKey);
+                assert.equal(request.headers.get('Authorization'), 'Bearer ' + settings.adminKey);
+                return new RuntimeResponse(null, { status: 204 });
+              }
+              if (path === '/rest/v1/rpc/record_attendance_storage') {
+                assert.equal(request.headers.get('Authorization'), 'Bearer fixture-user-token');
                 return json({ id: operation, storage_saved: true });
+              }
               if (path === '/rest/v1/rpc/hr_begin_staff_account') return json(context);
               if (path === '/rest/v1/rpc/hr_staff_account_context') return json(context);
               if (path === '/auth/v1/admin/users') {

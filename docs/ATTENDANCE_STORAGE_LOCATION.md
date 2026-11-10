@@ -72,6 +72,12 @@ the caller-scoped transaction atomically appends attendance, GPS, the object ref
 and audit. A network interruption retries the same intent and never takes a second
 photo or writes a second punch. A committed receipt is returned without reupload.
 
+The upload-verification SQL function returns void. PostgREST responds with HTTP
+204 and an empty body for that success; the Pages handler accepts it at this step.
+Preparation and attendance commit still require their JSON intent/receipt. A 204
+from verification is not itself a saved attendance receipt. Tests cover an empty
+204 in Node and Cloudflare Workers, including a matching duplicate-upload retry.
+
 Storage and PostgreSQL cannot share a transaction. An interrupted/expired upload
 may leave an unreferenced private object, never a partial attendance event. Such
 objects have no staff read access; retention cleanup must check the intent's expiry

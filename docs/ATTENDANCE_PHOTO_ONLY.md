@@ -70,6 +70,20 @@ Storage HTTP. Browser checks use actual location/video/frame APIs with fixture
 camera hardware; isolated demo checks never contact production services.
 Live migration, real provider uploads and deployment require owner activation.
 
+## Upload confirmation recovery
+
+A Pages handler fix accepts PostgREST's empty HTTP 204 success response from the
+void upload-verification RPC. Earlier code tried to parse that response as JSON,
+returned a retryable error and stopped before the attendance commit. The fix
+requires deploying the latest frontend/Pages Functions from main; no additional
+database migration is needed for this response-handling change.
+
+For an open tab with Check attendance request, check that same request after
+deployment. A committed request returns its original receipt. If an uncommitted
+photo reservation has expired, refresh status and take a fresh photo/location.
+The original private upload may remain unreferenced; do not delete evidence or
+create an attendance row manually to work around an uncertain response.
+
 ## Local validation · 11 November 2026
 
 | Command or check | Result |

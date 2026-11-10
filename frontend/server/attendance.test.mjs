@@ -67,6 +67,7 @@ function upstream({
   redirect = false,
   replay = false,
   denied = false,
+  verificationNoContent = false,
 } = {}) {
   const calls = [];
   return {
@@ -80,7 +81,8 @@ function upstream({
         return json(replay ? { receipt } : intent);
       if (target.pathname.endsWith('hr_workspace_settings'))
         return denied ? json({ code: 'PT403', message: 'workforce_access_denied' }, 403) : json({});
-      if (target.pathname.endsWith('verify_attendance_photo_upload')) return json(null);
+      if (target.pathname.endsWith('verify_attendance_photo_upload'))
+        return verificationNoContent ? new Response(null, { status: 204 }) : json(null);
       if (target.pathname.endsWith('record_attendance_storage')) return json(receipt);
       if (target.pathname.startsWith('/storage/v1/object/')) {
         if (redirect)
@@ -123,6 +125,51 @@ test('uploads exact photo bytes to the action bucket before verified commit; cal
   const commit = fixture.calls.at(-1);
   assert.equal(commit.options.headers.Authorization, 'Bearer fixture-user-token');
   assert.equal(fixture.calls[3].options.headers.Authorization, 'Bearer ' + settings.adminKey);
+});
+test('accepts the no-content verification response before committing attendance', async () => {
+  for (const duplicate of [false, true]) {
+    const fixture = upstream({ verificationNoContent: true, duplicate });
+    const response = await handleAttendance(req(), settings, fixture);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), receipt);
+    assert.equal(fixture.calls.at(-1).path, '/rest/v1/rpc/record_attendance_storage');
+    assert.equal(
+      fixture.calls.filter((call) => call.path.endsWith('record_attendance_storage')).length,
+      1,
+    );
+    assert.equal(fixture.calls.at(-1).options.headers.Authorization, 'Bearer fixture-user-token');
+  }
+});
+test('requires JSON receipts for preparation and commit and never commits after a rejected verification', async () => {
+  for (const stage of ['prepare_attendance_photo', 'record_attendance_storage']) {
+    const fixture = upstream({ verificationNoContent: true });
+    const fetcher = fixture.fetcher;
+    fixture.fetcher = (url, options) =>
+      new URL(url).pathname.endsWith(stage)
+        ? new Response(null, { status: 204 })
+        : fetcher(url, options);
+    const response = await handleAttendance(req(), settings, fixture);
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: { code: 'attendance_request_failed' } });
+    if (stage === 'prepare_attendance_photo')
+      assert.equal(
+        fixture.calls.some((call) => call.path.startsWith('/storage/')),
+        false,
+      );
+  }
+  const fixture = upstream();
+  const fetcher = fixture.fetcher;
+  fixture.fetcher = (url, options) =>
+    new URL(url).pathname.endsWith('verify_attendance_photo_upload')
+      ? json({ code: 'PT409', message: 'attendance_photo_not_uploaded' }, 409)
+      : fetcher(url, options);
+  const response = await handleAttendance(req(), settings, fixture);
+  assert.equal(response.status, 409);
+  assert.deepEqual(await response.json(), { error: { code: 'attendance_photo_not_uploaded' } });
+  assert.equal(
+    fixture.calls.some((call) => call.path.endsWith('record_attendance_storage')),
+    false,
+  );
 });
 test('an already committed retry does not upload again; duplicate files must match the expected digest', async () => {
   const fixture = upstream({ replay: true });

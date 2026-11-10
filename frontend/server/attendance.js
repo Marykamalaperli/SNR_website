@@ -90,7 +90,7 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
         throw new Failure(503, 'attendance_upload_unavailable');
       return result;
     }
-    async function rpc(name, body, elevated = false) {
+    async function rpc(name, body, { elevated = false, allowNoContent = false } = {}) {
       const result = await upstream(
         '/rest/v1/rpc/' + name,
         {
@@ -100,6 +100,9 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
         },
         elevated,
       );
+      // PostgREST returns 204 for a void RPC. Only upload verification has that
+      // contract; preparation and commit must still return their JSON receipts.
+      if (result.status === 204 && allowNoContent) return null;
       const data = await result.json();
       if (!result.ok) {
         const status = /^PT(401|403|404|409|422|429)$/.test(data.code)
@@ -231,7 +234,7 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
     await rpc(
       'verify_attendance_photo_upload',
       { p_intent_id: intent.intent_id, p_sha256: intent.sha256 },
-      true,
+      { elevated: true, allowNoContent: true },
     );
     const receipt = await rpc('record_attendance_storage', {
       p_request_id: body.id,
