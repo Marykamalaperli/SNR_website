@@ -247,3 +247,16 @@ snapshots the checked personal version on private Storage evidence, separately
 from historical store QR metadata. Exact committed retries preserve receipts.
 All existing state, GPS, Storage naming and evidence-access transactions remain
 in use. See [personal employee QR](EMPLOYEE_ATTENDANCE_QR.md).
+
+## Attendance-only QR capability (0013)
+
+The owner superseded QR sign-in with a narrowly scoped bearer capability. The
+public `/attendance` page sends a private QR in bounded same-origin POST bodies
+to `/api/attendance/qr/{workspace,location,photos}` without account credentials.
+The Pages server invokes only `employee_qr_attendance_gateway`, a service-role-only
+allowlist. SQL derives and locks the current QR/employee, checks active role/Auth
+state, binds/restores transaction-local claims, and calls the existing attendance
+transactions. It never returns an Auth session. Workspace output is explicitly
+whitelisted, and QR access cannot fetch history/private photos or change profiles.
+The same server validates QR/location before camera/shutter/reservation/commit.
+Old fragment links redirect without reprinting. See EMPLOYEE_ATTENDANCE_QR.md.

@@ -9,7 +9,13 @@ import { dateLabel, momentLabel } from './attendanceFormat';
 import AttendanceCapture from './AttendanceCapture';
 import { EVIDENCE_NOTICE_VERSION } from '../../services/attendanceCaptureService';
 
-export default function PunchCard({ workspace, onRecorded, onRefresh, qrToken = null }) {
+export default function PunchCard({
+  workspace,
+  onRecorded,
+  onRefresh,
+  qrToken = null,
+  qrAccess = false,
+}) {
   const [pending, setPending] = useState(null);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -51,11 +57,12 @@ export default function PunchCard({ workspace, onRecorded, onRefresh, qrToken = 
         previousId: workspace.last_event_id,
         employeeId: workspace.employee_id,
         qrToken,
+        qrAccess,
       },
       location,
     );
     return location;
-  }, [workspace.status, workspace.last_event_id, workspace.employee_id, qrToken]);
+  }, [workspace.status, workspace.last_event_id, workspace.employee_id, qrToken, qrAccess]);
   async function punch(evidence) {
     if (
       busy.current ||
@@ -81,6 +88,7 @@ export default function PunchCard({ workspace, onRecorded, onRefresh, qrToken = 
         setLocating(false);
         action = {
           id: crypto.randomUUID(),
+          ...(qrAccess ? { qrAccess: true } : {}),
           type: clockedIn ? 'clock_out' : 'clock_in',
           previousId: workspace.last_event_id,
           employeeId: workspace.employee_id,
@@ -139,9 +147,7 @@ export default function PunchCard({ workspace, onRecorded, onRefresh, qrToken = 
           {clockedIn ? 'Clocked in' : 'Clocked out'}
         </StatusBadge>
       </div>
-      {qrToken && (
-        <p className="success-notice">Personal employee QR verified for your signed-in account.</p>
-      )}
+      {qrToken && <p className="success-notice">Personal employee QR verified.</p>}
       <h2>{clockedIn ? 'Your workday is underway' : 'Ready for your workday?'}</h2>
       <p className="muted">
         {clockedIn

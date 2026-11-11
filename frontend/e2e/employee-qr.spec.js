@@ -55,7 +55,7 @@ test('HR downloads a real QR image and regenerates it with explicit confirmation
   );
   expect(state.employeeQrs.get(state.people[0].id).token).not.toBe(original);
 });
-test('scanned link survives sign-in, checks location before selfie, and permits repeated attendance pairs', async ({
+test('scanned QR opens only its employee attendance without sign-in, checks location and permits repeated pairs', async ({
   page,
   context,
 }) => {
@@ -65,16 +65,15 @@ test('scanned link survives sign-in, checks location before selfie, and permits 
   ready(state);
   await installAttendanceCamera(page);
   await page.goto('/me/attendance#employee-qr=' + token);
-  await expect(page).toHaveURL(/\/login$/);
-  await page.getByLabel('Email address').fill('workspace-test@example.invalid');
-  await page.getByLabel('Password', { exact: true }).fill('fixture-password');
-  await page.getByRole('button', { name: 'Sign In', exact: true }).click();
-  await expect(page).toHaveURL(new RegExp('#employee-qr=' + token));
-  await expect(
-    page.getByText('Personal employee QR verified for your signed-in account.'),
-  ).toBeVisible();
+  await expect(page).toHaveURL(new RegExp('/attendance#employee-qr=' + token));
+  await expect(page.getByText('Personal employee QR verified.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: state.people[0].display_name })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign In', exact: true })).toHaveCount(0);
+  expect(state.calls.some((c) => c.name === 'current_workspace')).toBe(false);
+  state.loseNextPunchResponse = true;
   await page.getByRole('checkbox').check();
   await capturePunch(page, 'Clock in');
+  await page.getByRole('button', { name: 'Check attendance request' }).click();
   await expect(page.getByRole('button', { name: 'Clock out', exact: true })).toBeVisible();
   expect(state.calls.find((c) => c.name === 'record_attendance').parameters.p_evidence.qr).toBe(
     token,
@@ -90,7 +89,7 @@ test('scanned link survives sign-in, checks location before selfie, and permits 
   await expect(page.getByRole('button', { name: 'Clock out', exact: true })).toBeVisible();
   expect(state.punches.map((p) => p.event_type)).toEqual(['clock_in', 'clock_out', 'clock_in']);
 });
-test('a replaced or other employee QR cannot open capture and rotation during selfie blocks the shutter', async ({
+test('a replaced QR cannot open attendance and rotation during selfie blocks the shutter', async ({
   page,
   context,
 }) => {
@@ -99,13 +98,6 @@ test('a replaced or other employee QR cannot open capture and rotation during se
   const state = await workforceFixture(page, { role: 'employee', populated: true });
   ready(state);
   await installAttendanceCamera(page);
-  // Exercise a slow membership check: the login helper must await the completed
-  // workspace redirect before this test opens a different attendance URL.
-  await page.route('**/rest/v1/rpc/current_workspace', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    await route.fallback();
-  });
-  await signInWorkforce(page);
   await page.goto('/me/attendance#employee-qr=90000000-0000-4000-8000-000000000099');
   await expect(page.getByText(/This QR is invalid, replaced/)).toBeVisible();
   expect(await page.evaluate(() => window.attendanceCameraRequests)).toBe(0);
@@ -122,4 +114,31 @@ test('a replaced or other employee QR cannot open capture and rotation during se
   await expect(dialog.getByText(/This QR is invalid, replaced/)).toBeVisible();
   expect(state.punches).toHaveLength(0);
   await expect.poll(() => page.evaluate(() => window.attendanceCameraTracks)).toBe(0);
+});
+
+test('QR attendance denies outside or inaccurate location before opening the camera', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({
+    latitude: 12.971599 + 55 / 111195,
+    longitude: 77.594566,
+    accuracy: 8,
+  });
+  const state = await workforceFixture(page, { role: 'employee', populated: true });
+  ready(state);
+  await installAttendanceCamera(page);
+  await page.goto('/attendance#employee-qr=' + token);
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Clock in', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText(/outside your store/)).toBeVisible();
+  expect(await page.evaluate(() => window.attendanceCameraRequests)).toBe(0);
+  await page.getByRole('button', { name: 'Close dialog' }).click();
+  await context.setGeolocation({ latitude: 12.971599, longitude: 77.594566, accuracy: 60 });
+  await page.getByRole('button', { name: 'Clock in', exact: true }).click();
+  await expect(page.getByRole('dialog').getByText(/accuracy is too low/)).toBeVisible();
+  expect(await page.evaluate(() => window.attendanceCameraRequests)).toBe(0);
+  expect(state.punches).toHaveLength(0);
 });

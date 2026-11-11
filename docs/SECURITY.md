@@ -148,3 +148,14 @@ rotate only within its organization. QR storage has no browser grants, operation
 are audited and rotation uses attendance serialization. Committed exact retries
 survive rotation without another punch; unfinished old-code requests are rejected.
 See [personal QR security and activation](EMPLOYEE_ATTENDANCE_QR.md).
+
+Migration 0013 explicitly supersedes personal QR sign-in: possession is an
+attendance-only credential for the QR's employee. Only the server gateway can
+execute its restricted SQL dispatcher. Direct browser roles cannot invoke it;
+the dispatcher exposes no arbitrary RPC, general Auth session, directory/history,
+account mutation or private-photo read. It derives the subject from the token,
+rejects forged employee IDs and inactive/banned accounts, restores transaction-local
+claims, and retains expected-state/retry, QR rotation, GPS and photo constraints.
+Normal workspace and private-photo permissions remain authenticated. Keep QR codes
+private and replace copied/lost codes; GPS and selfies do not independently prove
+identity. See EMPLOYEE_ATTENDANCE_QR.md for the complete current access contract.

@@ -321,3 +321,97 @@ test('personal QR is passed only to caller-authorized SQL and a replaced QR stop
   assert.equal((await rejected.json()).error.code, 'employee_qr_invalid');
   assert.equal(calls.length, 2);
 });
+
+function qrRequest(body, operation = 'photos') {
+  return req(body, 'qr/' + operation, { Authorization: '' });
+}
+test('unsigned personal QR uses only attendance gateway RPCs and never creates an Auth session', async () => {
+  const qr = '90000000-0000-4000-8000-000000000001';
+  const base = upstream();
+  const fixture = {
+    fetcher: async (url, options) => {
+      if (url.endsWith('employee_qr_attendance_gateway')) {
+        base.calls.push({ path: new URL(url).pathname, options });
+        assert.equal(options.headers.apikey, settings.adminKey);
+        const body = JSON.parse(options.body);
+        assert.equal(body.p_token, qr);
+        if (body.p_operation === 'context') return json({ user_id: user, employee_id: employee });
+        if (body.p_operation === 'prepare') {
+          assert.equal(body.p_payload.evidence.qr, qr);
+          return json(intent);
+        }
+        if (body.p_operation === 'commit') return json({ ...receipt, employee_qr_verified: true });
+      }
+      assert.ok(!url.includes('/auth/'), 'QR access must not invoke Auth or issue a session');
+      return base.fetcher(url, options);
+    },
+  };
+  const response = await handleAttendance(
+    qrRequest({ ...action, qrToken: qr, evidence: { photo, qr } }),
+    settings,
+    fixture,
+  );
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).employee_qr_verified, true);
+  assert.deepEqual(
+    base.calls
+      .filter((c) => c.path.endsWith('employee_qr_attendance_gateway'))
+      .map((c) => JSON.parse(c.options.body).p_operation),
+    ['context', 'prepare', 'commit'],
+  );
+});
+test('unsigned QR cannot select another employee, arbitrary operation, missing token or cross-origin access', async () => {
+  const qr = '90000000-0000-4000-8000-000000000001';
+  const fixture = {
+    fetcher: async (url) => {
+      assert.ok(url.endsWith('employee_qr_attendance_gateway'));
+      return json({ user_id: user, employee_id: employee });
+    },
+  };
+  const forged = await handleAttendance(
+    qrRequest({ ...action, employeeId: requestId, qrToken: qr }),
+    settings,
+    fixture,
+  );
+  assert.equal(forged.status, 403);
+  const missing = await handleAttendance(qrRequest(action), settings, fixture);
+  assert.equal(missing.status, 403);
+  const arbitrary = await handleAttendance(
+    qrRequest({ qrToken: qr }, 'records'),
+    settings,
+    fixture,
+  );
+  assert.equal(arbitrary.status, 404);
+  const foreign = await handleAttendance(
+    req({ qrToken: qr }, 'qr/workspace', { Origin: 'https://foreign.invalid', Authorization: '' }),
+    settings,
+    fixture,
+  );
+  assert.equal(foreign.status, 403);
+});
+test('QR rotated during upload is rechecked at commit and rejected', async () => {
+  const qr = '90000000-0000-4000-8000-000000000001';
+  const base = upstream();
+  let committed = false;
+  const response = await handleAttendance(
+    qrRequest({ ...action, qrToken: qr, evidence: { photo, qr } }),
+    settings,
+    {
+      fetcher: async (url, options) => {
+        if (url.endsWith('employee_qr_attendance_gateway')) {
+          const body = JSON.parse(options.body);
+          if (body.p_operation === 'context') return json({ user_id: user, employee_id: employee });
+          if (body.p_operation === 'prepare') return json(intent);
+          if (body.p_operation === 'commit') {
+            committed = true;
+            return json({ code: 'PT403', message: 'employee_qr_invalid' }, 403);
+          }
+        }
+        return base.fetcher(url, options);
+      },
+    },
+  );
+  assert.equal(response.status, 403);
+  assert.equal(committed, true);
+  assert.equal((await response.json()).error.code, 'employee_qr_invalid');
+});

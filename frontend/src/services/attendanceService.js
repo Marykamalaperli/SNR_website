@@ -2,7 +2,7 @@ import { getAuthClient } from './authService';
 
 const messages = {
   employee_qr_invalid:
-    'This QR is invalid, replaced, or belongs to another employee. Sign in with the correct account or ask HR for the current QR.',
+    'This QR is invalid, replaced, or no longer active. Ask HR for the current employee QR.',
 
   employee_name_required:
     'Ask HR to save your full name in your employee profile before clocking in or out.',
@@ -119,28 +119,41 @@ export function loadAttendanceRecords({
     p_page: page,
   });
 }
-export const validateAttendanceLocation = ({ type, previousId, employeeId, qrToken }, location) =>
-  request(qrToken ? 'validate_employee_qr_location' : 'validate_attendance_location', {
-    ...(qrToken ? { p_token: qrToken } : {}),
-    p_employee_id: employeeId,
-    p_event_type: type,
-    p_previous_event_id: previousId || null,
-    p_location: location,
-  });
-export async function attendanceGatewayRequest(path, body) {
-  const client = await getAuthClient();
-  const { data, error } = (await client?.auth.getSession()) || {};
-  if (error || !data?.session?.access_token) throw new Error(messages.sign_in_required);
+export const validateAttendanceLocation = (
+  { type, previousId, employeeId, qrToken, qrAccess },
+  location,
+) =>
+  qrAccess
+    ? attendanceGatewayRequest(
+        'location',
+        { type, previousId: previousId || null, employeeId, location },
+        { qrToken },
+      )
+    : request(qrToken ? 'validate_employee_qr_location' : 'validate_attendance_location', {
+        ...(qrToken ? { p_token: qrToken } : {}),
+        p_employee_id: employeeId,
+        p_event_type: type,
+        p_previous_event_id: previousId || null,
+        p_location: location,
+      });
+export async function attendanceGatewayRequest(path, body, { qrToken } = {}) {
+  let accessToken;
+  if (!qrToken) {
+    const client = await getAuthClient();
+    const { data, error } = (await client?.auth.getSession()) || {};
+    if (error || !data?.session?.access_token) throw new Error(messages.sign_in_required);
+    accessToken = data.session.access_token;
+  }
   let response, result;
   try {
-    response = await fetch('/api/attendance/' + path, {
+    response = await fetch('/api/attendance/' + (qrToken ? 'qr/' : '') + path, {
       method: 'POST',
-      credentials: 'same-origin',
+      credentials: qrToken ? 'omit' : 'same-origin',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + data.session.access_token,
+        ...(accessToken ? { Authorization: 'Bearer ' + accessToken } : {}),
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(qrToken ? { ...body, qrToken } : body),
       signal: AbortSignal.timeout(35000),
     });
     if (!response.headers.get('Content-Type')?.includes('application/json'))
@@ -167,34 +180,48 @@ export async function attendanceGatewayRequest(path, body) {
   }
   return result;
 }
-export const recordAttendance = ({ type, id, previousId, employeeId, location, evidence }) =>
-  attendanceGatewayRequest('photos', {
-    type,
-    id,
-    previousId: previousId || null,
-    employeeId: employeeId || null,
-    location: location
-      ? {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          accuracy_meters: location.accuracy_meters,
-          captured_at: location.captured_at,
-          consent_version: location.consent_version,
-        }
-      : null,
-    evidence: evidence
-      ? {
-          ...(/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(evidence.qr || '')
-            ? { qr: evidence.qr }
-            : {}),
-          photo: {
-            jpeg_base64: evidence.photo.jpeg_base64,
-            captured_at: evidence.photo.captured_at,
-            consent_version: evidence.photo.consent_version,
-          },
-        }
-      : null,
-  });
+export const loadQrAttendanceAccess = (qrToken) =>
+  attendanceGatewayRequest('workspace', {}, { qrToken });
+export const recordAttendance = ({
+  type,
+  id,
+  previousId,
+  employeeId,
+  location,
+  evidence,
+  qrAccess,
+}) =>
+  attendanceGatewayRequest(
+    'photos',
+    {
+      type,
+      id,
+      previousId: previousId || null,
+      employeeId: employeeId || null,
+      location: location
+        ? {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            accuracy_meters: location.accuracy_meters,
+            captured_at: location.captured_at,
+            consent_version: location.consent_version,
+          }
+        : null,
+      evidence: evidence
+        ? {
+            ...(/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(evidence.qr || '')
+              ? { qr: evidence.qr }
+              : {}),
+            photo: {
+              jpeg_base64: evidence.photo.jpeg_base64,
+              captured_at: evidence.photo.captured_at,
+              consent_version: evidence.photo.consent_version,
+            },
+          }
+        : null,
+    },
+    qrAccess ? { qrToken: evidence?.qr } : {},
+  );
 export async function loadAttendanceLocations(id) {
   const result = await request('attendance_location_details', { p_session_id: id });
   const client = await getAuthClient();

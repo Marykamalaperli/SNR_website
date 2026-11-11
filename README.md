@@ -50,8 +50,9 @@ for the naming format, store time zone, safe-name rules and activation.
 
 Personal employee QR attendance is implemented with migration **0012**. HR can
 issue/download a QR for new or existing Employees and regenerate a lost code.
-Scanning requires the matching employee's sign-in, then the existing 50-metre
-location-first selfie flow. Store QR remains disabled. Production activation and
+Migration **0013** opens only that employee’s attendance without sign-in, using
+the QR as an attendance-only credential and retaining the 50-metre location-first
+selfie flow. Store QR remains disabled. Production activation and
 deployment remain manual: [personal employee QR setup](docs/EMPLOYEE_ATTENDANCE_QR.md).
 
 ## Stack and architecture

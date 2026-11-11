@@ -70,3 +70,6 @@ snr_psql < "$snr_project_root/supabase/tests/attendance-photo-names.sql"
 snr_psql < "$snr_project_root/supabase/migrations/202611110012_employee_attendance_qr.sql"
 snr_psql < "$snr_project_root/supabase/tests/employee-attendance-qr.sql"
 python3 "$snr_project_root/scripts/test_employee_qr_concurrency.py" "$snr_pg_container"
+
+snr_psql < "$snr_project_root/supabase/migrations/202611110013_employee_qr_attendance_access.sql"
+snr_psql < "$snr_project_root/supabase/tests/employee-qr-attendance-access.sql"

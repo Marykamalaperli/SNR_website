@@ -63,10 +63,18 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
     if (request.method !== 'POST') throw new Failure(405, 'method_not_allowed');
     if (request.headers.has('Origin') && request.headers.get('Origin') !== url.origin)
       throw new Failure(403, 'origin_denied');
-    if (!['/api/attendance/photos', '/api/attendance/resolve-map-link'].includes(url.pathname))
+    const qrMode = [
+      '/api/attendance/qr/workspace',
+      '/api/attendance/qr/location',
+      '/api/attendance/qr/photos',
+    ].includes(url.pathname);
+    if (
+      !qrMode &&
+      !['/api/attendance/photos', '/api/attendance/resolve-map-link'].includes(url.pathname)
+    )
       throw new Failure(404, 'not_found');
     const authorization = request.headers.get('Authorization') || '';
-    if (!/^Bearer [A-Za-z0-9_.-]{10,12000}$/.test(authorization))
+    if (!qrMode && !/^Bearer [A-Za-z0-9_.-]{10,12000}$/.test(authorization))
       throw new Failure(401, 'sign_in_required');
     const config = readPublicAuthConfig({
       VITE_SUPABASE_URL: settings.supabaseUrl,
@@ -116,10 +124,14 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       }
       return data;
     }
-    const identityResponse = await upstream('/auth/v1/user');
-    const identity = await identityResponse.json();
-    if (!identityResponse.ok || !uuid.test(identity.id || ''))
-      throw new Failure(401, 'sign_in_required');
+    let identity;
+    if (!qrMode) {
+      const identityResponse = await upstream('/auth/v1/user');
+      identity = await identityResponse.json();
+      if (!identityResponse.ok || !uuid.test(identity.id || ''))
+        throw new Failure(401, 'sign_in_required');
+    } else if (!adminKey(settings.adminKey))
+      throw new Failure(503, 'attendance_upload_unavailable');
     if (!request.headers.get('Content-Type')?.startsWith('application/json'))
       throw new Failure(415, 'json_required');
     const bytes = await readBytes(request, url.pathname.endsWith('/photos') ? 215000 : 5000);
@@ -128,6 +140,34 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       body = JSON.parse(new TextDecoder().decode(bytes));
     } catch {
       throw new Failure(422, 'invalid_request');
+    }
+    const qrToken = qrMode ? body?.qrToken : null;
+    const qrRpc = (operation, payload = {}) =>
+      rpc(
+        'employee_qr_attendance_gateway',
+        {
+          p_token: qrToken,
+          p_operation: operation,
+          p_payload: payload,
+        },
+        { elevated: true },
+      );
+    if (qrMode) {
+      if (!uuid.test(qrToken || '')) throw new Failure(403, 'employee_qr_invalid');
+      if (url.pathname.endsWith('/workspace')) return json(await qrRpc('workspace'));
+      if (url.pathname.endsWith('/location'))
+        return json(
+          await qrRpc('location', {
+            employeeId: body.employeeId,
+            type: body.type,
+            previousId: body.previousId || null,
+            location: body.location,
+          }),
+        );
+      const subject = await qrRpc('context');
+      if (!uuid.test(subject?.user_id || '') || subject.employee_id !== body.employeeId)
+        throw new Failure(403, 'employee_qr_invalid');
+      identity = { id: subject.user_id };
     }
     if (url.pathname.endsWith('/resolve-map-link')) {
       await rpc('hr_workspace_settings', {});
@@ -185,7 +225,9 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       throw new Failure(422, 'invalid_attendance_photo');
     // PostgreSQL validates JPEG structure, consent, shutter fix and expected
     // employee/state, and derives a unique bucket/path and immutable intent.
-    const intent = await rpc('prepare_attendance_photo', { p_action: action });
+    const intent = qrMode
+      ? await qrRpc('prepare', action)
+      : await rpc('prepare_attendance_photo', { p_action: action });
     if (intent.receipt) return json(intent.receipt);
     const expectedBucket =
       body.type === 'clock_in' ? 'attendance-clock-in' : 'attendance-clock-out';
@@ -243,10 +285,12 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       { p_intent_id: intent.intent_id, p_sha256: intent.sha256 },
       { elevated: true, allowNoContent: true },
     );
-    const receipt = await rpc('record_attendance_storage', {
-      p_request_id: body.id,
-      p_employee_id: body.employeeId,
-    });
+    const receipt = qrMode
+      ? await qrRpc('commit', { id: body.id, employeeId: body.employeeId })
+      : await rpc('record_attendance_storage', {
+          p_request_id: body.id,
+          p_employee_id: body.employeeId,
+        });
     return json(receipt);
   } catch (failure) {
     return json(

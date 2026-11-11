@@ -1,97 +1,121 @@
 # Personal employee attendance QR
 
-Migration 0012 adds individual QR links. It does not reactivate store QR codes.
-Only the existing server-confirmed HR role can issue, view or regenerate a code
-for an active Employee in its organization. “Admin” means that HR dashboard
-permission; system-owner, auditor and supervisor roles do not inherit it.
+Personal QR access requires migrations 0012 and 0013. Store QR stays disabled.
+Scanning now opens the assigned employee's attendance **without sign-in**. The
+QR is a secret, attendance-only credential: anyone holding a copy can attempt
+that employee's attendance, subject to location and photo checks. It does not
+prove who is holding the device; no facial recognition is performed. Share it
+only with that employee and regenerate a lost or shared code.
 
-Creating or linking an active Employee account issues its QR in the same database
-transaction as completing the account profile. Recovery does not rotate the code.
-After creation the dashboard opens the download dialog. For existing employees,
-open **Employees → Attendance QR → Download QR**. Inactive employees and supervisors
-do not receive attendance QR controls. A missing QR is generated on first HR use.
-New accounts created inactive can receive their QR after HR activates them.
+## Issue and replace
 
-For a lost code choose **Regenerate QR → Confirm regenerate QR**, then download the
-new PNG. The previous token stops resolving as soon as regeneration commits.
-Version checks prevent a stale HR tab rotating a newer code. Reopen the dialog if
-a regeneration response is uncertain; do not repeat a blind rotation.
+Only the existing HR dashboard role can issue, view or regenerate a code for an
+active Employee in its organization. “Admin” here means that HR permission;
+system-owner, auditor and supervisor roles do not inherit it.
 
-The QR encodes the current site's origin plus
-`/me/attendance#employee-qr=<random-token>`. Generate/download codes on the intended
-production hostname, not a development or preview host. The fragment is not sent
-in page HTTP requests or referrer headers. Do not log or share personal QR links
-outside their intended recipients. The private QR table has RLS and no browser
-read/write grants; HR RPC reads/issuance and regeneration are audited. QR tokens
-are random UUIDs and are not passwords or attendance authorization.
+Creating/linking an active Employee issues a QR in the account completion database
+transaction. Recovery does not rotate it. The download dialog opens after creation.
+For existing Employees use **Employees → Attendance QR → Download QR**. Inactive
+employees can receive a code after HR activates their Employee membership.
 
-Scanning opens attendance and retains the link through sign-in. The caller must
-be that employee with an active profile and membership in the same organization.
-Wrong-account and replaced links fail closed before capture. The normal signed-in
-own-attendance route also remains available; QR is a personal shortcut, not an
-additional identity factor or a requirement to clock without the link.
+For a lost code use **Regenerate QR → Confirm regenerate QR**, then download the
+replacement PNG. Regeneration immediately invalidates previous links, cameras and
+unfinished uploads once committed. Reopen the dialog after an uncertain response
+rather than repeating a blind rotation. Recorded attendance and old photos remain.
 
-The server's latest event selects Clock in versus Clock out. The existing expected
-previous-event contract still rejects stale state. Open sessions retain their
-original date/site/time zone overnight; finishing one allows subsequent pairs.
-The app never auto-punches on scan. Consent, fresh GPS and server validation of
-distance plus accuracy within 50 metres precede the selfie camera. Location and QR
-are rechecked while the camera is open and at the shutter. Photo reservation and
-commit validate the current personal QR again. Rotation and punches use the same
-organization lock: a commit ordered before rotation is recorded; a commit ordered
-after it rejects the old QR, including an already uploaded, unfinished request.
+New codes encode `/attendance#employee-qr=<random-token>` on the current hostname.
+Download them from the production hostname, not a development/preview host. Codes
+issued earlier with `/me/attendance#employee-qr=...` automatically redirect to the
+new attendance-only page without login; no reprinting is necessary for this route
+change. Tokens stay in the fragment, never page-request paths or query strings.
+The page/API use no-store responses, noindex and no-referrer policy on the QR page.
 
-A personal QR version is stamped on new private Storage evidence at insertion.
-The old store `qr_version` remains null for new evidence. Historical store QR
-proof, photos, employee-name editing and append-only attendance/audit rules are
-unchanged. Exact committed retries remain readable after regeneration; changed
-retry payloads are rejected. Rejected or abandoned uploads remain private under
-the existing retention rules and are not deleted during uncertain responses.
+## Attendance-only access
 
-Private buckets remain `attendance-clock-in` and `attendance-clock-out`. Migration
-0011 still controls date folders and sanitized employee-name/local-date/time/
-request-ID filenames. Client input cannot choose the filename or attendance time.
-Employee-self/HR scoped photo reads and short-lived signed URLs remain unchanged.
-No facial recognition or background tracking is added.
+The page displays the server-confirmed employee name and the currently available
+Clock in/Clock out action. It does not show a directory, employee account, attendance
+history, private photos or HR controls. Normal workspace access still requires
+sign-in and the existing role permissions.
+
+The browser sends the QR in a bounded POST body to `/api/attendance/qr/workspace`,
+`/location` or `/photos`, without an Auth token or cookies. The Pages gateway uses
+its existing private Supabase binding to invoke one service-role-only SQL function,
+`employee_qr_attendance_gateway`. Anonymous and authenticated browser roles cannot
+call that dispatcher directly. It has an explicit attendance-operation allowlist;
+there is no general RPC dispatch or Auth token/session issuance.
+
+The dispatcher derives the employee solely from the current private token. It
+rejects an inactive profile/membership, non-Employee role, unconfirmed/deleted/banned
+Auth account, invalid token, mismatched employee ID or multiple active workspaces.
+Inside that single operation it binds a transaction-local employee identity to the
+existing attendance transactions and restores prior claims on success and error.
+Only a small whitelisted workspace projection leaves SQL. The context operation's
+user identifier is consumed server-side during photo upload and is not an Auth
+credential. A private per-employee minute counter limits successful gateway work;
+existing photo reservation limits also apply. Invalid UUID guessing is denied
+without disclosing employee records.
+
+Consent and fresh GPS are required before the selfie camera opens. PostgreSQL
+requires distance plus reported accuracy to fit inside the assigned store's fixed
+50-metre area. The camera monitors location and rechecks both QR and location at
+the shutter. Photo preparation and final commit revalidate the current QR, employee,
+expected attendance state, store policy and accepted evidence. Camera/location
+permissions alone never record attendance; confirmation is still required.
+
+Server state selects Clock out for an open session, retaining its original site,
+work date and time zone overnight. Closing a session permits subsequent pairs.
+Request UUIDs and immutable payload fingerprints retain retry protection. A lost
+response can be checked with the same current QR without a duplicate event/audit.
+A replaced QR cannot read even a prior receipt through this public gateway; the
+normal authenticated exact-replay behavior remains available and historical data
+is not changed.
+
+The private `attendance-clock-in` and `attendance-clock-out` buckets are unchanged.
+Migration 0011 still controls date folders and employee-name/local-date/time/request
+filenames. Personal QR version proof is inserted separately from historical store
+QR metadata. The QR gateway grants no private photo reads or Storage signed URLs;
+those remain employee-self/HR authenticated operations. Abandoned private uploads
+are not deleted after an uncertain response.
 
 ## Manual production activation
 
-1. Confirm backups and that migrations 0001–0011 are already applied in the intended
-   Supabase project. Do not rerun or edit those deployed migrations.
-2. In that project's SQL Editor, paste and run the complete checked-in file
-   `supabase/migrations/202611110012_employee_attendance_qr.sql` once. Its transaction
-   creates the private QR table, new RPCs and evidence column and wraps the current
-   account/photo transactions. No existing employee QR is bulk-issued. If the
-   transaction fails, diagnose it before retrying; do not partially apply it.
-3. In the same SQL Editor run `notify pgrst, 'reload schema';` to refresh PostgREST.
-4. Keep both attendance buckets private and retain the existing Cloudflare Pages
-   `SUPABASE_ADMIN_KEY` binding and public Supabase URL/publishable-key configuration.
-   No new secret, bucket, policy, Cloud Run service or live data migration is needed.
-5. In GitHub **Actions → Deploy application → Run workflow**, choose branch `main`
-   and target `frontend`. Review the deployment job and its recorded production
-   URL. Do not run the backend/both target for this feature. This step is manual;
-   a Git push does not invoke this repository's deployment workflow.
-6. On the production hostname, HR should create a test Employee and download its
-   QR; also generate a QR for an existing assigned Employee. Scan as that Employee,
-   sign in, and confirm Clock in → location → selfie → confirmation. Confirm the
-   open session offers Clock out, including across midnight, and another pair is
-   possible after checkout. Check private photo details and date/name paths.
-7. Regenerate a QR while its old link/camera is open. Confirm old link, shutter and
-   unfinished upload commit fail; the replacement works. Verify another employee,
-   supervisor, unauthenticated caller and HR from another organization cannot use
-   it to punch. Verify exact successful retries do not add attendance/audit rows.
-8. Confirm HR name editing and historical evidence still work and store QR remains
-   disabled. Keep production migrations and deployment manual.
+1. Confirm migrations 0001–0012 have already succeeded in the intended Supabase
+   project. If 0012 is missing, apply its checked-in file once first. Never rewrite
+   or rerun previously deployed migrations.
+2. In Supabase **SQL Editor**, run the complete file
+   `supabase/migrations/202611110013_employee_qr_attendance_access.sql` once. It creates
+   the private rate counter and narrow service-role-only attendance dispatcher.
+3. In the same SQL Editor run `notify pgrst, 'reload schema';`.
+4. Keep both attendance buckets private. Retain the existing encrypted Cloudflare
+   Pages `SUPABASE_ADMIN_KEY` binding and public Supabase URL/publishable-key build
+   configuration. No secret belongs in a `VITE_*` variable. No new bucket, Auth
+   account, Google service or hosting secret is needed.
+5. In GitHub **Actions → Deploy application → Run workflow**, select branch `main`
+   and target `frontend`. This deploys the new public page and Pages gateway.
+   A push runs checks but does not deploy. Do not choose backend/both for this change.
+6. In a private browser window with no signed-in account, scan an existing or new
+   employee QR. Confirm it opens that employee's attendance without a login page,
+   shows the correct name/action, and exposes no directory/history/profile controls.
+7. Confirm denied/outside/inaccurate GPS blocks the camera. Check valid in-store
+   location opens it, moving outside blocks the shutter, and confirmation saves
+   the proper private photo. Verify Clock in → Clock out → another Clock in, and
+   an overnight checkout retains its start context.
+8. Regenerate the code while an old camera/upload is open. Confirm old links and
+   unfinished commits fail, the new code works, account deactivation denies QR
+   access, and altered employee IDs cannot select another employee. Verify an
+   uncertain successful request is retried without adding events. Confirm historical
+   photos and HR employee-name editing still work and store QR stays disabled.
 
-If rolling back the frontend, keep 0012 in place to preserve evidence and rotation
-history. Do not drop the table/column or rewrite attendance history. The normal
-own-attendance route remains compatible with the previous photo-only frontend.
+Keep production migrations and deployment manual. Retain 0012/0013 tables/evidence
+if rolling back the frontend; never rewrite historical evidence. Rolling back to
+the earlier frontend restores its sign-in behavior for printed QR links.
 
 ## Local validation
 
-Run `bash scripts/check.sh`, `bash scripts/test-supabase.sh`, then from `frontend`
-run `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium CI=1 npm run test:browser`.
-The database script uses a disposable network-isolated PostgreSQL container and
-synthetic auth/Storage metadata, including real grants/RLS/transactions. Browser
-checks use the real SDK, generated QR PNG, camera canvas and intercepted services.
-They do not establish live Supabase or Cloudflare production readiness.
+Run `bash scripts/check.sh` and `bash scripts/test-supabase.sh`. From `frontend` run
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium CI=1 npm run test:browser`.
+The pinned Wrangler check in `scripts/test-worker-runtime.mjs` covers unsigned QR
+photo upload in the real Worker runtime as well as authenticated account flows.
+Database tests use real disposable PostgreSQL grants/RLS/transactions and synthetic
+Auth/Storage records. Browser services are intercepted; no live Supabase migration
+or production deployment is performed by these checks.

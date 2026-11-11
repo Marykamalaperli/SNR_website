@@ -121,6 +121,23 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
                 });
               const json = (value) => RuntimeResponse.json(value);
               if (path === '/auth/v1/user') return json({ id: actor });
+              if (path === '/rest/v1/rpc/employee_qr_attendance_gateway') {
+                assert.equal(request.headers.get('apikey'), settings.adminKey);
+                assert.equal(data.p_token, '98000000-0000-4000-8000-000000000001');
+                if (data.p_operation === 'context')
+                  return json({ user_id: actor, employee_id: employee });
+                if (data.p_operation === 'prepare')
+                  return json({
+                    intent_id: operation,
+                    user_id: actor,
+                    bucket_id: 'attendance-clock-in',
+                    object_path: photoPath,
+                    sha256: photoHash,
+                  });
+                if (data.p_operation === 'commit')
+                  return json({ id: operation, storage_saved: true, employee_qr_verified: true });
+                assert.fail('Unexpected QR operation');
+              }
               if (path === '/rest/v1/rpc/prepare_attendance_photo')
                 return json({
                   intent_id: operation,
@@ -233,6 +250,46 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
       'PASS Worker ' +
         compatibilityDate +
         ': verified private attendance photo upload and caller-scoped commit',
+    );
+    calls = [];
+    const qrToken = '98000000-0000-4000-8000-000000000001';
+    const unsigned = await runtime.dispatchFetch(
+      'https://workspace.snr-nest.test/api/attendance/qr/photos',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          qrToken,
+          id: operation,
+          employeeId: employee,
+          type: 'clock_in',
+          previousId: null,
+          location: { latitude: 12.97 },
+          evidence: {
+            qr: qrToken,
+            photo: {
+              jpeg_base64: photoBytes.toString('base64'),
+              captured_at: new Date().toISOString(),
+              consent_version: 'attendance-photo-location-v1',
+            },
+          },
+        }),
+      },
+    );
+    assert.equal(unsigned.status, 200);
+    assert.equal((await unsigned.json()).employee_qr_verified, true);
+    assert.equal(
+      calls.some((call) => call.path.startsWith('/auth/')),
+      false,
+    );
+    assert.deepEqual(
+      calls
+        .filter((call) => call.path.endsWith('employee_qr_attendance_gateway'))
+        .map((call) => call.data.p_operation),
+      ['context', 'prepare', 'commit'],
+    );
+    console.log(
+      `PASS Worker ${compatibilityDate}: attendance-only QR upload without sign-in or Auth session`,
     );
   } finally {
     await runtime.dispose();

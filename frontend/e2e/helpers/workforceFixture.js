@@ -240,6 +240,115 @@ export async function workforceFixture(
       qr_required: false,
     });
   }
+  function buildAttendanceWorkspace() {
+    const person = state.people[0];
+    const plan = state.assignments.find(
+      (assignment) => assignment.employee_id === person?.id && !assignment.cancelled,
+    );
+    const shift = state.shifts.find((shift) => shift.id === plan?.shift_id);
+    const last = state.punches.at(-1);
+    return {
+      role,
+      today: state.today,
+      location_required: state.locationEnabled,
+      evidence_required: state.evidenceEnabled,
+      storage_required: state.storageEnabled,
+      camera_location_policy: 'location-before-camera-v1',
+      qr_required: !state.photoOnlyEnabled,
+      attendance_capture_policy: state.photoOnlyEnabled ? 'store-50m-photo-v1' : null,
+      attendance_radius_meters: 50,
+      evidence_notice_version: 'attendance-photo-location-v1',
+      location_notice_version: 'attendance-location-v1',
+      store_geofence_required: state.storePolicyEnabled,
+      store_geofence_policy: 'store-radius-v1',
+      attendance_area: {
+        configured: state.storeAreas.has(person?.site_id),
+        radius_meters: state.storeAreas.get(person?.site_id)?.radius_meters,
+        site_name: person?.site_name,
+      },
+      timezone: 'Asia/Kolkata',
+      server_time: `${state.today}T04:00:00Z`,
+      sites: state.sites,
+      departments: state.departments,
+      ...(role === 'employee'
+        ? {
+            employee_id: person?.id,
+            site_name: person?.site_name,
+            site_active: true,
+            last_event_id: last?.id || null,
+            last_request_id: last?.request_id || null,
+            status: last?.event_type === 'clock_in' ? 'clocked_in' : 'clocked_out',
+            open_since: last?.occurred_at,
+            shift: shift
+              ? {
+                  name: shift.name,
+                  timezone: shift.timezone,
+                  work_date: state.today,
+                  scheduled_start: `${state.today}T04:00:00Z`,
+                  scheduled_end: `${state.today}T12:00:00Z`,
+                }
+              : null,
+            schedule: state.assignments
+              .filter(
+                (assignment) => assignment.employee_id === person?.id && !assignment.cancelled,
+              )
+              .map((assignment) => ({
+                ...assignment,
+                ...state.shifts.find((shift) => shift.id === assignment.shift_id),
+                id: assignment.id,
+                site_name: person.site_name,
+              })),
+          }
+        : {}),
+    };
+  }
+  function validateLocation(parameters, reply) {
+    const area = state.storeAreas.get(state.people[0]?.site_id);
+    if (!area) return reply({ code: 'PT409', message: 'store_area_not_configured' }, 409);
+    const distance = Math.hypot(
+      (parameters.p_location.latitude - area.latitude) * 111195,
+      (parameters.p_location.longitude - area.longitude) * 108000,
+    );
+    if (distance > area.radius_meters)
+      return reply({ code: 'PT409', message: 'outside_store_area' }, 409);
+    if (distance + parameters.p_location.accuracy_meters > area.radius_meters)
+      return reply({ code: 'PT409', message: 'store_location_uncertain' }, 409);
+    return reply({
+      site_id: state.people[0].site_id,
+      distance_meters: distance,
+      radius_meters: area.radius_meters,
+    });
+  }
+  await page.route('**/api/attendance/qr/**', async (route) => {
+    const body = route.request().postDataJSON();
+    const reply = (json, status = 200) =>
+      route.fulfill({ status, json, headers: { 'Cache-Control': 'no-store' } });
+    const person = state.people[0];
+    if (body.qrToken !== state.employeeQrs.get(person?.id)?.token)
+      return reply({ error: { code: 'employee_qr_invalid' } }, 403);
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/workspace')) {
+      const workspace = buildAttendanceWorkspace();
+      for (const key of ['sites', 'departments', 'schedule', 'role']) delete workspace[key];
+      return reply({ ...workspace, display_name: person.display_name, employee_qr_verified: true });
+    }
+    const parameters = {
+      p_event_type: body.type,
+      p_request_id: body.id,
+      p_previous_event_id: body.previousId,
+      p_employee_id: body.employeeId,
+      p_location: body.location,
+      p_evidence: body.evidence,
+    };
+    const wrapReply = (data, status = 200) =>
+      status >= 400 ? reply({ error: { code: data.message } }, status) : reply(data, status);
+    if (path.endsWith('/location')) {
+      state.calls.push({ name: 'validate_employee_qr_location', parameters });
+      return validateLocation(parameters, wrapReply);
+    }
+    state.calls.push({ name: 'record_attendance', parameters });
+    return handlePhoto(route, parameters, wrapReply);
+  });
   await page.route('**/api/attendance/photos', async (route) => {
     const body = route.request().postDataJSON();
     const parameters = {
@@ -424,85 +533,10 @@ export async function workforceFixture(
       person.version++;
       return reply(parameters.p_id || state.assignments.at(-1).id);
     }
-    if (['attendance_workspace', 'employee_qr_attendance_workspace'].includes(name)) {
-      const person = state.people[0];
-      const plan = state.assignments.find(
-        (assignment) => assignment.employee_id === person?.id && !assignment.cancelled,
-      );
-      const shift = state.shifts.find((shift) => shift.id === plan?.shift_id);
-      const last = state.punches.at(-1);
-      return reply({
-        role,
-        today: state.today,
-        location_required: state.locationEnabled,
-        evidence_required: state.evidenceEnabled,
-        storage_required: state.storageEnabled,
-        camera_location_policy: 'location-before-camera-v1',
-        qr_required: !state.photoOnlyEnabled,
-        attendance_capture_policy: state.photoOnlyEnabled ? 'store-50m-photo-v1' : null,
-        attendance_radius_meters: 50,
-        evidence_notice_version: 'attendance-photo-location-v1',
-        location_notice_version: 'attendance-location-v1',
-        store_geofence_required: state.storePolicyEnabled,
-        store_geofence_policy: 'store-radius-v1',
-        attendance_area: {
-          configured: state.storeAreas.has(person?.site_id),
-          radius_meters: state.storeAreas.get(person?.site_id)?.radius_meters,
-          site_name: person?.site_name,
-        },
-        timezone: 'Asia/Kolkata',
-        server_time: `${state.today}T04:00:00Z`,
-        sites: state.sites,
-        departments: state.departments,
-        ...(role === 'employee'
-          ? {
-              employee_id: person?.id,
-              site_name: person?.site_name,
-              site_active: true,
-              last_event_id: last?.id || null,
-              last_request_id: last?.request_id || null,
-              status: last?.event_type === 'clock_in' ? 'clocked_in' : 'clocked_out',
-              open_since: last?.occurred_at,
-              shift: shift
-                ? {
-                    name: shift.name,
-                    timezone: shift.timezone,
-                    work_date: state.today,
-                    scheduled_start: `${state.today}T04:00:00Z`,
-                    scheduled_end: `${state.today}T12:00:00Z`,
-                  }
-                : null,
-              schedule: state.assignments
-                .filter(
-                  (assignment) => assignment.employee_id === person?.id && !assignment.cancelled,
-                )
-                .map((assignment) => ({
-                  ...assignment,
-                  ...state.shifts.find((shift) => shift.id === assignment.shift_id),
-                  id: assignment.id,
-                  site_name: person.site_name,
-                })),
-            }
-          : {}),
-      });
-    }
-    if (['validate_attendance_location', 'validate_employee_qr_location'].includes(name)) {
-      const area = state.storeAreas.get(state.people[0]?.site_id);
-      if (!area) return reply({ code: 'PT409', message: 'store_area_not_configured' }, 409);
-      const distance = Math.hypot(
-        (parameters.p_location.latitude - area.latitude) * 111195,
-        (parameters.p_location.longitude - area.longitude) * 108000,
-      );
-      if (distance > area.radius_meters)
-        return reply({ code: 'PT409', message: 'outside_store_area' }, 409);
-      if (distance + parameters.p_location.accuracy_meters > area.radius_meters)
-        return reply({ code: 'PT409', message: 'store_location_uncertain' }, 409);
-      return reply({
-        site_id: state.people[0].site_id,
-        distance_meters: distance,
-        radius_meters: area.radius_meters,
-      });
-    }
+    if (['attendance_workspace', 'employee_qr_attendance_workspace'].includes(name))
+      return reply(buildAttendanceWorkspace());
+    if (['validate_attendance_location', 'validate_employee_qr_location'].includes(name))
+      return validateLocation(parameters, reply);
     if (name === 'record_attendance') return handlePhoto(route, parameters, reply);
     if (name === 'attendance_location_details') {
       if (role === 'supervisor')

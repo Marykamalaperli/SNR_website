@@ -270,3 +270,19 @@ organization serialization lock; committed exact retries remain recoverable.
 Location-first 50-metre selfie checks, overnight/pair semantics, private buckets,
 server filename rules and historical evidence are preserved. See
 [personal employee QR activation](EMPLOYEE_ATTENDANCE_QR.md) for manual rollout.
+
+## Attendance-only QR access without sign-in (11 November 2026)
+
+The owner explicitly replaced the sign-in requirement for personal employee QR.
+The QR now acts as an attendance-only bearer credential for its assigned employee;
+it grants no workspace session, directory, account changes, history or photo reads.
+Migration 0013 adds a service-role-only, allowlisted attendance dispatcher behind
+narrow Pages endpoints. It derives subject/scope from the current QR, verifies
+active Employee/Auth state, confines/restores transaction-local claims, and reuses
+the existing normal attendance/GPS/photo transactions. Browser requests contain
+no Auth token or cookies. New QR URLs use `/attendance`; older printed fragment
+links redirect there without login. QR regeneration, 50-metre GPS accuracy checks,
+location-before-camera/shutter, private Storage and filenames remain enforced.
+Anyone with a copied QR can attempt that employee's attendance; photo/GPS are
+required evidence, not biometric identity verification. This explicitly supersedes
+the earlier decision to require the matching account's sign-in for personal QR.

@@ -213,3 +213,38 @@ it('binds personal QR preflight and upload to the same signed-in employee intent
   });
   expect(JSON.parse(fetch.mock.calls[0][1].body).evidence.qr).toBe(qr);
 });
+
+it('opens and records QR attendance without reading or sending a signed-in session', async () => {
+  fetch.mockImplementation(
+    async () => new Response('{}', { headers: { 'Content-Type': 'application/json' } }),
+  );
+  const { loadQrAttendanceAccess, validateAttendanceLocation } =
+    await import('../services/attendanceService');
+  const token = '90000000-0000-4000-8000-000000000001';
+  await loadQrAttendanceAccess(token);
+  await validateAttendanceLocation(
+    { qrAccess: true, qrToken: token, type: 'clock_in', employeeId: 'employee' },
+    { latitude: 12 },
+  );
+  await recordAttendance({
+    qrAccess: true,
+    type: 'clock_in',
+    id: 'request',
+    employeeId: 'employee',
+    evidence: {
+      qr: token,
+      photo: { jpeg_base64: 'jpeg', captured_at: 'now', consent_version: 'notice' },
+    },
+  });
+  expect(getAuthClient).not.toHaveBeenCalled();
+  expect(fetch.mock.calls.map((call) => call[0])).toEqual([
+    '/api/attendance/qr/workspace',
+    '/api/attendance/qr/location',
+    '/api/attendance/qr/photos',
+  ]);
+  for (const [, options] of fetch.mock.calls) {
+    expect(options.headers).not.toHaveProperty('Authorization');
+    expect(options.credentials).toBe('omit');
+    expect(JSON.parse(options.body).qrToken).toBe(token);
+  }
+});

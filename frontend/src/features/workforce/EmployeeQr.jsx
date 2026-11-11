@@ -18,7 +18,7 @@ export default function EmployeeQr({ employeeId, onClose }) {
   useEffect(() => {
     let active = true;
     if (data) {
-      const link = new URL('/me/attendance', window.location.origin);
+      const link = new URL('/attendance', window.location.origin);
       link.hash = 'employee-qr=' + data.token;
       QRCode.toDataURL(link.href, { width: 480, margin: 4, errorCorrectionLevel: 'M' }).then(
         (src) => {
@@ -56,8 +56,8 @@ export default function EmployeeQr({ employeeId, onClose }) {
         <>
           <h3>{data.display_name}</h3>
           <p>
-            Scan this personal QR to open attendance. The employee must sign in to their own
-            account, verify their store location and take a selfie.
+            Scan this personal QR to open attendance. No sign-in is needed. The employee must verify
+            their store location and take a selfie. Keep this code private.
           </p>
           {image?.data === data && (
             <>
