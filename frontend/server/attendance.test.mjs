@@ -294,3 +294,30 @@ test('HR-only map resolution follows approved redirects without forwarding any c
   );
   assert.notEqual(failed.status, 200);
 });
+
+test('personal QR is passed only to caller-authorized SQL and a replaced QR stops before Storage upload', async () => {
+  const qr = '90000000-0000-4000-8000-000000000001';
+  const flow = upstream();
+  const result = await handleAttendance(
+    req({ ...action, evidence: { photo, qr } }),
+    settings,
+    flow,
+  );
+  assert.equal(result.status, 200);
+  const preparation = flow.calls.find((call) => call.path.endsWith('prepare_attendance_photo'));
+  assert.equal(JSON.parse(preparation.options.body).p_action.evidence.qr, qr);
+  assert.equal(preparation.options.headers.Authorization, 'Bearer fixture-user-token');
+  const calls = [];
+  const rejected = await handleAttendance(req({ ...action, evidence: { photo, qr } }), settings, {
+    fetcher: async (url) => {
+      calls.push(url);
+      if (url.endsWith('/auth/v1/user')) return json({ id: user });
+      if (url.endsWith('/prepare_attendance_photo'))
+        return json({ code: 'PT403', message: 'employee_qr_invalid' }, 403);
+      throw new Error('Rejected QR reached upload or commit');
+    },
+  });
+  assert.equal(rejected.status, 403);
+  assert.equal((await rejected.json()).error.code, 'employee_qr_invalid');
+  assert.equal(calls.length, 2);
+});

@@ -9,7 +9,7 @@ import { dateLabel, momentLabel } from './attendanceFormat';
 import AttendanceCapture from './AttendanceCapture';
 import { EVIDENCE_NOTICE_VERSION } from '../../services/attendanceCaptureService';
 
-export default function PunchCard({ workspace, onRecorded, onRefresh }) {
+export default function PunchCard({ workspace, onRecorded, onRefresh, qrToken = null }) {
   const [pending, setPending] = useState(null);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -50,11 +50,12 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
         type: workspace.status === 'clocked_in' ? 'clock_out' : 'clock_in',
         previousId: workspace.last_event_id,
         employeeId: workspace.employee_id,
+        qrToken,
       },
       location,
     );
     return location;
-  }, [workspace.status, workspace.last_event_id, workspace.employee_id]);
+  }, [workspace.status, workspace.last_event_id, workspace.employee_id, qrToken]);
   async function punch(evidence) {
     if (
       busy.current ||
@@ -84,7 +85,7 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
           previousId: workspace.last_event_id,
           employeeId: workspace.employee_id,
           location,
-          evidence,
+          evidence: { ...evidence, ...(qrToken ? { qr: qrToken } : {}) },
         };
       }
       const receipt = await recordAttendance(action);
@@ -96,6 +97,7 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
         receipt.photo_saved !== true ||
         receipt.qr_required !== false ||
         receipt.storage_saved !== true ||
+        (qrToken && receipt.employee_qr_verified !== true) ||
         !Number.isFinite(Date.parse(receipt.occurred_at))
       ) {
         setPending(action);
@@ -137,6 +139,9 @@ export default function PunchCard({ workspace, onRecorded, onRefresh }) {
           {clockedIn ? 'Clocked in' : 'Clocked out'}
         </StatusBadge>
       </div>
+      {qrToken && (
+        <p className="success-notice">Personal employee QR verified for your signed-in account.</p>
+      )}
       <h2>{clockedIn ? 'Your workday is underway' : 'Ready for your workday?'}</h2>
       <p className="muted">
         {clockedIn

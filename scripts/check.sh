@@ -12,8 +12,8 @@ npm run build
 cd "$project_root/backend"
 .venv/bin/python -m ruff check .
 .venv/bin/python -m ruff check --config pyproject.toml ../scripts/bootstrap_gcp.py
-.venv/bin/python -m ruff check --config pyproject.toml ../scripts/test_workspace_concurrency.py ../scripts/test_photo_qr_concurrency.py
+.venv/bin/python -m ruff check --config pyproject.toml ../scripts/test_workspace_concurrency.py ../scripts/test_photo_qr_concurrency.py ../scripts/test_employee_qr_concurrency.py
 .venv/bin/python -m ruff format --check .
 .venv/bin/python -m ruff format --check --config pyproject.toml ../scripts/bootstrap_gcp.py
-.venv/bin/python -m ruff format --check --config pyproject.toml ../scripts/test_workspace_concurrency.py ../scripts/test_photo_qr_concurrency.py
+.venv/bin/python -m ruff format --check --config pyproject.toml ../scripts/test_workspace_concurrency.py ../scripts/test_photo_qr_concurrency.py ../scripts/test_employee_qr_concurrency.py
 .venv/bin/python -m pytest

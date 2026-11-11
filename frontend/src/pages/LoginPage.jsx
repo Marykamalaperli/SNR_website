@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff, ArrowRight, LockKeyhole } from 'lucide-react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../components/common/Button';
 import FormField from '../components/forms/FormField';
 import { useAuth } from '../hooks/useAuth';
@@ -11,6 +11,12 @@ export default function LoginPage() {
   usePageMeta('Sign In', 'Sign in to your SNR NEST workspace.', true);
   const { session, signIn } = useAuth();
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const attendanceReturn =
+    typeof state?.from === 'string' &&
+    /^\/me\/attendance#employee-qr=[0-9a-f-]{36}$/.test(state.from)
+      ? state.from
+      : null;
   const [visible, setVisible] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -33,7 +39,10 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const confirmed = await signIn(email, password);
-      navigate(confirmed.workspace, { replace: true });
+      navigate(
+        confirmed.role === 'employee' && attendanceReturn ? attendanceReturn : confirmed.workspace,
+        { replace: true },
+      );
     } catch (error) {
       setMessage(error.message || 'Sign-in is unavailable. Please try again later.');
     } finally {
@@ -41,7 +50,13 @@ export default function LoginPage() {
     }
   }
 
-  if (session) return <Navigate to={session.workspace} replace />;
+  if (session)
+    return (
+      <Navigate
+        to={session.role === 'employee' && attendanceReturn ? attendanceReturn : session.workspace}
+        replace
+      />
+    );
   return (
     <>
       <div className="login-heading">

@@ -14,6 +14,7 @@ import EmployeeForm from './EmployeeForm';
 import ManageAccountForm from './ManageAccountForm';
 import PendingAccounts from './PendingAccounts';
 import EmployeeShifts from './EmployeeShifts';
+import EmployeeQr from './EmployeeQr';
 
 const initialFilters = { search: '', site: '', department: '', status: 'active', page: 1 };
 const roleNames = { employee: 'Employee', supervisor: 'Supervisor', hr: 'HR' };
@@ -24,6 +25,7 @@ export default function EmployeeDirectory({ manage = false }) {
   const [editor, setEditor] = useState(null);
   const [accountEditor, setAccountEditor] = useState(null);
   const [shiftEditor, setShiftEditor] = useState(null);
+  const [qrEmployee, setQrEmployee] = useState(null);
   const [notice, setNotice] = useState('');
   const [accountRevision, setAccountRevision] = useState(0);
   const fetchDirectory = useCallback(() => loadDirectory(filters), [filters]);
@@ -94,6 +96,15 @@ export default function EmployeeDirectory({ manage = false }) {
             >
               Manage account
             </Button>
+            {row.role === 'employee' && row.active && (
+              <Button
+                variant="text"
+                aria-label={`Attendance QR ${row.display_name}`}
+                onClick={() => setQrEmployee(row.id)}
+              >
+                Attendance QR
+              </Button>
+            )}
             {row.role === 'employee' && row.active && (
               <Button
                 variant="text"
@@ -339,7 +350,8 @@ export default function EmployeeDirectory({ manage = false }) {
             setAccountRevision((value) => value + 1);
             directory.reload();
           }}
-          onSaved={(message) => {
+          onSaved={(message, employeeId) => {
+            if (employeeId) setQrEmployee(employeeId);
             setEditor(null);
             setAccountRevision((value) => value + 1);
             setNotice(message);
@@ -363,6 +375,7 @@ export default function EmployeeDirectory({ manage = false }) {
           }}
         />
       )}
+      {qrEmployee && <EmployeeQr employeeId={qrEmployee} onClose={() => setQrEmployee(null)} />}
       {shiftEditor && (
         <EmployeeShifts
           record={shiftEditor}

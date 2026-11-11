@@ -6,7 +6,8 @@ export default function ProtectedRoute({ role }) {
   const { session, loading } = useAuth();
   const location = useLocation();
   if (loading) return <LoadingState label="Opening your workspace…" />;
-  if (!session) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!session)
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.hash }} />;
   if (session.role !== role) {
     return (
       <ErrorState

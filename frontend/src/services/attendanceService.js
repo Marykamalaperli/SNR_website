@@ -1,6 +1,9 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  employee_qr_invalid:
+    'This QR is invalid, replaced, or belongs to another employee. Sign in with the correct account or ask HR for the current QR.',
+
   employee_name_required:
     'Ask HR to save your full name in your employee profile before clocking in or out.',
   attendance_storage_required:
@@ -89,6 +92,14 @@ async function request(name, parameters = {}) {
 }
 
 export const loadAttendanceWorkspace = () => request('attendance_workspace');
+export const loadEmployeeQr = (employeeId, rotate = false, version = null) =>
+  request('hr_employee_attendance_qr', {
+    p_employee_id: employeeId,
+    p_rotate: rotate,
+    p_version: version,
+  });
+export const loadQrAttendanceWorkspace = (token) =>
+  request('employee_qr_attendance_workspace', { p_token: token });
 export function loadAttendanceRecords({
   from,
   to,
@@ -108,8 +119,9 @@ export function loadAttendanceRecords({
     p_page: page,
   });
 }
-export const validateAttendanceLocation = ({ type, previousId, employeeId }, location) =>
-  request('validate_attendance_location', {
+export const validateAttendanceLocation = ({ type, previousId, employeeId, qrToken }, location) =>
+  request(qrToken ? 'validate_employee_qr_location' : 'validate_attendance_location', {
+    ...(qrToken ? { p_token: qrToken } : {}),
     p_employee_id: employeeId,
     p_event_type: type,
     p_previous_event_id: previousId || null,
@@ -172,6 +184,9 @@ export const recordAttendance = ({ type, id, previousId, employeeId, location, e
       : null,
     evidence: evidence
       ? {
+          ...(/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(evidence.qr || '')
+            ? { qr: evidence.qr }
+            : {}),
           photo: {
             jpeg_base64: evidence.photo.jpeg_base64,
             captured_at: evidence.photo.captured_at,

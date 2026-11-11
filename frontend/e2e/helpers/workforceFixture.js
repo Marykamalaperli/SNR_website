@@ -30,6 +30,7 @@ export async function workforceFixture(
     shifts: [],
     people: [],
     calls: [],
+    employeeQrs: new Map(),
     nextError: null,
     accountCalls: [],
     pending: [],
@@ -103,8 +104,14 @@ export async function workforceFixture(
         photo_saved: true,
         qr_verified: false,
         qr_required: false,
+        employee_qr_verified: Boolean(existing.employee_qr_verified),
       });
     const person = state.people[0];
+    if (
+      parameters.p_evidence?.qr &&
+      parameters.p_evidence.qr !== state.employeeQrs.get(person.id)?.token
+    )
+      return reply({ code: 'PT403', message: 'employee_qr_invalid' }, 403);
     if (!parameters.p_evidence?.photo?.jpeg_base64)
       return reply({ code: 'PT422', message: 'attendance_evidence_required' }, 422);
     if (
@@ -146,6 +153,7 @@ export async function workforceFixture(
       id: id('9', state.punches.length + 1),
       request_id: parameters.p_request_id,
       event_type: parameters.p_event_type,
+      employee_qr_verified: Boolean(parameters.p_evidence?.qr),
       occurred_at: `${state.today}T${parameters.p_event_type === 'clock_in' ? '04' : '12'}:00:00Z`,
     };
     state.punches.push(punch);
@@ -223,6 +231,7 @@ export async function workforceFixture(
     }
     return reply({
       ...punch,
+      employee_qr_verified: Boolean(parameters.p_evidence?.qr),
       replayed: false,
       location_saved: true,
       storage_saved: true,
@@ -335,6 +344,32 @@ export async function workforceFixture(
     const parameters = route.request().postDataJSON();
     state.calls.push({ name, parameters });
     if (missingMigration) return reply({ code: 'PGRST202', message: 'missing procedure' }, 404);
+    if (name === 'hr_employee_attendance_qr') {
+      const person = state.people.find((p) => p.id === parameters.p_employee_id);
+      if (role !== 'hr' || !person)
+        return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
+      let qr = state.employeeQrs.get(person.id) || {
+        token: '90000000-0000-4000-8000-000000000001',
+        version: 1,
+      };
+      if (parameters.p_rotate) {
+        if (parameters.p_version !== qr.version)
+          return reply({ code: 'PT409', message: 'record_changed' }, 409);
+        qr = {
+          token: '90000000-0000-4000-8000-' + String(qr.version + 1).padStart(12, '0'),
+          version: qr.version + 1,
+        };
+      }
+      state.employeeQrs.set(person.id, qr);
+      return reply({ ...qr, employee_id: person.id, display_name: person.display_name });
+    }
+    if (['employee_qr_attendance_workspace', 'validate_employee_qr_location'].includes(name)) {
+      if (
+        role !== 'employee' ||
+        parameters.p_token !== state.employeeQrs.get(state.people[0]?.id)?.token
+      )
+        return reply({ code: 'PT403', message: 'employee_qr_invalid' }, 403);
+    }
     if (name === 'hr_employee_shifts') {
       const person = state.people.find((person) => person.id === parameters.p_employee_id);
       return reply({
@@ -389,7 +424,7 @@ export async function workforceFixture(
       person.version++;
       return reply(parameters.p_id || state.assignments.at(-1).id);
     }
-    if (name === 'attendance_workspace') {
+    if (['attendance_workspace', 'employee_qr_attendance_workspace'].includes(name)) {
       const person = state.people[0];
       const plan = state.assignments.find(
         (assignment) => assignment.employee_id === person?.id && !assignment.cancelled,
@@ -451,7 +486,7 @@ export async function workforceFixture(
           : {}),
       });
     }
-    if (name === 'validate_attendance_location') {
+    if (['validate_attendance_location', 'validate_employee_qr_location'].includes(name)) {
       const area = state.storeAreas.get(state.people[0]?.site_id);
       if (!area) return reply({ code: 'PT409', message: 'store_area_not_configured' }, 409);
       const distance = Math.hypot(

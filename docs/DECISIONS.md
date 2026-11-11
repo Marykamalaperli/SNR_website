@@ -256,3 +256,17 @@ The Pages handler accepts both trusted naming formats and retains caller/request
 bucket/digest validation. Storage authorization follows committed scoped evidence,
 not folder structure. The 50-metre, photo-only and HTTP 204 confirmation rules
 continue to apply. See ATTENDANCE_PHOTO_NAMES.md for rollout and safe-name limits.
+
+## Personal employee QR attendance (11 November 2026)
+
+The owner requested individual employee QR issuance/download and immediate old-code
+invalidation on regeneration. Migration 0012 adds an HR-scoped private token table,
+transactional issuance during account completion, authenticated employee-only QR
+workspace/preflight RPCs, and prepare/commit revalidation. The existing signed-in
+own-attendance flow stays available; the code is a shortcut, never sign-in authority.
+Store QR remains disabled. Tokens use URL fragments to avoid page-request/referrer
+exposure and never choose the caller's identity. Rotation shares attendance's
+organization serialization lock; committed exact retries remain recoverable.
+Location-first 50-metre selfie checks, overnight/pair semantics, private buckets,
+server filename rules and historical evidence are preserved. See
+[personal employee QR activation](EMPLOYEE_ATTENDANCE_QR.md) for manual rollout.

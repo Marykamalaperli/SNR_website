@@ -181,3 +181,35 @@ it('loads private photos through short-lived signed Storage URLs', async () => {
   expect(signed).toHaveBeenCalledWith('org/user/file.jpg', 60);
   expect(result.clock_in.photo.signed_url).toContain('token=fixture');
 });
+
+it('binds personal QR preflight and upload to the same signed-in employee intent', async () => {
+  const { loadEmployeeQr, loadQrAttendanceWorkspace, validateAttendanceLocation } =
+    await import('../services/attendanceService');
+  const qr = '90000000-0000-4000-8000-000000000001';
+  await loadEmployeeQr('employee', true, 3);
+  expect(client.rpc).toHaveBeenLastCalledWith('hr_employee_attendance_qr', {
+    p_employee_id: 'employee',
+    p_rotate: true,
+    p_version: 3,
+  });
+  await loadQrAttendanceWorkspace(qr);
+  expect(client.rpc).toHaveBeenLastCalledWith('employee_qr_attendance_workspace', { p_token: qr });
+  await validateAttendanceLocation(
+    { type: 'clock_out', previousId: 'open-event', employeeId: 'employee', qrToken: qr },
+    { latitude: 12 },
+  );
+  expect(client.rpc).toHaveBeenLastCalledWith('validate_employee_qr_location', {
+    p_token: qr,
+    p_employee_id: 'employee',
+    p_event_type: 'clock_out',
+    p_previous_event_id: 'open-event',
+    p_location: { latitude: 12 },
+  });
+  await recordAttendance({
+    type: 'clock_out',
+    id: 'request',
+    employeeId: 'employee',
+    evidence: { qr, photo: { jpeg_base64: 'jpeg', captured_at: 'now', consent_version: 'notice' } },
+  });
+  expect(JSON.parse(fetch.mock.calls[0][1].body).evidence.qr).toBe(qr);
+});

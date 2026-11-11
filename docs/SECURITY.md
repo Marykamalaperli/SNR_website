@@ -140,3 +140,11 @@ area save uses a fixed 50-metre radius; existing preflight and the commit-time
 location trigger enforce distance plus reported accuracy within that boundary.
 Photo upload, private access, consent and audit rules are unchanged. Historical
 QR verification is shown only for evidence that actually has a saved QR version.
+
+Migration 0012 adds personal employee QR shortcuts; store QR stays disabled.
+Personal links never authorize another identity. QR workspace/camera/shutter and
+photo prepare/commit RPCs require the matching active Employee. HR can issue/read/
+rotate only within its organization. QR storage has no browser grants, operations
+are audited and rotation uses attendance serialization. Committed exact retries
+survive rotation without another punch; unfinished old-code requests are rejected.
+See [personal QR security and activation](EMPLOYEE_ATTENDANCE_QR.md).

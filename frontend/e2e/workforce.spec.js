@@ -47,6 +47,9 @@ test('HR configures a workplace, adds an employee, edits access, and reloads per
   await dialog.getByLabel('Site', { exact: true }).selectOption({ label: 'Main office' });
   await dialog.getByLabel('Department', { exact: true }).selectOption({ label: 'Operations' });
   await dialog.getByRole('button', { name: 'Create employee', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Employee attendance QR' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Download QR' })).toBeVisible();
+  await page.getByRole('button', { name: 'Close dialog' }).click();
   await expect(page.getByText('New Team Member', { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: 'Edit employee New Team Member' }).click();

@@ -31,18 +31,22 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
   );
   async function submit(values) {
     try {
+      let createdEmployee = null;
       if (record) await saveEmployee(values, record);
       else {
         const result = pending
           ? await recoverStaffAccount(pending)
           : await createStaffAccount(values, requestId.current, mode);
+        if (values.role === 'employee' && values.active !== 'false')
+          createdEmployee = result.employee_id;
         if (result.status === 'failed') {
           setPending(null);
           requestId.current = crypto.randomUUID();
           throw new Error('No account setup was confirmed. Review the details and try again.');
         }
       }
-      onSaved(record ? 'Employee changes saved.' : 'Employee account and profile saved.');
+      if (record) onSaved('Employee changes saved.');
+      else onSaved('Employee account and profile saved.', createdEmployee);
     } catch (error) {
       if (error.operationClosed) {
         setPending(null);

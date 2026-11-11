@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Card from '../../components/common/Card';
@@ -6,13 +7,22 @@ import Button from '../../components/common/Button';
 import PageHeader from '../../components/dashboard/PageHeader';
 import { ErrorState, LoadingState } from '../../components/common/States';
 import useRemoteData from '../../hooks/useRemoteData';
-import { loadAttendanceWorkspace } from '../../services/attendanceService';
+import {
+  loadAttendanceWorkspace,
+  loadQrAttendanceWorkspace,
+} from '../../services/attendanceService';
 import PunchCard from './PunchCard';
 import AttendanceRecords from './AttendanceRecords';
 
 export default function LiveAttendance({ role, home = false }) {
   const { session } = useAuth();
-  const workspace = useRemoteData(loadAttendanceWorkspace);
+  const { hash } = useLocation();
+  const qrToken = hash.startsWith('#employee-qr=') ? hash.slice(13) : null;
+  const loader = useCallback(
+    () => (qrToken !== null ? loadQrAttendanceWorkspace(qrToken) : loadAttendanceWorkspace()),
+    [qrToken],
+  );
+  const workspace = useRemoteData(loader);
   const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState('');
   const own = role === 'employee';
@@ -75,7 +85,15 @@ export default function LiveAttendance({ role, home = false }) {
       )}
       {workspace.data && workspace.data.role === role && (
         <>
-          {own && <PunchCard workspace={workspace.data} onRecorded={refresh} onRefresh={refresh} />}
+          {own && (
+            <PunchCard
+              key={qrToken || 'ordinary'}
+              qrToken={qrToken}
+              workspace={workspace.data}
+              onRecorded={refresh}
+              onRefresh={refresh}
+            />
+          )}
           <AttendanceRecords workspace={workspace.data} revision={revision} own={own} />
         </>
       )}

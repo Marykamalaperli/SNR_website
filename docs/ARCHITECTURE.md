@@ -233,3 +233,17 @@ The Pages handler accepts both trusted naming formats and retains caller/request
 bucket/digest validation. Storage authorization follows committed scoped evidence,
 not folder structure. The 50-metre, photo-only and HTTP 204 confirmation rules
 continue to apply. See ATTENDANCE_PHOTO_NAMES.md for rollout and safe-name limits.
+
+## Personal employee QR links (0012)
+
+The dashboard issues an individual QR during active Employee account completion;
+HR can also retrieve or regenerate it through a tenant-scoped audited RPC. A
+private RLS table stores a random token/version per employee. Fragment links open
+own attendance and retain their destination through sign-in. PostgreSQL derives
+identity and checks ownership, active membership and current QR at workspace load,
+location preflight, photo reservation and commit. Regeneration serializes with
+attendance and blocks old-code unfinished captures/uploads. An insert trigger
+snapshots the checked personal version on private Storage evidence, separately
+from historical store QR metadata. Exact committed retries preserve receipts.
+All existing state, GPS, Storage naming and evidence-access transactions remain
+in use. See [personal employee QR](EMPLOYEE_ATTENDANCE_QR.md).

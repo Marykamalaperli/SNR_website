@@ -15,6 +15,11 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'employee-qr',
+      testMatch: /employee-qr.spec.js/,
+      use: { baseURL: 'http://127.0.0.1:5174' },
+    },
+    {
       name: 'attendance',
       testMatch: /attendance.spec.js/,
       use: { baseURL: 'http://127.0.0.1:5174' },
