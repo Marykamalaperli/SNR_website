@@ -99,6 +99,12 @@ test('a replaced or other employee QR cannot open capture and rotation during se
   const state = await workforceFixture(page, { role: 'employee', populated: true });
   ready(state);
   await installAttendanceCamera(page);
+  // Exercise a slow membership check: the login helper must await the completed
+  // workspace redirect before this test opens a different attendance URL.
+  await page.route('**/rest/v1/rpc/current_workspace', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await route.fallback();
+  });
   await signInWorkforce(page);
   await page.goto('/me/attendance#employee-qr=90000000-0000-4000-8000-000000000099');
   await expect(page.getByText(/This QR is invalid, replaced/)).toBeVisible();

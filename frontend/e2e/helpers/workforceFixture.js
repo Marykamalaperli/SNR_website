@@ -715,4 +715,7 @@ export async function signInWorkforce(page) {
   await page.getByLabel('Email address').fill('workspace-test@example.invalid');
   await page.getByLabel('Password', { exact: true }).fill('workforce-test-password');
   await page.getByRole('button', { name: 'Sign In', exact: true }).click();
+  // Sign-in verifies membership asynchronously before navigating. Do not let a
+  // caller's next navigation race with LoginPage's final workspace redirect.
+  await page.waitForURL((url) => /^\/(hr|me|team)$/.test(url.pathname));
 }
