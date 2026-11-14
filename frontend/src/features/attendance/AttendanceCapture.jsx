@@ -11,11 +11,13 @@ export default function AttendanceCapture({
   onClose,
   busy,
   checkLocation,
+  title,
+  confirmLabel,
 }) {
   const [photo, setPhoto] = useState(null);
   return (
     <Modal
-      title={clockedIn ? 'Clock out at your store' : 'Clock in at your store'}
+      title={title || (clockedIn ? 'Clock out at your store' : 'Clock in at your store')}
       onClose={onClose}
       busy={busy}
     >
@@ -58,7 +60,9 @@ export default function AttendanceCapture({
               Retake photo
             </Button>
             <Button onClick={() => onConfirm({ photo })} disabled={busy}>
-              {busy ? 'Recording…' : clockedIn ? 'Confirm clock out' : 'Confirm clock in'}
+              {busy
+                ? 'Recording…'
+                : confirmLabel || (clockedIn ? 'Confirm clock out' : 'Confirm clock in')}
             </Button>
           </div>
         </>

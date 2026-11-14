@@ -186,6 +186,7 @@ test('employee clocks in/out, keeps history on reload and recovers a lost respon
   await page.context().setGeolocation({ latitude: 12.9717, longitude: 77.5946, accuracy: 11 });
   await capturePunch(page, 'Clock out');
   await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'View my attendance history' }).click();
   await expect(page.getByRole('cell', { name: '8 h 0 min', exact: true })).toBeVisible();
   expect(state.punches).toHaveLength(2);
   expect(state.locations.size).toBe(2);
@@ -217,9 +218,9 @@ test('employee clocks in/out, keeps history on reload and recovers a lost respon
     /openstreetmap.org/,
   );
   await locationDialog.getByRole('button', { name: 'Close dialog', exact: true }).click();
-  await page.getByRole('link', { name: 'My Schedule', exact: true }).click();
+  await page.goto('/me/schedule');
   await expect(page.getByRole('cell', { name: 'Day shift', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'My Attendance', exact: true }).click();
+  await page.goto('/me/attendance');
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     (

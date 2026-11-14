@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import PublicLayout from '../layouts/PublicLayout';
 import AuthLayout from '../layouts/AuthLayout';
+import AttendanceQrPage from '../pages/AttendanceQrPage';
 import QrAttendancePage from '../pages/QrAttendancePage';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
@@ -18,12 +19,16 @@ const DemoWorkspace = import.meta.env.DEV
 export default function AppRoutes() {
   const location = useLocation();
   // Printed QR links issued before the attendance-only route remain usable.
-  if (location.pathname === '/me/attendance' && location.hash.startsWith('#employee-qr='))
-    return <Navigate to={'/attendance' + location.hash} replace />;
+  if (
+    ['/me/attendance', '/attendance'].includes(location.pathname) &&
+    location.hash.startsWith('#employee-qr=')
+  )
+    return <Navigate to="/login?attendance=1" replace />;
   return (
     <Suspense fallback={<LoadingState />}>
       <Routes>
         <Route path="attendance" element={<QrAttendancePage />} />
+        <Route path="attendance/qr" element={<AttendanceQrPage />} />
         <Route element={<PublicLayout />}>
           <Route index element={<HomePage />} />
         </Route>

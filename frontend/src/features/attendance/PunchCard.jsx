@@ -7,15 +7,10 @@ import { recordAttendance, validateAttendanceLocation } from '../../services/att
 import { captureAttendanceLocation, LOCATION_NOTICE_VERSION } from '../../services/locationService';
 import { dateLabel, momentLabel } from './attendanceFormat';
 import AttendanceCapture from './AttendanceCapture';
+import { verifyAttendanceIdentity } from '../../services/securityAttendanceService';
 import { EVIDENCE_NOTICE_VERSION } from '../../services/attendanceCaptureService';
 
-export default function PunchCard({
-  workspace,
-  onRecorded,
-  onRefresh,
-  qrToken = null,
-  qrAccess = false,
-}) {
+export default function PunchCard({ workspace, onRecorded, onRefresh, securityFlowId = null }) {
   const [pending, setPending] = useState(null);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -56,13 +51,12 @@ export default function PunchCard({
         type: workspace.status === 'clocked_in' ? 'clock_out' : 'clock_in',
         previousId: workspace.last_event_id,
         employeeId: workspace.employee_id,
-        qrToken,
-        qrAccess,
+        securityFlowId,
       },
       location,
     );
     return location;
-  }, [workspace.status, workspace.last_event_id, workspace.employee_id, qrToken, qrAccess]);
+  }, [workspace.status, workspace.last_event_id, workspace.employee_id, securityFlowId]);
   async function punch(evidence) {
     if (
       busy.current ||
@@ -88,14 +82,17 @@ export default function PunchCard({
         setLocating(false);
         action = {
           id: crypto.randomUUID(),
-          ...(qrAccess ? { qrAccess: true } : {}),
+          ...(securityFlowId ? { securityFlowId } : {}),
           type: clockedIn ? 'clock_out' : 'clock_in',
           previousId: workspace.last_event_id,
           employeeId: workspace.employee_id,
           location,
-          evidence: { ...evidence, ...(qrToken ? { qr: qrToken } : {}) },
+          evidence,
         };
       }
+      if (securityFlowId && !action.identityId)
+        action = { ...action, identityId: await verifyAttendanceIdentity(securityFlowId, action) };
+      if (!active.current) return;
       const receipt = await recordAttendance(action);
       if (!active.current) return;
       if (
@@ -105,7 +102,7 @@ export default function PunchCard({
         receipt.photo_saved !== true ||
         receipt.qr_required !== false ||
         receipt.storage_saved !== true ||
-        (qrToken && receipt.employee_qr_verified !== true) ||
+        (securityFlowId && receipt.security_identity_verified !== true) ||
         !Number.isFinite(Date.parse(receipt.occurred_at))
       ) {
         setPending(action);
@@ -147,7 +144,7 @@ export default function PunchCard({
           {clockedIn ? 'Clocked in' : 'Clocked out'}
         </StatusBadge>
       </div>
-      {qrToken && <p className="success-notice">Personal employee QR verified.</p>}
+
       <h2>{clockedIn ? 'Your workday is underway' : 'Ready for your workday?'}</h2>
       <p className="muted">
         {clockedIn

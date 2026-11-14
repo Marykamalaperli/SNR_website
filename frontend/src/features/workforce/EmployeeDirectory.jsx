@@ -14,7 +14,7 @@ import EmployeeForm from './EmployeeForm';
 import ManageAccountForm from './ManageAccountForm';
 import PendingAccounts from './PendingAccounts';
 import EmployeeShifts from './EmployeeShifts';
-import EmployeeQr from './EmployeeQr';
+import EmployeeSecurity from './EmployeeSecurity';
 
 const initialFilters = { search: '', site: '', department: '', status: 'active', page: 1 };
 const roleNames = { employee: 'Employee', supervisor: 'Supervisor', hr: 'HR' };
@@ -25,7 +25,7 @@ export default function EmployeeDirectory({ manage = false }) {
   const [editor, setEditor] = useState(null);
   const [accountEditor, setAccountEditor] = useState(null);
   const [shiftEditor, setShiftEditor] = useState(null);
-  const [qrEmployee, setQrEmployee] = useState(null);
+  const [securityEditor, setSecurityEditor] = useState(null);
   const [notice, setNotice] = useState('');
   const [accountRevision, setAccountRevision] = useState(0);
   const fetchDirectory = useCallback(() => loadDirectory(filters), [filters]);
@@ -99,10 +99,10 @@ export default function EmployeeDirectory({ manage = false }) {
             {row.role === 'employee' && row.active && (
               <Button
                 variant="text"
-                aria-label={`Attendance QR ${row.display_name}`}
-                onClick={() => setQrEmployee(row.id)}
+                aria-label={`Attendance security ${row.display_name}`}
+                onClick={() => setSecurityEditor(row)}
               >
-                Attendance QR
+                Attendance security
               </Button>
             )}
             {row.role === 'employee' && row.active && (
@@ -131,10 +131,20 @@ export default function EmployeeDirectory({ manage = false }) {
         }
         action={
           manage && (
-            <Button disabled={!canAdd} onClick={() => setEditor({ record: null })}>
-              <Plus size={17} aria-hidden="true" />
-              Add employee
-            </Button>
+            <div className="directory-actions">
+              <Button
+                href="/attendance/qr"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="secondary"
+              >
+                Open attendance QR
+              </Button>
+              <Button disabled={!canAdd} onClick={() => setEditor({ record: null })}>
+                <Plus size={17} aria-hidden="true" />
+                Add employee
+              </Button>
+            </div>
           )
         }
       />
@@ -350,8 +360,7 @@ export default function EmployeeDirectory({ manage = false }) {
             setAccountRevision((value) => value + 1);
             directory.reload();
           }}
-          onSaved={(message, employeeId) => {
-            if (employeeId) setQrEmployee(employeeId);
+          onSaved={(message) => {
             setEditor(null);
             setAccountRevision((value) => value + 1);
             setNotice(message);
@@ -375,7 +384,9 @@ export default function EmployeeDirectory({ manage = false }) {
           }}
         />
       )}
-      {qrEmployee && <EmployeeQr employeeId={qrEmployee} onClose={() => setQrEmployee(null)} />}
+      {securityEditor && (
+        <EmployeeSecurity record={securityEditor} onClose={() => setSecurityEditor(null)} />
+      )}
       {shiftEditor && (
         <EmployeeShifts
           record={shiftEditor}

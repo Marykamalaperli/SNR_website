@@ -182,69 +182,44 @@ it('loads private photos through short-lived signed Storage URLs', async () => {
   expect(result.clock_in.photo.signed_url).toContain('token=fixture');
 });
 
-it('binds personal QR preflight and upload to the same signed-in employee intent', async () => {
-  const { loadEmployeeQr, loadQrAttendanceWorkspace, validateAttendanceLocation } =
-    await import('../services/attendanceService');
-  const qr = '90000000-0000-4000-8000-000000000001';
-  await loadEmployeeQr('employee', true, 3);
-  expect(client.rpc).toHaveBeenLastCalledWith('hr_employee_attendance_qr', {
-    p_employee_id: 'employee',
-    p_rotate: true,
-    p_version: 3,
-  });
-  await loadQrAttendanceWorkspace(qr);
-  expect(client.rpc).toHaveBeenLastCalledWith('employee_qr_attendance_workspace', { p_token: qr });
-  await validateAttendanceLocation(
-    { type: 'clock_out', previousId: 'open-event', employeeId: 'employee', qrToken: qr },
-    { latitude: 12 },
-  );
-  expect(client.rpc).toHaveBeenLastCalledWith('validate_employee_qr_location', {
-    p_token: qr,
-    p_employee_id: 'employee',
-    p_event_type: 'clock_out',
-    p_previous_event_id: 'open-event',
-    p_location: { latitude: 12 },
-  });
-  await recordAttendance({
-    type: 'clock_out',
-    id: 'request',
-    employeeId: 'employee',
-    evidence: { qr, photo: { jpeg_base64: 'jpeg', captured_at: 'now', consent_version: 'notice' } },
-  });
-  expect(JSON.parse(fetch.mock.calls[0][1].body).evidence.qr).toBe(qr);
+it('requires a signed-in session for all attendance gateway requests', async () => {
+  const { attendanceGatewayRequest } = await import('../services/attendanceService');
+  client.auth.getSession.mockResolvedValue({ data: { session: null } });
+  await expect(
+    attendanceGatewayRequest('security/workspace', { clientId: 'client' }),
+  ).rejects.toThrow('session has expired');
+  expect(fetch).not.toHaveBeenCalled();
 });
-
-it('opens and records QR attendance without reading or sending a signed-in session', async () => {
+it('binds security preflight and upload to the flow, identity proof and caller JWT without QR credentials', async () => {
   fetch.mockImplementation(
     async () => new Response('{}', { headers: { 'Content-Type': 'application/json' } }),
   );
-  const { loadQrAttendanceAccess, validateAttendanceLocation } =
-    await import('../services/attendanceService');
-  const token = '90000000-0000-4000-8000-000000000001';
-  await loadQrAttendanceAccess(token);
+  const { validateAttendanceLocation } = await import('../services/attendanceService');
   await validateAttendanceLocation(
-    { qrAccess: true, qrToken: token, type: 'clock_in', employeeId: 'employee' },
+    { securityFlowId: 'flow', type: 'clock_out', previousId: 'open', employeeId: 'employee' },
     { latitude: 12 },
   );
   await recordAttendance({
-    qrAccess: true,
-    type: 'clock_in',
+    securityFlowId: 'flow',
+    identityId: 'proof',
+    type: 'clock_out',
     id: 'request',
     employeeId: 'employee',
     evidence: {
-      qr: token,
+      qr: 'obsolete',
       photo: { jpeg_base64: 'jpeg', captured_at: 'now', consent_version: 'notice' },
     },
   });
-  expect(getAuthClient).not.toHaveBeenCalled();
-  expect(fetch.mock.calls.map((call) => call[0])).toEqual([
-    '/api/attendance/qr/workspace',
-    '/api/attendance/qr/location',
-    '/api/attendance/qr/photos',
+  expect(fetch.mock.calls.map((c) => c[0])).toEqual([
+    '/api/attendance/security/location',
+    '/api/attendance/security/photos',
   ]);
   for (const [, options] of fetch.mock.calls) {
-    expect(options.headers).not.toHaveProperty('Authorization');
-    expect(options.credentials).toBe('omit');
-    expect(JSON.parse(options.body).qrToken).toBe(token);
+    expect(options.headers.Authorization).toBe('Bearer fixture-user-token');
+    expect(JSON.parse(options.body).flowId).toBe('flow');
+    expect(JSON.parse(options.body)).not.toHaveProperty('qrToken');
   }
+  const payload = JSON.parse(fetch.mock.calls[1][1].body);
+  expect(payload.identityId).toBe('proof');
+  expect(payload.evidence).not.toHaveProperty('qr');
 });

@@ -11,6 +11,7 @@ import {
   Building2,
   ChartNoAxesCombined,
   Settings,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const workspaces = {
@@ -47,6 +48,7 @@ export const workspaces = {
       ['', 'Dashboard', LayoutDashboard],
       ['employees', 'Employees', UsersRound],
       ['attendance', 'Attendance', Clock3],
+      ['security', 'Security checks', ShieldCheck],
       ['approvals', 'Approvals', ClipboardCheck],
       ['sites', 'Sites & Shifts', Building2],
       ['documents', 'Documents', FolderOpen],

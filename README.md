@@ -48,12 +48,14 @@ employee name, local date/time and request UUID in the filename. Add employee as
 for Full name first. See [attendance photo names](docs/ATTENDANCE_PHOTO_NAMES.md)
 for the naming format, store time zone, safe-name rules and activation.
 
-Personal employee QR attendance is implemented with migration **0012**. HR can
-issue/download a QR for new or existing Employees and regenerate a lost code.
-Migration **0013** opens only that employee’s attendance without sign-in, using
-the QR as an attendance-only credential and retaining the 50-metre location-first
-selfie flow. Store QR remains disabled. Production activation and
-deployment remain manual: [personal employee QR setup](docs/EMPLOYEE_ATTENDANCE_QR.md).
+Migration **0014** replaces personal QR credentials with one common QR leading to
+Employee sign-in and a separate security attendance page. New punches require an
+HR-approved passkey plus the existing 50-metre, location-first selfie checks.
+HR can enable three or four random, two-minute photo checks per security employee's
+future attendance sessions. The common QR opens in its own display window.
+Store QR stays disabled and old history/photos are preserved. See
+[security attendance setup](docs/SECURITY_ATTENDANCE.md) for manual activation,
+enrollment, privacy and the limits of proxy-attendance prevention.
 
 ## Stack and architecture
 

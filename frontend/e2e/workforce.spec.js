@@ -47,9 +47,6 @@ test('HR configures a workplace, adds an employee, edits access, and reloads per
   await dialog.getByLabel('Site', { exact: true }).selectOption({ label: 'Main office' });
   await dialog.getByLabel('Department', { exact: true }).selectOption({ label: 'Operations' });
   await dialog.getByRole('button', { name: 'Create employee', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Employee attendance QR' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Download QR' })).toBeVisible();
-  await page.getByRole('button', { name: 'Close dialog' }).click();
   await expect(page.getByText('New Team Member', { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: 'Edit employee New Team Member' }).click();
@@ -183,6 +180,8 @@ for (const role of ['employee', 'supervisor']) {
   test(`${role} can read their scoped profiles without HR mutation controls`, async ({ page }) => {
     await workforceFixture(page, { role, populated: true });
     await signInWorkforce(page);
+    if (role === 'employee')
+      await page.getByRole('link', { name: 'View my attendance history' }).click();
     await page
       .getByRole('link', { name: role === 'employee' ? 'Profile' : 'Team Members', exact: true })
       .click();

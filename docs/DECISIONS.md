@@ -286,3 +286,23 @@ location-before-camera/shutter, private Storage and filenames remain enforced.
 Anyone with a copied QR can attempt that employee's attendance; photo/GPS are
 required evidence, not biometric identity verification. This explicitly supersedes
 the earlier decision to require the matching account's sign-in for personal QR.
+
+## Shared attendance QR, sign-in and security checks (13 November 2026)
+
+The owner replaced personal bearer QR with a common QR and credential sign-in,
+a separate attendance security page, unique employee-bound punches, and three/four
+random photo/location checks with a two-minute response window. The implementation
+uses an HR-approved employee passkey with required device user verification;
+password-only enrollment cannot authorize attendance. It binds each proof to the
+exact action and confines one active Auth session/client attendance channel.
+No biometric matching is added; native device verification does not send biometric
+templates to the app and does not justify a claim of perfect physical identity.
+
+Security staff retain the Employee role. HR selects 0/3/4 checks per employee,
+applying only to future clock-ins. Defaults stay Off to avoid silently imposing
+additional checks on unrelated staff. Server-scheduled requests persist through
+refresh/offline periods; overdue checks are missed evidence for manual HR review,
+not absence/payroll decisions. The page must stay open; no background camera/GPS
+or guaranteed locked-phone notifications are introduced. Migration 0014 disables
+the former unsigned gateway and preserves all historical records. Manual rollout
+and operational acceptance are in SECURITY_ATTENDANCE.md.

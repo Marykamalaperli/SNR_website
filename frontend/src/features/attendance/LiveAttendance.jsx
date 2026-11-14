@@ -1,5 +1,3 @@
-import { useCallback, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Card from '../../components/common/Card';
@@ -7,30 +5,13 @@ import Button from '../../components/common/Button';
 import PageHeader from '../../components/dashboard/PageHeader';
 import { ErrorState, LoadingState } from '../../components/common/States';
 import useRemoteData from '../../hooks/useRemoteData';
-import {
-  loadAttendanceWorkspace,
-  loadQrAttendanceWorkspace,
-} from '../../services/attendanceService';
-import PunchCard from './PunchCard';
+import { loadAttendanceWorkspace } from '../../services/attendanceService';
 import AttendanceRecords from './AttendanceRecords';
 
 export default function LiveAttendance({ role, home = false }) {
   const { session } = useAuth();
-  const { hash } = useLocation();
-  const qrToken = hash.startsWith('#employee-qr=') ? hash.slice(13) : null;
-  const loader = useCallback(
-    () => (qrToken !== null ? loadQrAttendanceWorkspace(qrToken) : loadAttendanceWorkspace()),
-    [qrToken],
-  );
-  const workspace = useRemoteData(loader);
-  const [revision, setRevision] = useState(0);
-  const [notice, setNotice] = useState('');
+  const workspace = useRemoteData(loadAttendanceWorkspace);
   const own = role === 'employee';
-  function refresh(message = '') {
-    setNotice(typeof message === 'string' ? message : '');
-    workspace.reload();
-    setRevision((value) => value + 1);
-  }
   return (
     <>
       <PageHeader
@@ -60,11 +41,6 @@ export default function LiveAttendance({ role, home = false }) {
           ) : undefined
         }
       />
-      {notice && (
-        <p className="success-notice" role="status">
-          {notice}
-        </p>
-      )}
       {workspace.loading && <LoadingState label="Loading attendance status…" />}
       {workspace.error && (
         <Card>
@@ -86,15 +62,19 @@ export default function LiveAttendance({ role, home = false }) {
       {workspace.data && workspace.data.role === role && (
         <>
           {own && (
-            <PunchCard
-              key={qrToken || 'ordinary'}
-              qrToken={qrToken}
-              workspace={workspace.data}
-              onRecorded={refresh}
-              onRefresh={refresh}
-            />
+            <Card className="live-punch-card">
+              <h2>Record attendance securely</h2>
+              <p>
+                Use your own sign-in, approved passkey, precise location and a fresh selfie on the
+                security attendance page.
+              </p>
+              <Button to="/attendance">
+                Open security attendance
+                <ArrowRight size={18} />
+              </Button>
+            </Card>
           )}
-          <AttendanceRecords workspace={workspace.data} revision={revision} own={own} />
+          <AttendanceRecords workspace={workspace.data} revision={0} own={own} />
         </>
       )}
     </>

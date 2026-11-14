@@ -325,93 +325,74 @@ test('personal QR is passed only to caller-authorized SQL and a replaced QR stop
 function qrRequest(body, operation = 'photos') {
   return req(body, 'qr/' + operation, { Authorization: '' });
 }
-test('unsigned personal QR uses only attendance gateway RPCs and never creates an Auth session', async () => {
-  const qr = '90000000-0000-4000-8000-000000000001';
-  const base = upstream();
-  const fixture = {
-    fetcher: async (url, options) => {
-      if (url.endsWith('employee_qr_attendance_gateway')) {
-        base.calls.push({ path: new URL(url).pathname, options });
-        assert.equal(options.headers.apikey, settings.adminKey);
-        const body = JSON.parse(options.body);
-        assert.equal(body.p_token, qr);
-        if (body.p_operation === 'context') return json({ user_id: user, employee_id: employee });
-        if (body.p_operation === 'prepare') {
-          assert.equal(body.p_payload.evidence.qr, qr);
-          return json(intent);
-        }
-        if (body.p_operation === 'commit') return json({ ...receipt, employee_qr_verified: true });
-      }
-      assert.ok(!url.includes('/auth/'), 'QR access must not invoke Auth or issue a session');
-      return base.fetcher(url, options);
-    },
-  };
-  const response = await handleAttendance(
-    qrRequest({ ...action, qrToken: qr, evidence: { photo, qr } }),
-    settings,
-    fixture,
-  );
-  assert.equal(response.status, 200);
-  assert.equal((await response.json()).employee_qr_verified, true);
-  assert.deepEqual(
-    base.calls
-      .filter((c) => c.path.endsWith('employee_qr_attendance_gateway'))
-      .map((c) => JSON.parse(c.options.body).p_operation),
-    ['context', 'prepare', 'commit'],
-  );
+test('retired unsigned QR paths require sign-in and never call upstream services', async () => {
+  let called = false;
+  for (const operation of ['workspace', 'location', 'photos']) {
+    const response = await handleAttendance(
+      qrRequest({ ...action, qrToken: requestId }, operation),
+      settings,
+      {
+        fetcher: async () => {
+          called = true;
+          throw new Error('Retired bearer path reached upstream');
+        },
+      },
+    );
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).error.code, 'sign_in_required');
+  }
+  assert.equal(called, false);
 });
-test('unsigned QR cannot select another employee, arbitrary operation, missing token or cross-origin access', async () => {
-  const qr = '90000000-0000-4000-8000-000000000001';
-  const fixture = {
-    fetcher: async (url) => {
-      assert.ok(url.endsWith('employee_qr_attendance_gateway'));
-      return json({ user_id: user, employee_id: employee });
-    },
-  };
-  const forged = await handleAttendance(
-    qrRequest({ ...action, employeeId: requestId, qrToken: qr }),
-    settings,
-    fixture,
-  );
-  assert.equal(forged.status, 403);
-  const missing = await handleAttendance(qrRequest(action), settings, fixture);
-  assert.equal(missing.status, 403);
-  const arbitrary = await handleAttendance(
-    qrRequest({ qrToken: qr }, 'records'),
-    settings,
-    fixture,
-  );
-  assert.equal(arbitrary.status, 404);
-  const foreign = await handleAttendance(
-    req({ qrToken: qr }, 'qr/workspace', { Origin: 'https://foreign.invalid', Authorization: '' }),
-    settings,
-    fixture,
-  );
-  assert.equal(foreign.status, 403);
-});
-test('QR rotated during upload is rechecked at commit and rejected', async () => {
-  const qr = '90000000-0000-4000-8000-000000000001';
+test('security photo preparation binds flow, identity proof and caller JWT before upload', async () => {
   const base = upstream();
-  let committed = false;
   const response = await handleAttendance(
-    qrRequest({ ...action, qrToken: qr, evidence: { photo, qr } }),
+    req({ ...action, flowId: 'flow', identityId: 'proof' }, 'security/photos'),
     settings,
     {
       fetcher: async (url, options) => {
-        if (url.endsWith('employee_qr_attendance_gateway')) {
+        if (url.endsWith('prepare_security_attendance_photo')) {
+          assert.equal(options.headers.Authorization, 'Bearer fixture-user-token');
           const body = JSON.parse(options.body);
-          if (body.p_operation === 'context') return json({ user_id: user, employee_id: employee });
-          if (body.p_operation === 'prepare') return json(intent);
-          if (body.p_operation === 'commit') {
-            committed = true;
-            return json({ code: 'PT403', message: 'employee_qr_invalid' }, 403);
-          }
+          assert.equal(body.p_flow_id, 'flow');
+          assert.equal(body.p_identity_id, 'proof');
+          assert.deepEqual(body.p_action, action);
+          return json(intent);
         }
         return base.fetcher(url, options);
       },
     },
   );
-  assert.equal(response.status, 403);
-  assert.equal(committed, true);
-  assert.equal((await response.json()).error.code, 'employee_qr_invalid');
+  assert.equal(response.status, 200);
+  assert.ok(base.calls.some((c) => c.path.endsWith('record_attendance_storage')));
+});
+test('random security photos use their private bucket and expired requests never upload', async () => {
+  const checkIntent = { ...intent, bucket_id: 'attendance-security-checks' };
+  const base = upstream({ photoIntent: checkIntent });
+  const make = (expired) => ({
+    fetcher: async (url, options) => {
+      if (url.endsWith('prepare_security_presence_photo'))
+        return expired
+          ? json({ code: 'PT409', message: 'security_check_expired' }, 409)
+          : json(checkIntent);
+      if (url.endsWith('verify_security_presence_upload'))
+        return new Response(null, { status: 204 });
+      if (url.endsWith('commit_security_presence'))
+        return json({ id: requestId, photo_saved: true, location_saved: true });
+      return base.fetcher(url, options);
+    },
+  });
+  const body = {
+    ...action,
+    type: 'security_check',
+    checkId: 'check',
+    flowId: 'flow',
+    identityId: 'proof',
+  };
+  const success = await handleAttendance(req(body, 'security/check-photos'), settings, make(false));
+  assert.equal(success.status, 200);
+  assert.ok(base.calls.some((c) => c.path.includes('/attendance-security-checks/')));
+  const uploads = base.calls.filter((c) => c.path.startsWith('/storage/')).length;
+  const expired = await handleAttendance(req(body, 'security/check-photos'), settings, make(true));
+  assert.equal(expired.status, 409);
+  assert.equal(base.calls.filter((c) => c.path.startsWith('/storage/')).length, uploads);
 });

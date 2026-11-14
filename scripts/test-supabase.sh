@@ -73,3 +73,6 @@ python3 "$snr_project_root/scripts/test_employee_qr_concurrency.py" "$snr_pg_con
 
 snr_psql < "$snr_project_root/supabase/migrations/202611110013_employee_qr_attendance_access.sql"
 snr_psql < "$snr_project_root/supabase/tests/employee-qr-attendance-access.sql"
+
+snr_psql < "$snr_project_root/supabase/migrations/202611130014_security_attendance.sql"
+snr_psql < "$snr_project_root/supabase/tests/security-attendance.sql"

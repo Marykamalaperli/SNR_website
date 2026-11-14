@@ -17,23 +17,23 @@ export default defineConfig({
     {
       name: 'employee-qr',
       testMatch: /employee-qr.spec.js/,
-      use: { baseURL: 'http://127.0.0.1:5174' },
+      use: { baseURL: 'http://localhost:5174' },
     },
     {
       name: 'attendance',
       testMatch: /attendance.spec.js/,
-      use: { baseURL: 'http://127.0.0.1:5174' },
+      use: { baseURL: 'http://localhost:5174' },
     },
-    { name: 'accounts', testMatch: /accounts.spec.js/, use: { baseURL: 'http://127.0.0.1:5174' } },
+    { name: 'accounts', testMatch: /accounts.spec.js/, use: { baseURL: 'http://localhost:5174' } },
     {
       name: 'workforce',
       testMatch: /workforce.spec.js/,
-      use: { baseURL: 'http://127.0.0.1:5174' },
+      use: { baseURL: 'http://localhost:5174' },
     },
     {
       name: 'authentication',
       testMatch: /authentication.spec.js/,
-      use: { baseURL: 'http://127.0.0.1:5174' },
+      use: { baseURL: 'http://localhost:5174' },
     },
     {
       name: 'development',

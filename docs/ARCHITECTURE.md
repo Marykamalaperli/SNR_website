@@ -260,3 +260,22 @@ transactions. It never returns an Auth session. Workspace output is explicitly
 whitelisted, and QR access cannot fetch history/private photos or change profiles.
 The same server validates QR/location before camera/shutter/reservation/commit.
 Old fragment links redirect without reprinting. See EMPLOYEE_ATTENDANCE_QR.md.
+
+## Common QR and security attendance (0014)
+
+The owner superseded personal bearer QR access with a common link, verified
+Employee sign-in and a dedicated security screen. The old unsigned dispatcher is
+revoked in SQL and rejected by the Worker. No QR contains an identity credential.
+New punches require a session-bound attendance flow and a two-minute WebAuthn
+challenge binding the exact request/photo/GPS. A narrow Worker verifies signature,
+RP, origin and user verification; only its service-role completion RPC may mark
+proof valid. Public writers recheck active credentials/flow under the existing
+organization lock. New keys need audited in-person HR approval/reset.
+
+An HR policy of 0/3/4 schedules private per-session requests on clock-in. A check has
+a fixed two-minute server deadline and fresh GPS/photo/identity evidence. Separate
+private Storage and append-only evidence preserve normal punches and historical
+buckets/naming. Employees receive only the current due request; HR has scoped
+review and short-lived signed photo reads. Offline/background behavior is reported
+as missed evidence, never an automatic attendance rewrite. See SECURITY_ATTENDANCE.md
+for the complete contract, threat limits and manual rollout.

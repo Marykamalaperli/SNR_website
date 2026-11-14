@@ -1,6 +1,21 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  attendance_passkey_required:
+    'Verify with your HR-approved passkey. If this is a new device, enroll it here and ask HR to approve it in person.',
+  attendance_passkey_pending:
+    'An attendance passkey is already enrolled. Ask HR to approve it or reset it after verifying your identity.',
+  attendance_identity_expired:
+    'Identity verification expired. Refresh the security page and take a fresh photo.',
+  security_flow_required:
+    'Open the security attendance page and verify your sign-in before recording attendance.',
+  attendance_open_elsewhere:
+    'Your attendance screen is active in another tab or device. Close that screen and wait 90 seconds before retrying here.',
+  security_check_expired:
+    'The two-minute photo-check window has ended. This check is recorded for HR review; do not submit an older photo.',
+  personal_qr_retired:
+    'Individual QR codes have been replaced. Use the common attendance QR and sign in with your own account.',
+
   employee_qr_invalid:
     'This QR is invalid, replaced, or no longer active. Ask HR for the current employee QR.',
 
@@ -120,40 +135,38 @@ export function loadAttendanceRecords({
   });
 }
 export const validateAttendanceLocation = (
-  { type, previousId, employeeId, qrToken, qrAccess },
+  { type, previousId, employeeId, securityFlowId },
   location,
 ) =>
-  qrAccess
-    ? attendanceGatewayRequest(
-        'location',
-        { type, previousId: previousId || null, employeeId, location },
-        { qrToken },
-      )
-    : request(qrToken ? 'validate_employee_qr_location' : 'validate_attendance_location', {
-        ...(qrToken ? { p_token: qrToken } : {}),
+  securityFlowId
+    ? attendanceGatewayRequest('security/location', {
+        flowId: securityFlowId,
+        type,
+        previousId: previousId || null,
+        employeeId,
+        location,
+      })
+    : request('validate_attendance_location', {
         p_employee_id: employeeId,
         p_event_type: type,
         p_previous_event_id: previousId || null,
         p_location: location,
       });
-export async function attendanceGatewayRequest(path, body, { qrToken } = {}) {
-  let accessToken;
-  if (!qrToken) {
-    const client = await getAuthClient();
-    const { data, error } = (await client?.auth.getSession()) || {};
-    if (error || !data?.session?.access_token) throw new Error(messages.sign_in_required);
-    accessToken = data.session.access_token;
-  }
+export async function attendanceGatewayRequest(path, body) {
+  const client = await getAuthClient();
+  const { data, error } = (await client?.auth.getSession()) || {};
+  if (error || !data?.session?.access_token) throw new Error(messages.sign_in_required);
+  const accessToken = data.session.access_token;
   let response, result;
   try {
-    response = await fetch('/api/attendance/' + (qrToken ? 'qr/' : '') + path, {
+    response = await fetch('/api/attendance/' + path, {
       method: 'POST',
-      credentials: qrToken ? 'omit' : 'same-origin',
+      credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
         ...(accessToken ? { Authorization: 'Bearer ' + accessToken } : {}),
       },
-      body: JSON.stringify(qrToken ? { ...body, qrToken } : body),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(35000),
     });
     if (!response.headers.get('Content-Type')?.includes('application/json'))
@@ -180,48 +193,49 @@ export async function attendanceGatewayRequest(path, body, { qrToken } = {}) {
   }
   return result;
 }
-export const loadQrAttendanceAccess = (qrToken) =>
-  attendanceGatewayRequest('workspace', {}, { qrToken });
-export const recordAttendance = ({
+export { request as attendanceRpc };
+export function attendanceActionPayload({
   type,
   id,
   previousId,
   employeeId,
   location,
   evidence,
-  qrAccess,
-}) =>
-  attendanceGatewayRequest(
-    'photos',
-    {
-      type,
-      id,
-      previousId: previousId || null,
-      employeeId: employeeId || null,
-      location: location
-        ? {
-            latitude: location.latitude,
-            longitude: location.longitude,
-            accuracy_meters: location.accuracy_meters,
-            captured_at: location.captured_at,
-            consent_version: location.consent_version,
-          }
-        : null,
-      evidence: evidence
-        ? {
-            ...(/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(evidence.qr || '')
-              ? { qr: evidence.qr }
-              : {}),
-            photo: {
-              jpeg_base64: evidence.photo.jpeg_base64,
-              captured_at: evidence.photo.captured_at,
-              consent_version: evidence.photo.consent_version,
-            },
-          }
-        : null,
-    },
-    qrAccess ? { qrToken: evidence?.qr } : {},
-  );
+  checkId,
+}) {
+  return {
+    type,
+    id,
+    previousId: previousId || null,
+    employeeId: employeeId || null,
+    location: location
+      ? {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          accuracy_meters: location.accuracy_meters,
+          captured_at: location.captured_at,
+          consent_version: location.consent_version,
+        }
+      : null,
+    evidence: evidence
+      ? {
+          photo: {
+            jpeg_base64: evidence.photo.jpeg_base64,
+            captured_at: evidence.photo.captured_at,
+            consent_version: evidence.photo.consent_version,
+          },
+        }
+      : null,
+    ...(type === 'security_check' ? { checkId } : {}),
+  };
+}
+export const recordAttendance = (action) =>
+  attendanceGatewayRequest(action.securityFlowId ? 'security/photos' : 'photos', {
+    ...attendanceActionPayload(action),
+    ...(action.securityFlowId
+      ? { flowId: action.securityFlowId, identityId: action.identityId }
+      : {}),
+  });
 export async function loadAttendanceLocations(id) {
   const result = await request('attendance_location_details', { p_session_id: id });
   const client = await getAuthClient();

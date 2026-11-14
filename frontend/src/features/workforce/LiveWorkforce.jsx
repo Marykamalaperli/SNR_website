@@ -7,6 +7,7 @@ import EmployeeProfile from './EmployeeProfile';
 import HrSettings from './HrSettings';
 import LiveAttendance from '../attendance/LiveAttendance';
 import EmployeeSchedule from '../attendance/EmployeeSchedule';
+import SecurityCheckReport from '../attendance/SecurityCheckReport';
 
 export default function LiveWorkforce({ role, base }) {
   const { pathname } = useLocation();
@@ -17,6 +18,7 @@ export default function LiveWorkforce({ role, base }) {
     if (!section) return <HrDashboard />;
     if (section === 'employees') return <EmployeeDirectory manage />;
     if (section === 'sites') return <OrganizationSetup />;
+    if (section === 'security') return <SecurityCheckReport />;
     if (section === 'settings') return <HrSettings />;
   }
   if (role === 'supervisor' && section === 'members') return <EmployeeDirectory />;

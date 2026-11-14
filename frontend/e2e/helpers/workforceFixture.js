@@ -1,7 +1,8 @@
+import { securityFixture } from './securityFixture';
 // The real Supabase SDK talks to intercepted HTTP. SQL security is tested separately.
 export async function workforceFixture(
   page,
-  { role = 'hr', populated = false, missingMigration = false } = {},
+  { role = 'hr', populated = false, missingMigration = false, seedCredential = true } = {},
 ) {
   const id = (prefix, n = 1) => `${prefix}0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
   const userId = id('0');
@@ -413,7 +414,7 @@ export async function workforceFixture(
   await page.route('https://auth.snr-nest.test/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     const headers = {
-      'Access-Control-Allow-Origin': 'http://127.0.0.1:5174',
+      'Access-Control-Allow-Origin': route.request().headers().origin || 'http://localhost:5174',
       'Access-Control-Allow-Headers': '*',
       'Access-Control-Allow-Methods': '*',
     };
@@ -453,6 +454,44 @@ export async function workforceFixture(
     const parameters = route.request().postDataJSON();
     state.calls.push({ name, parameters });
     if (missingMigration) return reply({ code: 'PGRST202', message: 'missing procedure' }, 404);
+    if (name === 'security_presence_status')
+      return reply({
+        total: state.securityChecksPerShift,
+        completed: state.securityCheckPhotos?.length || 0,
+        missed: 0,
+        current: state.securityCheck,
+        server_time: new Date().toISOString(),
+      });
+    if (name === 'security_release_flow') {
+      state.securityClientId = null;
+      return reply(null);
+    }
+    if (name === 'hr_security_attendance') {
+      if (role !== 'hr') return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
+      if (parameters.p_checks !== null) state.securityChecksPerShift = parameters.p_checks;
+      if (parameters.p_credential_id) state.securityApproved = true;
+      if (parameters.p_reset) {
+        state.securityApproved = false;
+        state.securityPending = false;
+      }
+      const credential = state.securityCredential?.();
+      return reply({
+        employee_id: parameters.p_employee_id,
+        checks_per_shift: state.securityChecksPerShift || 0,
+        credentials: credential
+          ? [
+              {
+                id: credential.id,
+                version: 1,
+                rp_id: 'localhost',
+                approved: state.securityApproved,
+                created_at: new Date().toISOString(),
+              },
+            ]
+          : [],
+      });
+    }
+    if (name === 'hr_security_presence_report') return reply({ rows: [], limit: 500 });
     if (name === 'hr_employee_attendance_qr') {
       const person = state.people.find((p) => p.id === parameters.p_employee_id);
       if (role !== 'hr' || !person)
@@ -741,6 +780,14 @@ export async function workforceFixture(
     }
     throw new Error(`Unexpected workforce request: ${path}`);
   });
+  await securityFixture(page, state, {
+    role,
+    userId,
+    buildWorkspace: buildAttendanceWorkspace,
+    validateLocation,
+    handlePhoto,
+    seedCredential,
+  });
   return state;
 }
 
@@ -752,4 +799,5 @@ export async function signInWorkforce(page) {
   // Sign-in verifies membership asynchronously before navigating. Do not let a
   // caller's next navigation race with LoginPage's final workspace redirect.
   await page.waitForURL((url) => /^\/(hr|me|team)$/.test(url.pathname));
+  if (new URL(page.url()).pathname === '/me') await page.goto('/attendance');
 }

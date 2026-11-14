@@ -31,7 +31,7 @@ async function interceptAuth(page, { invalidPassword = false, access = { allowed
   await page.route('https://auth.snr-nest.test/**', async (route) => {
     const path = new URL(route.request().url()).pathname;
     const headers = {
-      'Access-Control-Allow-Origin': 'http://127.0.0.1:5174',
+      'Access-Control-Allow-Origin': route.request().headers().origin || 'http://localhost:5174',
       'Access-Control-Allow-Headers': '*',
       'Access-Control-Allow-Methods': '*',
     };

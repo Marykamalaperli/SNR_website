@@ -11,12 +11,9 @@ export default function LoginPage() {
   usePageMeta('Sign In', 'Sign in to your SNR NEST workspace.', true);
   const { session, signIn } = useAuth();
   const navigate = useNavigate();
-  const { state } = useLocation();
-  const attendanceReturn =
-    typeof state?.from === 'string' &&
-    /^\/me\/attendance#employee-qr=[0-9a-f-]{36}$/.test(state.from)
-      ? state.from
-      : null;
+  const { state, search } = useLocation();
+  const attendanceEntry = new URLSearchParams(search).get('attendance') === '1';
+  const attendanceReturn = attendanceEntry || state?.from === '/attendance' ? '/attendance' : null;
   const [visible, setVisible] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +47,7 @@ export default function LoginPage() {
     }
   }
 
-  if (session)
+  if (session && !attendanceEntry)
     return (
       <Navigate
         to={session.role === 'employee' && attendanceReturn ? attendanceReturn : session.workspace}
@@ -60,9 +57,15 @@ export default function LoginPage() {
   return (
     <>
       <div className="login-heading">
-        <p className="eyebrow">WELCOME TO SNR NEST</p>
-        <h2>Good to see you.</h2>
-        <p className="muted">Sign in and settle into your workday.</p>
+        <p className="eyebrow">
+          {attendanceReturn ? 'SECURITY ATTENDANCE' : 'WELCOME TO SNR NEST'}
+        </p>
+        <h2>{attendanceReturn ? 'Sign in for attendance' : 'Good to see you.'}</h2>
+        <p className="muted">
+          {attendanceReturn
+            ? 'Use your own Employee account, then verify your passkey, store location and fresh photo.'
+            : 'Sign in and settle into your workday.'}
+        </p>
       </div>
       {!authConfigured && (
         <p className="notice">

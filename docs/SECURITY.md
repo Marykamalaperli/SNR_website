@@ -159,3 +159,18 @@ claims, and retains expected-state/retry, QR rotation, GPS and photo constraints
 Normal workspace and private-photo permissions remain authenticated. Keep QR codes
 private and replace copied/lost codes; GPS and selfies do not independently prove
 identity. See EMPLOYEE_ATTENDANCE_QR.md for the complete current access contract.
+
+Migration **0014** supersedes the unsigned personal QR path. A common link grants
+no attendance authority. New punches require a verified Employee JWT/session,
+active self profile, exclusive attendance channel and an approved WebAuthn key.
+The Worker verifies signature, RP, origin, nonce and required user verification;
+SQL checks the action hash, active credential version, current flow, photo/GPS,
+expected prior event and exact replay. Browser roles cannot mark identity or
+uploads verified. HR approval/reset and all sensitive operations are audited.
+Random checks use unpublished server schedules, fixed two-minute deadlines,
+50-metre-plus-accuracy checks and separate immutable private evidence. Supervisor,
+other users/tenants and unsigned QR access cannot read or write that evidence.
+Keep passkeys/device PINs private and verify enrollment in person. Passkey sync,
+shared devices/PINs, fabricated client images and spoofed GPS prevent an absolute
+physical-identity/fraud guarantee; no face recognition/liveness certification is
+performed. See SECURITY_ATTENDANCE.md for the current controls and limits.
