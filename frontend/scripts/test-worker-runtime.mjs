@@ -179,7 +179,13 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
                   headers: { Location: 'https://unexpected.example.invalid/collect' },
                 });
               const json = (value) => RuntimeResponse.json(value);
-              if (path === '/auth/v1/user') return json({ id: actor });
+              if (path === '/auth/v1/user')
+                return json({
+                  id:
+                    request.headers.get('Authorization') === 'Bearer fixture-employee-token'
+                      ? account
+                      : actor,
+                });
               if (path === '/rest/v1/rpc/employee_qr_attendance_gateway') {
                 assert.equal(request.headers.get('apikey'), settings.adminKey);
                 assert.equal(data.p_token, '98000000-0000-4000-8000-000000000001');
@@ -199,6 +205,50 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
               }
               if (path === '/rest/v1/rpc/security_identity_context')
                 return json({ user_id: actor, display_name: 'Runtime Employee', credential: null });
+              if (path === '/rest/v1/rpc/security_station_context')
+                return json({
+                  user_id: actor,
+                  display_name: 'Runtime Guard',
+                  flow_id: 'guard-flow',
+                  credential: identityCredential,
+                });
+              if (path === '/rest/v1/rpc/security_attendance_workspace') {
+                assert.equal(request.headers.get('Authorization'), 'Bearer fixture-employee-token');
+                return json({
+                  security_flow_id: 'employee-flow',
+                  display_name: 'Runtime Employee',
+                });
+              }
+              if (path === '/rest/v1/rpc/security_station_employee_context') {
+                assert.equal(request.headers.get('Authorization'), 'Bearer fixture-employee-token');
+                return json({
+                  user_id: account,
+                  flow_id: 'employee-flow',
+                  employee_number: 'RUNTIME-1',
+                });
+              }
+              if (path === '/rest/v1/rpc/open_security_station_visit') {
+                assert.equal(request.headers.get('Authorization'), 'Bearer ' + settings.adminKey);
+                assert.deepEqual(data, {
+                  p_operator_user_id: actor,
+                  p_operator_flow_id: 'guard-flow',
+                  p_employee_user_id: account,
+                  p_employee_flow_id: 'employee-flow',
+                });
+                return json({
+                  visit_id: operation,
+                  expires_at: new Date(Date.now() + 300000).toISOString(),
+                });
+              }
+              if (path === '/rest/v1/rpc/security_station_identity_challenge')
+                return json({
+                  id: operation,
+                  user_id: actor,
+                  kind: 'station',
+                  challenge: identityNonce,
+                  rp_id: 'workspace.snr-nest.test',
+                  credential: identityCredential,
+                });
               if (path === '/rest/v1/rpc/security_identity_challenge')
                 return json({
                   id: operation,
@@ -208,12 +258,22 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
                   rp_id: 'workspace.snr-nest.test',
                   credential: identityCredential,
                 });
-              if (path === '/rest/v1/rpc/complete_security_identity') {
+              if (
+                [
+                  '/rest/v1/rpc/complete_security_identity',
+                  '/rest/v1/rpc/complete_security_station_identity',
+                ].includes(path)
+              ) {
                 assert.equal(request.headers.get('apikey'), settings.adminKey);
                 assert.equal(data.p_counter, 1);
                 return json({ id: operation, status: 'verified' });
               }
-              if (path === '/rest/v1/rpc/security_begin_identity')
+              if (
+                [
+                  '/rest/v1/rpc/security_begin_identity',
+                  '/rest/v1/rpc/security_begin_station_identity',
+                ].includes(path)
+              )
                 return json({
                   id: operation,
                   challenge: identityNonce,
@@ -396,6 +456,38 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
     );
     console.log(
       `PASS Worker ${compatibilityDate}: WebAuthn signature verified; wrong origin refused`,
+    );
+    const station = await runtime.dispatchFetch(
+      'https://workspace.snr-nest.test/api/attendance/station/workspace',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer fixture-user-token',
+          'X-Employee-Authorization': 'Bearer fixture-employee-token',
+        },
+        body: JSON.stringify({ flowId: 'guard-flow', clientId: operation }),
+      },
+    );
+    assert.equal(station.status, 200);
+    assert.equal((await station.json()).workspace.employee_number, 'RUNTIME-1');
+    const witnessed = await runtime.dispatchFetch(
+      'https://workspace.snr-nest.test/api/attendance/identity/station-verify',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer fixture-user-token' },
+        body: JSON.stringify({
+          flowId: 'guard-flow',
+          visitId: operation,
+          challengeId: operation,
+          response: identityAssertion(),
+        }),
+      },
+    );
+    assert.equal(witnessed.status, 200);
+    assert.equal((await witnessed.json()).status, 'verified');
+    console.log(
+      `PASS Worker ${compatibilityDate}: two verified station identities and native guard passkey signature`,
     );
   } finally {
     await runtime.dispose();

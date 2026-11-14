@@ -128,3 +128,61 @@
 .security-review-card {
   padding: clamp(1.3rem, 3vw, 2rem);
 }
+.attendance-entry-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.1rem;
+  padding: clamp(1.3rem, 3vw, 2rem);
+  margin-bottom: 1.5rem;
+  border-color: var(--orange);
+  background: var(--soft-orange);
+}
+.attendance-entry-card > div {
+  min-width: 0;
+}
+.attendance-entry-card h2 {
+  margin: 0.4rem 0;
+}
+.attendance-entry-card .security-header-actions {
+  justify-content: flex-start;
+  margin: 1rem 0;
+}
+.station-witness {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 2px solid var(--charcoal);
+  border-radius: var(--radius-md);
+}
+.station-witness input {
+  flex-shrink: 0;
+  margin-top: 0.3rem;
+}
+.station-person-card,
+.station-due-card {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.station-person-card {
+  border: 2px solid var(--charcoal);
+}
+.station-qr-help {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+@media (max-width: 600px) {
+  .attendance-entry-card {
+    display: block;
+  }
+  .attendance-entry-card > .feature-icon {
+    margin-bottom: 0.8rem;
+  }
+  .attendance-entry-card .security-header-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

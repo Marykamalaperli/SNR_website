@@ -32,15 +32,15 @@ function context(kind = 'punch') {
     calls,
     rpc: async (name, data, opts) => {
       calls.push({ name, data, opts });
-      if (name === 'security_identity_context')
+      if (['security_identity_context', 'security_station_context'].includes(name))
         return { user_id: user, display_name: 'Test Employee', credential };
-      if (name === 'security_begin_identity')
+      if (['security_begin_identity', 'security_begin_station_identity'].includes(name))
         return {
           id: 'challenge',
           challenge: nonce,
           expires_at: new Date(Date.now() + 120000).toISOString(),
         };
-      if (name === 'security_identity_challenge')
+      if (['security_identity_challenge', 'security_station_identity_challenge'].includes(name))
         return {
           user_id: user,
           id: 'challenge',
@@ -49,7 +49,7 @@ function context(kind = 'punch') {
           rp_id: url.hostname,
           credential,
         };
-      if (name === 'complete_security_identity')
+      if (['complete_security_identity', 'complete_security_station_identity'].includes(name))
         return { id: data.p_id, status: kind === 'register' ? 'pending_hr_approval' : 'verified' };
       throw new Error('Unexpected identity RPC');
     },
@@ -115,6 +115,64 @@ test('WebAuthn assertions verify a real signature, RP, origin, nonce and require
       false,
     );
   }
+});
+test('supervised approval verifies the guard signature and binds the employee visit without changing normal enrollment authority', async () => {
+  const ctx = context('station');
+  const body = {
+    flowId: 'guard-flow',
+    visitId: 'employee-visit',
+    action: { type: 'clock_in', employeeId: 'employee', evidence: { photo: 'exact-photo' } },
+  };
+  const options = await handleSecurityIdentity('station-options', {
+    body,
+    rpc: ctx.rpc,
+    url,
+    userId: user,
+  });
+  assert.equal(options.options.userVerification, 'required');
+  assert.equal(options.options.challenge, nonce);
+  assert.equal(ctx.calls.at(-1).name, 'security_begin_station_identity');
+  assert.equal(ctx.calls.at(-1).data.p_visit_id, 'employee-visit');
+  assert.deepEqual(ctx.calls.at(-1).data.p_action, body.action);
+  const verified = await handleSecurityIdentity('station-verify', {
+    body: { ...body, challengeId: 'challenge', response: assertion() },
+    rpc: ctx.rpc,
+    url,
+    userId: user,
+  });
+  assert.equal(verified.status, 'verified');
+  assert.equal(ctx.calls.at(-1).name, 'complete_security_station_identity');
+  assert.deepEqual(ctx.calls.at(-1).data, { p_id: 'challenge', p_user_id: user, p_counter: 1 });
+  assert.equal(ctx.calls.at(-1).opts.elevated, true);
+  for (const response of [
+    assertion({ origin: 'https://phishing.invalid' }),
+    assertion({ flags: 1 }),
+    assertion({ challenge: 'copied-challenge' }),
+  ]) {
+    const denied = context('station');
+    await assert.rejects(
+      handleSecurityIdentity('station-verify', {
+        body: { ...body, challengeId: 'challenge', response },
+        rpc: denied.rpc,
+        url,
+        userId: user,
+      }),
+      /attendance_passkey_required/,
+    );
+    assert.equal(
+      denied.calls.some((c) => c.name === 'complete_security_station_identity'),
+      false,
+    );
+  }
+  await assert.rejects(
+    handleSecurityIdentity('station-verify', {
+      body: { ...body, challengeId: 'challenge', response: assertion() },
+      rpc: context('punch').rpc,
+      url,
+      userId: user,
+    }),
+    /attendance_passkey_required/,
+  );
 });
 test('registration requires user verification and finishes as pending HR approval, not attendance authority', async () => {
   const idBytes = Buffer.from(credentialId, 'base64url');

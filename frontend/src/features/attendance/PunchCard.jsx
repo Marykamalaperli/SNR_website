@@ -10,7 +10,17 @@ import AttendanceCapture from './AttendanceCapture';
 import { verifyAttendanceIdentity } from '../../services/securityAttendanceService';
 import { EVIDENCE_NOTICE_VERSION } from '../../services/attendanceCaptureService';
 
-export default function PunchCard({ workspace, onRecorded, onRefresh, securityFlowId = null }) {
+export default function PunchCard({
+  workspace,
+  onRecorded,
+  onRefresh,
+  securityFlowId = null,
+  transport = null,
+  witnessName = null,
+}) {
+  const validateLocation = transport?.validateLocation || validateAttendanceLocation;
+  const verifyIdentity = transport?.verifyIdentity || verifyAttendanceIdentity;
+  const record = transport?.record || recordAttendance;
   const [pending, setPending] = useState(null);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -46,7 +56,7 @@ export default function PunchCard({ workspace, onRecorded, onRefresh, securityFl
     workspace.qr_required === false && workspace.attendance_capture_policy === 'store-50m-photo-v1';
   const checkLocation = useCallback(async () => {
     const location = await captureAttendanceLocation();
-    await validateAttendanceLocation(
+    await validateLocation(
       {
         type: workspace.status === 'clocked_in' ? 'clock_out' : 'clock_in',
         previousId: workspace.last_event_id,
@@ -56,7 +66,13 @@ export default function PunchCard({ workspace, onRecorded, onRefresh, securityFl
       location,
     );
     return location;
-  }, [workspace.status, workspace.last_event_id, workspace.employee_id, securityFlowId]);
+  }, [
+    workspace.status,
+    workspace.last_event_id,
+    workspace.employee_id,
+    securityFlowId,
+    validateLocation,
+  ]);
   async function punch(evidence) {
     if (
       busy.current ||
@@ -91,9 +107,9 @@ export default function PunchCard({ workspace, onRecorded, onRefresh, securityFl
         };
       }
       if (securityFlowId && !action.identityId)
-        action = { ...action, identityId: await verifyAttendanceIdentity(securityFlowId, action) };
+        action = { ...action, identityId: await verifyIdentity(securityFlowId, action) };
       if (!active.current) return;
-      const receipt = await recordAttendance(action);
+      const receipt = await record(action);
       if (!active.current) return;
       if (
         !receipt?.id ||
@@ -305,6 +321,11 @@ export default function PunchCard({ workspace, onRecorded, onRefresh, securityFl
           onConfirm={punch}
           onClose={() => setCapturing(false)}
           busy={saving}
+          witnessName={witnessName}
+          employeeName={
+            workspace.display_name +
+            (workspace.employee_number ? ' (staff ID ' + workspace.employee_number + ')' : '')
+          }
         />
       )}
     </Card>

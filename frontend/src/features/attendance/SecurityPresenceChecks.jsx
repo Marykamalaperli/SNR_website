@@ -11,7 +11,17 @@ import {
   recordSecurityCheck,
 } from '../../services/securityAttendanceService';
 
-export default function SecurityPresenceChecks({ flowId, workspace }) {
+export default function SecurityPresenceChecks({
+  flowId,
+  workspace,
+  transport = null,
+  witnessName = null,
+  onRecorded,
+}) {
+  const loadChecks = transport?.loadChecks || loadSecurityChecks;
+  const validateLocation = transport?.validateLocation || validateAttendanceLocation;
+  const verifyIdentity = transport?.verifyIdentity || verifyAttendanceIdentity;
+  const recordCheck = transport?.recordCheck || recordSecurityCheck;
   const [status, setStatus] = useState(null);
   const [error, setError] = useState('');
   const [captureId, setCaptureId] = useState(null);
@@ -28,7 +38,7 @@ export default function SecurityPresenceChecks({ flowId, workspace }) {
       if (running) return;
       running = true;
       try {
-        const data = await loadSecurityChecks(flowId);
+        const data = await loadChecks(flowId);
         if (active) {
           setStatus({ ...data, offset: Date.parse(data.server_time) - Date.now() });
           setError('');
@@ -45,7 +55,7 @@ export default function SecurityPresenceChecks({ flowId, workspace }) {
       active = false;
       clearInterval(timer);
     };
-  }, [flowId, revision]);
+  }, [flowId, revision, loadChecks]);
   useEffect(() => {
     const timer = setInterval(() => setTick(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -57,7 +67,7 @@ export default function SecurityPresenceChecks({ flowId, workspace }) {
   const checkSessionId = check?.session_id;
   const checkLocation = useCallback(async () => {
     const location = await captureAttendanceLocation();
-    await validateAttendanceLocation(
+    await validateLocation(
       {
         securityFlowId: flowId,
         employeeId: workspace.employee_id,
@@ -67,7 +77,7 @@ export default function SecurityPresenceChecks({ flowId, workspace }) {
       location,
     );
     return location;
-  }, [flowId, workspace.employee_id, checkSessionId]);
+  }, [flowId, workspace.employee_id, checkSessionId, validateLocation]);
   async function confirm(evidence) {
     if (busy) return;
     setBusy(true);
@@ -86,9 +96,9 @@ export default function SecurityPresenceChecks({ flowId, workspace }) {
           evidence,
           securityFlowId: flowId,
         };
-        action = { ...action, identityId: await verifyAttendanceIdentity(flowId, action) };
+        action = { ...action, identityId: await verifyIdentity(flowId, action) };
       }
-      const receipt = await recordSecurityCheck(action);
+      const receipt = await recordCheck(action);
       if (
         receipt.id !== action.id ||
         receipt.photo_saved !== true ||
@@ -102,6 +112,7 @@ export default function SecurityPresenceChecks({ flowId, workspace }) {
       setConsentId(null);
       setNotice('Your security photo check was recorded.');
       setRevision((v) => v + 1);
+      onRecorded?.('The security photo check was recorded.');
     } catch (failure) {
       setError(failure.message);
       setPending(failure.retryable ? action : null);
@@ -189,6 +200,11 @@ export default function SecurityPresenceChecks({ flowId, workspace }) {
           onConfirm={confirm}
           onClose={() => setCaptureId(null)}
           busy={busy}
+          witnessName={witnessName}
+          employeeName={
+            workspace.display_name +
+            (workspace.employee_number ? ' (staff ID ' + workspace.employee_number + ')' : '')
+          }
         />
       )}
     </Card>

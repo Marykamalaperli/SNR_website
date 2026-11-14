@@ -466,6 +466,18 @@ export async function workforceFixture(
       state.securityClientId = null;
       return reply(null);
     }
+    if (name === 'hr_attendance_station') {
+      if (role !== 'hr') return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
+      if (parameters.p_enabled !== null) {
+        state.stationEnabled = parameters.p_enabled;
+        state.stationVersion = (state.stationVersion || 0) + 1;
+      }
+      return reply({
+        enabled: state.stationEnabled || false,
+        version: state.stationVersion || 0,
+        site_name: 'Main office',
+      });
+    }
     if (name === 'hr_security_attendance') {
       if (role !== 'hr') return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
       if (parameters.p_checks !== null) state.securityChecksPerShift = parameters.p_checks;
@@ -788,6 +800,7 @@ export async function workforceFixture(
     handlePhoto,
     seedCredential,
   });
+  state.buildAttendanceWorkspace = buildAttendanceWorkspace;
   return state;
 }
 

@@ -1,6 +1,16 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  station_operator_required:
+    'HR must authorize you as a shared-device guard for your assigned site.',
+  station_operator_setup_required:
+    'Assign an active site and approve this guard’s attendance passkey before enabling shared-device duty.',
+  station_different_employee_required:
+    'A guard cannot approve their own attendance. Ask another authorized guard or use your personal attendance screen.',
+  station_visit_required:
+    'This employee turn is no longer authorized. End the turn and ask the employee to sign in again.',
+  station_busy:
+    'An employee turn is already open. Finish it or clear the interrupted turn before continuing.',
   attendance_passkey_required:
     'Verify with your HR-approved passkey. If this is a new device, enroll it here and ask HR to approve it in person.',
   attendance_passkey_pending:
@@ -69,8 +79,8 @@ const messages = {
   invalid_attendance_filters: 'Choose a date range of up to 31 days and check the filters.',
 };
 
-async function request(name, parameters = {}) {
-  const client = await getAuthClient();
+async function request(name, parameters = {}, callerClient = null) {
+  const client = callerClient || (await getAuthClient());
   if (!client) throw new Error('Please sign in to continue.');
   let result;
   try {
@@ -152,8 +162,12 @@ export const validateAttendanceLocation = (
         p_previous_event_id: previousId || null,
         p_location: location,
       });
-export async function attendanceGatewayRequest(path, body) {
-  const client = await getAuthClient();
+export async function attendanceGatewayRequest(
+  path,
+  body,
+  { client: callerClient = null, headers = {} } = {},
+) {
+  const client = callerClient || (await getAuthClient());
   const { data, error } = (await client?.auth.getSession()) || {};
   if (error || !data?.session?.access_token) throw new Error(messages.sign_in_required);
   const accessToken = data.session.access_token;
@@ -165,6 +179,7 @@ export async function attendanceGatewayRequest(path, body) {
       headers: {
         'Content-Type': 'application/json',
         ...(accessToken ? { Authorization: 'Bearer ' + accessToken } : {}),
+        ...headers,
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(35000),

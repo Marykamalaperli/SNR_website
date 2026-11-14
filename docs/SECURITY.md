@@ -174,3 +174,20 @@ Keep passkeys/device PINs private and verify enrollment in person. Passkey sync,
 shared devices/PINs, fabricated client images and spoofed GPS prevent an absolute
 physical-identity/fraud guarantee; no face recognition/liveness certification is
 performed. See SECURITY_ATTENDANCE.md for the current controls and limits.
+
+
+Migration **0015** permits a narrowly supervised shared-device flow. Only HR may
+grant/revoke a guard capability, bound to an active Employee and assigned site.
+The employee signs in independently; the gateway verifies both JWTs and scoped
+flows before opening a private five-minute visit. The guard checks staff ID and
+live photo in person and approves with their own approved passkey. SQL binds that
+proof to the exact employee/action/photo/location, both sessions and the current
+site/grant/key versions, with one successful action per visit. Self-approval,
+other sites/tenants, expired or revoked authority and direct browser verification
+are denied. Normal employee-self location/photo checks and idempotency still apply.
+Witness history is append-only; ordinary guards see current due names/deadlines at
+their site and gain no access to colleagues' saved photos/history. The temporary
+employee Auth client is memory-only and cleared at completion/cancellation/timeout;
+the guard's regular session is never overwritten. Human ID verification and a
+managed shared device are essential; this does not certify physical identity or
+prevent a colluding guard. See SECURITY_ATTENDANCE.md.

@@ -8,6 +8,7 @@ import SummaryStrip from '../../components/dashboard/SummaryStrip';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { ErrorState, LoadingState } from '../../components/common/States';
+import AttendanceEntryCard from '../attendance/AttendanceEntryCard';
 
 export default function HrDashboard() {
   const { session } = useAuth();
@@ -25,6 +26,7 @@ export default function HrDashboard() {
           </Button>
         }
       />
+      <AttendanceEntryCard />
       {loading ? (
         <LoadingState label="Loading your workspace…" />
       ) : error ? (

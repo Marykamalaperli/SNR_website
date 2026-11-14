@@ -126,6 +126,13 @@ test('HR approves passkeys explicitly and selects three or four checks for secur
   await expect(dialog.getByText('Approved passkey', { exact: true })).toBeVisible();
   await dialog.getByLabel('Random photo checks').selectOption('3');
   await expect.poll(() => state.securityChecksPerShift).toBe(3);
+  await dialog.getByRole('button', { name: 'Enable shared-device duty', exact: true }).click();
+  expect(state.stationEnabled).not.toBe(true);
+  await dialog.getByRole('button', { name: 'Confirm identity verification' }).click();
+  await expect(dialog.getByText('Shared-device duty enabled', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Disable shared-device duty', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Confirm identity verification' }).click();
+  await expect(dialog.getByText('Shared-device duty disabled', { exact: true })).toBeVisible();
 });
 test('a random check captures fresh evidence without creating another punch and closes at its deadline', async ({
   page,

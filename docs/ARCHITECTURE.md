@@ -1,5 +1,17 @@
 # Architecture
 
+Supervised attendance (migration 0015) adds `/attendance/station` to the common QR
+flow. The guard retains their normal verified session; an employee uses a separate
+memory-only Auth client for one turn. The gateway verifies both Auth subjects and
+scoped flows before a service-only visit open. An explicit HR site-scoped guard
+grant and a required-UV guard WebAuthn signature authorize only that employee's
+exact photo/GPS/action. PostgreSQL rechecks both sessions/flows, site, grant and key
+versions at preparation/commit, then appends witness evidence and ends the visit.
+Personal attendance still requires the employee's own approved passkey. Shared
+random checks reuse the existing private photo bucket and fixed two-minute server
+deadline. No general impersonation, guard photo-history access or face matching is
+introduced. See [security attendance](SECURITY_ATTENDANCE.md).
+
 ## Current implementation and boundaries
 
 The public React site, login interface, isolated synthetic previews, and FastAPI

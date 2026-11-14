@@ -61,6 +61,16 @@ export default function AttendanceQrPage() {
       <p className="muted">
         This QR contains no employee credentials and cannot record attendance by itself.
       </p>
+      <div className="station-qr-help">
+        <h2>No phone? Ask the guard.</h2>
+        <p>
+          Use the supervised shared device. Enter your own credentials, take your photo, and have
+          the guard check your staff ID.
+        </p>
+        <Button to="/attendance/station" variant="secondary">
+          Open shared attendance device
+        </Button>
+      </div>
     </main>
   );
 }

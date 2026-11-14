@@ -83,6 +83,11 @@ export async function securityFixture(
     if (!route.request().headers().authorization || role !== 'employee')
       return reply({ error: { code: 'sign_in_required' } }, 401);
     const operation = new URL(route.request().url()).pathname.split('/').at(-1);
+    if (
+      operation.startsWith('station-') &&
+      (!state.stationEnabled || body.visitId !== state.stationVisit?.id)
+    )
+      return reply({ error: { code: 'station_visit_required' } }, 403);
     if (operation.endsWith('-options')) {
       const register = operation === 'register-options';
       if (!register && !state.securityApproved)
@@ -175,7 +180,10 @@ export async function securityFixture(
     };
     const wrap = (json, status = 200) =>
       status >= 400 ? reply({ error: { code: json.message } }, status) : reply(json, status);
-    if (body.flowId !== flowId || body.employeeId !== state.people[0]?.id)
+    if (
+      (body.flowId !== flowId && body.flowId !== state.stationEmployeeFlow) ||
+      body.employeeId !== state.people[0]?.id
+    )
       return reply({ error: { code: 'security_flow_required' } }, 403);
     if (path.endsWith('/location')) {
       state.calls.push({
@@ -195,6 +203,8 @@ export async function securityFixture(
     };
     if (proofs.get(body.identityId) !== canonical(action) || !state.securityApproved)
       return reply({ error: { code: 'attendance_passkey_required' } }, 403);
+    if (body.flowId === state.stationEmployeeFlow && !state.stationEnabled)
+      return reply({ error: { code: 'station_operator_required' } }, 403);
     if (path.endsWith('/check-photos')) {
       const existing = state.securityCheckPhotos.find((p) => p.id === body.id);
       if (existing) return reply(existing);

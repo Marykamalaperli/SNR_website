@@ -57,6 +57,14 @@ Store QR stays disabled and old history/photos are preserved. See
 [security attendance setup](docs/SECURITY_ATTENDANCE.md) for manual activation,
 enrollment, privacy and the limits of proxy-attendance prevention.
 
+Migration **0015** adds dashboard access to the separate QR display and a supervised
+shared-device page for employees without phones. The employee enters their own
+credentials; an HR-authorized guard checks their staff ID/photo in person and
+approves each action with a passkey at the authorized site. Employee sessions clear
+after each turn. Guard authorization, witness history and the same location/photo,
+retry and two-minute photo-check rules are enforced by the server. Apply 0015
+after 0014 and deploy manually using [security attendance setup](docs/SECURITY_ATTENDANCE.md).
+
 ## Stack and architecture
 
 React + JavaScript/JSX, Vite, React Router, Lucide, CSS custom properties; ESLint,

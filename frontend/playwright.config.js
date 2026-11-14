@@ -20,6 +20,11 @@ export default defineConfig({
       use: { baseURL: 'http://localhost:5174' },
     },
     {
+      name: 'attendance-station',
+      testMatch: /attendance-station.spec.js/,
+      use: { baseURL: 'http://localhost:5174' },
+    },
+    {
       name: 'attendance',
       testMatch: /attendance.spec.js/,
       use: { baseURL: 'http://localhost:5174' },

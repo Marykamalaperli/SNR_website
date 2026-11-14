@@ -7,6 +7,7 @@ import { ErrorState, LoadingState } from '../../components/common/States';
 import useRemoteData from '../../hooks/useRemoteData';
 import { loadAttendanceWorkspace } from '../../services/attendanceService';
 import AttendanceRecords from './AttendanceRecords';
+import AttendanceEntryCard from './AttendanceEntryCard';
 
 export default function LiveAttendance({ role, home = false }) {
   const { session } = useAuth();
@@ -41,6 +42,7 @@ export default function LiveAttendance({ role, home = false }) {
           ) : undefined
         }
       />
+      {home && <AttendanceEntryCard />}
       {workspace.loading && <LoadingState label="Loading attendance status…" />}
       {workspace.error && (
         <Card>

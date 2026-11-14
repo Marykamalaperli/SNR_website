@@ -4,9 +4,16 @@ import Button from '../../components/common/Button';
 import { ErrorState, LoadingState } from '../../components/common/States';
 import useRemoteData from '../../hooks/useRemoteData';
 import { manageEmployeeSecurity } from '../../services/securityAttendanceService';
+import { manageStationOperator } from '../../services/attendanceStationService';
 
 export default function EmployeeSecurity({ record, onClose }) {
-  const loader = useCallback(() => manageEmployeeSecurity(record.id), [record.id]);
+  const loader = useCallback(async () => {
+    const [security, station] = await Promise.all([
+      manageEmployeeSecurity(record.id),
+      manageStationOperator(record.id),
+    ]);
+    return { ...security, station };
+  }, [record.id]);
   const data = useRemoteData(loader);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
@@ -15,7 +22,12 @@ export default function EmployeeSecurity({ record, onClose }) {
     setBusy(true);
     setError('');
     try {
-      await manageEmployeeSecurity(record.id, values);
+      if (Object.hasOwn(values, 'stationEnabled'))
+        await manageStationOperator(record.id, {
+          enabled: values.stationEnabled,
+          version: values.version,
+        });
+      else await manageEmployeeSecurity(record.id, values);
       setConfirm(null);
       data.reload();
     } catch (failure) {
@@ -81,12 +93,50 @@ export default function EmployeeSecurity({ record, onClose }) {
               Reset attendance passkey
             </Button>
           )}
+          <section className="notice">
+            <h3>Shared-device guard</h3>
+            <p>
+              Allow this employee to help colleagues without phones at{' '}
+              {data.data.station.site_name || 'their assigned site'}. They must check the
+              colleague’s staff ID in person and approve each live photo with their own approved
+              passkey. They cannot approve their own attendance.
+            </p>
+            <p>
+              <strong>
+                {data.data.station.enabled
+                  ? 'Shared-device duty enabled'
+                  : 'Shared-device duty disabled'}
+              </strong>
+            </p>
+            <Button
+              variant="secondary"
+              disabled={
+                busy ||
+                (!data.data.station.enabled &&
+                  !data.data.credentials.some((credential) => credential.approved))
+              }
+              onClick={() =>
+                setConfirm({
+                  stationEnabled: !data.data.station.enabled,
+                  version: data.data.station.version,
+                })
+              }
+            >
+              {data.data.station.enabled
+                ? 'Disable shared-device duty'
+                : 'Enable shared-device duty'}
+            </Button>
+          </section>
           {confirm && (
             <div className="notice">
               <p>
-                {confirm.reset
-                  ? 'Resetting disables the current passkey and attendance screen immediately. Verify the employee in person before they enroll another.'
-                  : 'I have verified the employee in person and confirmed this is their own passkey enrollment.'}
+                {Object.hasOwn(confirm, 'stationEnabled')
+                  ? confirm.stationEnabled
+                    ? 'I verified this guard in person and authorize them to check staff ID and witness attendance at their assigned site.'
+                    : 'Disable shared-device duty immediately. Open employee turns will stop working.'
+                  : confirm.reset
+                    ? 'Resetting disables the current passkey and attendance screen immediately. Verify the employee in person before they enroll another.'
+                    : 'I have verified the employee in person and confirmed this is their own passkey enrollment.'}
               </p>
               <div className="modal-actions">
                 <Button variant="secondary" onClick={() => setConfirm(null)} disabled={busy}>

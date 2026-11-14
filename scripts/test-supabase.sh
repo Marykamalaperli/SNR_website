@@ -76,3 +76,6 @@ snr_psql < "$snr_project_root/supabase/tests/employee-qr-attendance-access.sql"
 
 snr_psql < "$snr_project_root/supabase/migrations/202611130014_security_attendance.sql"
 snr_psql < "$snr_project_root/supabase/tests/security-attendance.sql"
+
+snr_psql < "$snr_project_root/supabase/migrations/202611140015_supervised_attendance.sql"
+snr_psql < "$snr_project_root/supabase/tests/supervised-attendance.sql"

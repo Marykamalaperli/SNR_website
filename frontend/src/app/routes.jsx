@@ -4,6 +4,7 @@ import PublicLayout from '../layouts/PublicLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import AttendanceQrPage from '../pages/AttendanceQrPage';
 import QrAttendancePage from '../pages/QrAttendancePage';
+import AttendanceStationPage from '../pages/AttendanceStationPage';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -29,6 +30,7 @@ export default function AppRoutes() {
       <Routes>
         <Route path="attendance" element={<QrAttendancePage />} />
         <Route path="attendance/qr" element={<AttendanceQrPage />} />
+        <Route path="attendance/station" element={<AttendanceStationPage />} />
         <Route element={<PublicLayout />}>
           <Route index element={<HomePage />} />
         </Route>

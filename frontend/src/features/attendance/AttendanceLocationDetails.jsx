@@ -73,6 +73,12 @@ function SavedPoint({ point, label, timezone, emptyText = 'Location not collecte
           </dd>
         </div>
       </dl>
+      {point.supervised_by && (
+        <p className="notice">
+          Staff ID and live photo witnessed by <strong>{point.supervised_by.operator_name}</strong>{' '}
+          on a shared attendance device.
+        </p>
+      )}
       {point.photo?.jpeg_base64 || point.photo?.signed_url ? (
         <div className="saved-attendance-photo">
           <img

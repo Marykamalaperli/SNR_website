@@ -13,7 +13,12 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { state, search } = useLocation();
   const attendanceEntry = new URLSearchParams(search).get('attendance') === '1';
-  const attendanceReturn = attendanceEntry || state?.from === '/attendance' ? '/attendance' : null;
+  const stationEntry = new URLSearchParams(search).get('station') === '1';
+  const attendanceReturn = stationEntry
+    ? '/attendance/station'
+    : attendanceEntry || state?.from === '/attendance'
+      ? '/attendance'
+      : null;
   const [visible, setVisible] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -47,7 +52,7 @@ export default function LoginPage() {
     }
   }
 
-  if (session && !attendanceEntry)
+  if (session && !attendanceEntry && !stationEntry)
     return (
       <Navigate
         to={session.role === 'employee' && attendanceReturn ? attendanceReturn : session.workspace}
@@ -60,11 +65,19 @@ export default function LoginPage() {
         <p className="eyebrow">
           {attendanceReturn ? 'SECURITY ATTENDANCE' : 'WELCOME TO SNR NEST'}
         </p>
-        <h2>{attendanceReturn ? 'Sign in for attendance' : 'Good to see you.'}</h2>
+        <h2>
+          {stationEntry
+            ? 'Guard sign-in'
+            : attendanceReturn
+              ? 'Sign in for attendance'
+              : 'Good to see you.'}
+        </h2>
         <p className="muted">
-          {attendanceReturn
-            ? 'Use your own Employee account, then verify your passkey, store location and fresh photo.'
-            : 'Sign in and settle into your workday.'}
+          {stationEntry
+            ? 'Use your HR-authorized guard account to open a shared attendance device.'
+            : attendanceReturn
+              ? 'Use your own Employee account, then verify your passkey, store location and fresh photo.'
+              : 'Sign in and settle into your workday.'}
         </p>
       </div>
       {!authConfigured && (

@@ -339,3 +339,44 @@ location on the actual device. Old records keep their genuine missing-location
 status. Device accuracy/spoof resistance and the live Supabase/hardware path are
 not certified by simulated-position tests. See `ATTENDANCE_LOCATIONS.md` for
 the versioned notice, data access and retained-record behavior.
+
+## 14 November 2026 · Supervised shared-device attendance (0015)
+
+Executed on the existing `main` checkout, preserving the published personal-device
+passkey flow and adding a separate supervised route for the user-approved guard
+ID check. No live migration, deployment or environment publication was performed.
+
+- `bash scripts/check.sh`: formatting, ESLint/Ruff, production build, **155 frontend
+  tests**, **36 server tests**, **55 backend tests** and **9 deployment helper tests**
+  passed. The existing upstream Starlette/httpx deprecation warning remains.
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium CI=1 npm run test:browser`:
+  **53 passed** with two workers, including five shared-device scenarios, native
+  virtual-authenticator signatures, private employee-session isolation/cleanup,
+  wrong-password refusal, witnessed photo confirmation, lost-response recovery,
+  guard revocation, location gating, random checks and five-minute camera cleanup.
+  Prior authentication, account, workforce/name editing, attendance, accessibility
+  and production route checks also passed. Total application/helper tests: **308**.
+- `bash scripts/test-supabase.sh`: all migration/authorization/upgrade/concurrency
+  suites through 0015 passed in disposable PostgreSQL 16. New assertions cover
+  service-only visit/identity grants, independent sessions, no self-authorization
+  or self-approval, versioned HR guard grants, exact evidence/proof binding, photo
+  upload verification, immediate revocation at commit, immutable witness history,
+  repeated attendance pairs, three scheduled checks, an accepted random photo,
+  a late check rejected without a punch, and completed retry after expiry.
+  A service-role JWT without `sub` verifies correct enrollment/open-visit audit
+  actors, without leaking changed claims into the caller's context.
+- `XDG_CONFIG_HOME=/workspace/.cloudflare-test-config WRANGLER_SEND_METRICS=false
+  npm_config_cache=/workspace/.npm-cache npx --yes --package=wrangler@4.158.0 --
+  node scripts/test-worker-runtime.mjs` passed on compatibility dates 2021-11-02
+  and 2026-11-07. It includes two Auth subjects and a real guard WebAuthn signature,
+  earlier account/photo requests, wrong-origin refusal and disabled bearer QR.
+- `WRANGLER_SEND_METRICS=false npm_config_cache=/workspace/.npm-cache npx --yes
+  wrangler@4.158.0 pages functions build functions --outdir .wrangler/worker
+  --compatibility-date 2026-11-07` compiled the Worker successfully.
+
+Browser/Auth/Storage fixtures and virtual cameras/positions are synthetic; Worker
+cryptography and database authorization execute their real implementations. No
+live Supabase account, physical phone/GPS/passkey provider, in-person identity or
+production deployment is claimed verified. Apply new migration 0015 after 0014,
+reload PostgREST and release the frontend manually, then have HR authorize the
+intended guards and perform the live acceptance run in SECURITY_ATTENDANCE.md.

@@ -49,6 +49,98 @@ const receipt = {
 };
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+test('shared-device visits verify both Auth identities and caller-scoped flows before a narrow service-only open', async () => {
+  const guard = 'e1000000-0000-4000-8000-000000000002';
+  for (const scenario of [
+    'valid',
+    'invalid-employee',
+    'same-person',
+    'wrong-employee-context',
+    'unauthorized-guard',
+    'redirect',
+  ]) {
+    const calls = [];
+    const response = await handleAttendance(
+      req(
+        {
+          flowId: 'guard-flow',
+          clientId: 'employee-client',
+          employeeId: 'forged-employee',
+          organizationId: 'forged-org',
+        },
+        'station/workspace',
+        { 'X-Employee-Authorization': 'Bearer fixture-employee-token' },
+      ),
+      settings,
+      {
+        fetcher: async (address, options) => {
+          const path = new URL(address).pathname,
+            auth = options.headers.Authorization;
+          const parameters = options.body ? JSON.parse(options.body) : null;
+          calls.push({ path, auth, parameters });
+          if (path === '/auth/v1/user') {
+            if (auth === 'Bearer fixture-user-token') return json({ id: guard });
+            assert.equal(auth, 'Bearer fixture-employee-token');
+            if (scenario === 'redirect')
+              return new Response(null, {
+                status: 302,
+                headers: { Location: 'https://exfiltration.invalid' },
+              });
+            return scenario === 'invalid-employee'
+              ? json({}, 401)
+              : json({ id: scenario === 'same-person' ? guard : user });
+          }
+          if (path.endsWith('/security_station_context')) {
+            assert.equal(auth, 'Bearer fixture-user-token');
+            return scenario === 'unauthorized-guard'
+              ? json({ code: 'PT403', message: 'station_operator_required' }, 403)
+              : json({ flow_id: 'verified-guard-flow', user_id: guard });
+          }
+          if (path.endsWith('/security_attendance_workspace')) {
+            assert.equal(auth, 'Bearer fixture-employee-token');
+            assert.deepEqual(parameters, { p_client_id: 'employee-client' });
+            return json({
+              security_flow_id: 'verified-employee-flow',
+              display_name: 'Verified employee',
+            });
+          }
+          if (path.endsWith('/security_station_employee_context')) {
+            assert.equal(auth, 'Bearer fixture-employee-token');
+            return json({
+              flow_id: 'verified-employee-flow',
+              user_id: scenario === 'wrong-employee-context' ? guard : user,
+            });
+          }
+          if (path.endsWith('/open_security_station_visit')) {
+            assert.equal(auth, 'Bearer ' + settings.adminKey);
+            assert.deepEqual(parameters, {
+              p_operator_flow_id: 'verified-guard-flow',
+              p_operator_user_id: guard,
+              p_employee_flow_id: 'verified-employee-flow',
+              p_employee_user_id: user,
+            });
+            return json({ visit_id: 'server-visit', expires_at: '2026-11-14T12:05:00Z' });
+          }
+          throw new Error('Unexpected station upstream call');
+        },
+      },
+    );
+    const data = await response.json();
+    if (scenario === 'valid') {
+      assert.equal(response.status, 200);
+      assert.equal(data.visit_id, 'server-visit');
+    } else {
+      assert.ok(response.status >= 400);
+      assert.equal(
+        calls.some((c) => c.path.endsWith('/open_security_station_visit')),
+        false,
+      );
+    }
+    assert.ok(
+      calls.every((c) => c.path.startsWith('/auth/v1/') || c.path.startsWith('/rest/v1/rpc/')),
+    );
+  }
+});
 function req(body = action, suffix = 'photos', headers = {}) {
   return new Request('https://workspace.snr-nest.test/api/attendance/' + suffix, {
     method: 'POST',

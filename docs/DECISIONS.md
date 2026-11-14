@@ -306,3 +306,26 @@ not absence/payroll decisions. The page must stay open; no background camera/GPS
 or guaranteed locked-phone notifications are introduced. Migration 0014 disables
 the former unsigned gateway and preserves all historical records. Manual rollout
 and operational acceptance are in SECURITY_ATTENDANCE.md.
+
+
+## 2026-11-14 · Supervised attendance on a guard's shared device
+
+The user approved an in-person guard ID check for employees without phones. A
+password-only shared kiosk would allow proxy attendance; enrolling every staff
+passkey under one guard device PIN would lose individual control. Migration 0015
+therefore adds a separate supervised mode: fresh employee Auth sign-in in memory,
+explicit HR authorization of a guard for their assigned site, in-person staff ID /
+live-photo confirmation and an action-bound required-UV assertion by that guard.
+Both identities and sessions are bound server-side, no self-approval is allowed,
+and private immutable witness evidence is recorded with each successful action.
+The personal-device passkey route remains available. Neither mode claims certified
+face matching, liveness or perfect physical identity. A colluding guard remains
+an operational risk, to be addressed through supervision and evidence review.
+
+Dashboard QR access opens a separate simple display. The supervised page clears
+the employee's temporary credentials/photo after one action or five minutes and
+keeps the guard session separate. Its site-scoped queue reveals only current
+random requests; the original two-minute server deadline is preserved. Existing
+writers, event ordering, private bucket naming, exact retries and historical data
+remain in use. Apply only the new migration after 0014; activation and frontend
+release stay manual. See SECURITY_ATTENDANCE.md for exact rollout steps.

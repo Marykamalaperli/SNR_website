@@ -18,7 +18,10 @@ export async function handleSecurityIdentity(operation, { body, rpc, url, userId
       securityCode: 'attendance_passkey_required',
     });
   if (!body?.flowId) throw failure();
-  const ctx = await rpc('security_identity_context', { p_flow_id: body.flowId });
+  const station = operation.startsWith('station-');
+  const ctx = await rpc(station ? 'security_station_context' : 'security_identity_context', {
+    p_flow_id: body.flowId,
+  });
   if (ctx.user_id !== userId) throw failure();
   if (operation.endsWith('-options')) {
     const registering = operation === 'register-options';
@@ -45,19 +48,34 @@ export async function handleSecurityIdentity(operation, { body, rpc, url, userId
           userVerification: 'required',
           allowCredentials: [{ id: ctx.credential.id, transports: ctx.credential.transports }],
         });
-    const challenge = await rpc('security_begin_identity', {
-      p_flow_id: body.flowId,
-      p_kind: registering ? 'register' : body.action?.type === 'security_check' ? 'check' : 'punch',
-      p_rp_id: url.hostname,
-      p_action: registering ? null : body.action,
-    });
+    const challenge = await rpc(
+      station ? 'security_begin_station_identity' : 'security_begin_identity',
+      {
+        p_flow_id: body.flowId,
+        ...(station
+          ? { p_visit_id: body.visitId }
+          : {
+              p_kind: registering
+                ? 'register'
+                : body.action?.type === 'security_check'
+                  ? 'check'
+                  : 'punch',
+            }),
+        p_rp_id: url.hostname,
+        p_action: registering ? null : body.action,
+      },
+    );
     options.challenge = challenge.challenge;
     return { ...challenge, options };
   }
-  const challenge = await rpc('security_identity_challenge', {
-    p_flow_id: body.flowId,
-    p_id: body.challengeId,
-  });
+  const challenge = await rpc(
+    station ? 'security_station_identity_challenge' : 'security_identity_challenge',
+    {
+      p_flow_id: body.flowId,
+      p_id: body.challengeId,
+      ...(station ? { p_visit_id: body.visitId } : {}),
+    },
+  );
   if (challenge.user_id !== userId || challenge.rp_id !== url.hostname) throw failure();
   let registration = null,
     counter = null;
@@ -83,7 +101,11 @@ export async function handleSecurityIdentity(operation, { body, rpc, url, userId
         ),
       };
     } else {
-      if (!['punch', 'check'].includes(challenge.kind) || !challenge.credential) throw failure();
+      if (
+        !(station ? challenge.kind === 'station' : ['punch', 'check'].includes(challenge.kind)) ||
+        !challenge.credential
+      )
+        throw failure();
       const result = await verifyAuthenticationResponse({
         response: body.response,
         expectedChallenge: challenge.challenge,
@@ -104,8 +126,13 @@ export async function handleSecurityIdentity(operation, { body, rpc, url, userId
     throw failure();
   }
   return rpc(
-    'complete_security_identity',
-    { p_id: challenge.id, p_user_id: userId, p_registration: registration, p_counter: counter },
+    station ? 'complete_security_station_identity' : 'complete_security_identity',
+    {
+      p_id: challenge.id,
+      p_user_id: userId,
+      ...(station ? {} : { p_registration: registration }),
+      p_counter: counter,
+    },
     { elevated: true },
   );
 }

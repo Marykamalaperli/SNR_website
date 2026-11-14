@@ -73,12 +73,19 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       '/api/attendance/security/photos',
       '/api/attendance/security/check-photos',
     ].includes(url.pathname);
+    const stationMode = url.pathname === '/api/attendance/station/workspace';
     if (url.pathname.startsWith('/api/attendance/qr/')) throw new Failure(401, 'sign_in_required');
     if (
       !securityMode &&
-      !['register-options', 'register-verify', 'assert-options', 'assert-verify'].includes(
-        identityOperation,
-      ) &&
+      !stationMode &&
+      ![
+        'register-options',
+        'register-verify',
+        'assert-options',
+        'assert-verify',
+        'station-options',
+        'station-verify',
+      ].includes(identityOperation) &&
       !['/api/attendance/photos', '/api/attendance/resolve-map-link'].includes(url.pathname)
     )
       throw new Failure(404, 'not_found');
@@ -107,12 +114,19 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
         throw new Failure(503, 'attendance_upload_unavailable');
       return result;
     }
-    async function rpc(name, body, { elevated = false, allowNoContent = false } = {}) {
+    async function rpc(
+      name,
+      body,
+      { elevated = false, allowNoContent = false, callerAuthorization = null } = {},
+    ) {
       const result = await upstream(
         '/rest/v1/rpc/' + name,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(callerAuthorization ? { Authorization: callerAuthorization } : {}),
+          },
           body: JSON.stringify(body),
         },
         elevated,
@@ -154,6 +168,44 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       return json(
         await handleSecurityIdentity(identityOperation, { body, rpc, url, userId: identity.id }),
       );
+    }
+    if (stationMode) {
+      if (!adminKey(settings.adminKey)) throw new Failure(503, 'attendance_upload_unavailable');
+      const guard = await rpc('security_station_context', { p_flow_id: body.flowId });
+      if (guard.user_id !== identity.id) throw new Failure(403, 'station_operator_required');
+      const employeeAuthorization = request.headers.get('X-Employee-Authorization') || '';
+      if (!/^Bearer [A-Za-z0-9_.-]{10,12000}$/.test(employeeAuthorization))
+        throw new Failure(401, 'sign_in_required');
+      const result = await upstream('/auth/v1/user', {
+        headers: { Authorization: employeeAuthorization },
+      });
+      const employee = await result.json();
+      if (!result.ok || !uuid.test(employee.id || '')) throw new Failure(401, 'sign_in_required');
+      if (employee.id === identity.id)
+        throw new Failure(403, 'station_different_employee_required');
+      const employeeRpc = (name, parameters) =>
+        rpc(name, parameters, { callerAuthorization: employeeAuthorization });
+      const workspace = await employeeRpc('security_attendance_workspace', {
+        p_client_id: body.clientId,
+      });
+      const context = await employeeRpc('security_station_employee_context', {
+        p_flow_id: workspace.security_flow_id,
+      });
+      if (context.user_id !== employee.id) throw new Failure(403, 'workforce_access_denied');
+      const visit = await rpc(
+        'open_security_station_visit',
+        {
+          p_operator_flow_id: guard.flow_id,
+          p_operator_user_id: identity.id,
+          p_employee_flow_id: context.flow_id,
+          p_employee_user_id: employee.id,
+        },
+        { elevated: true },
+      );
+      return json({
+        ...visit,
+        workspace: { ...workspace, employee_number: context.employee_number },
+      });
     }
     if (securityMode && url.pathname.endsWith('/workspace'))
       return json(await rpc('security_attendance_workspace', { p_client_id: body.clientId }));

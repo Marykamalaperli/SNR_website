@@ -206,6 +206,13 @@ function EmployeeAttendance() {
             <Link to="/me/attendance" className="text-link">
               View my attendance history
             </Link>
+            <p>
+              Using a guard’s phone? Use the supervised shared device so the guard can verify you in
+              person.
+            </p>
+            <Link to="/attendance/station" className="text-link">
+              Open shared attendance device
+            </Link>
           </Card>
         </aside>
       </div>
