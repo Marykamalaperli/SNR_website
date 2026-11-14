@@ -12,6 +12,7 @@ import {
   ChartNoAxesCombined,
   Settings,
   ShieldCheck,
+  QrCode,
 } from 'lucide-react';
 
 export const workspaces = {
@@ -22,6 +23,7 @@ export const workspaces = {
     links: [
       ['', 'Dashboard', LayoutDashboard],
       ['attendance', 'My Attendance', Clock3],
+      ['attendance-qr', 'Attendance QR', QrCode],
       ['schedule', 'My Schedule', CalendarDays],
       ['corrections', 'Correction Requests', FilePenLine],
       ['documents', 'My Documents', FolderOpen],
@@ -35,6 +37,7 @@ export const workspaces = {
     links: [
       ['', 'Dashboard', LayoutDashboard],
       ['attendance', 'Team Attendance', Clock3],
+      ['attendance-qr', 'Attendance QR', QrCode],
       ['members', 'Team Members', UsersRound],
       ['exceptions', 'Exceptions', CircleAlert],
       ['corrections', 'Correction Reviews', ClipboardCheck],
@@ -48,6 +51,7 @@ export const workspaces = {
       ['', 'Dashboard', LayoutDashboard],
       ['employees', 'Employees', UsersRound],
       ['attendance', 'Attendance', Clock3],
+      ['attendance-qr', 'Attendance QR', QrCode],
       ['security', 'Security checks', ShieldCheck],
       ['approvals', 'Approvals', ClipboardCheck],
       ['sites', 'Sites & Shifts', Building2],

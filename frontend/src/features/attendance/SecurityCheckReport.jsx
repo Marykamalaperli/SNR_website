@@ -32,11 +32,6 @@ export default function SecurityCheckReport() {
         eyebrow="ATTENDANCE SECURITY"
         title="Security photo checks"
         description="Review completed and missed two-minute checks. A missed check needs review; it is not proof of absence or misconduct."
-        action={
-          <Button href="/attendance/qr" target="_blank" rel="noopener noreferrer">
-            Open attendance QR
-          </Button>
-        }
       />
       <Card className="security-review-card">
         <form

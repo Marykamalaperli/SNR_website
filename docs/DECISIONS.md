@@ -329,3 +329,14 @@ random requests; the original two-minute server deadline is preserved. Existing
 writers, event ordering, private bucket naming, exact retries and historical data
 remain in use. Apply only the new migration after 0014; activation and frontend
 release stay manual. See SECURITY_ATTENDANCE.md for exact rollout steps.
+
+## 2026-11-14 · Dedicated sidebar page for the attendance QR
+
+The user clarified that Attendance QR belongs in the SNR NEST sidebar. It now
+opens its own workspace page for Employee, Supervisor and HR, displaying only
+common-QR attendance actions. The dashboard card and directory/report QR buttons
+are removed. A shared component renders both the workspace page and standalone
+QR window, with a single main landmark and the existing signed-in role gate on
+workspace routes. The optional display window, shared-device flow, employee
+security configuration and server attendance controls retain their existing
+behavior. This navigation change needs a frontend release and no new migration.

@@ -380,3 +380,23 @@ live Supabase account, physical phone/GPS/passkey provider, in-person identity o
 production deployment is claimed verified. Apply new migration 0015 after 0014,
 reload PostgREST and release the frontend manually, then have HR authorize the
 intended guards and perform the live acceptance run in SECURITY_ATTENDANCE.md.
+
+## 14 November 2026 · Attendance QR sidebar navigation
+
+Moved QR access to a dedicated sidebar page for Employee, Supervisor and HR.
+The workspace page renders the QR and attendance actions without employee tables;
+the optional standalone display window remains available. Removed the dashboard
+QR card and directory/report display buttons. No server or database code changed.
+
+Executed from `frontend/`:
+
+- `npm run format:check`, `npm run lint`, `npm test`, and `npm run build` passed;
+  all **155 unit tests** passed.
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium CI=1 npm run test:browser`
+  passed all **53 browser tests**. The updated QR scenario covers desktop sidebar
+  selection, no employee tables, direct reload, separate display/download, mobile
+  drawer navigation, no horizontal overflow and automated WCAG checks. Existing
+  attendance, supervised-device and account/access-control regressions passed.
+- Desktop/mobile QR screenshots were visually reviewed. No live deployment or
+  Supabase changes were performed. This navigation update needs only the manual
+  frontend release; existing migration 0015 activation remains separate.

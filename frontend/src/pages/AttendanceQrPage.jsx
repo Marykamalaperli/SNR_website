@@ -6,7 +6,7 @@ import Button from '../components/common/Button';
 import usePageMeta from '../hooks/usePageMeta';
 import '../styles/security-attendance.css';
 
-export default function AttendanceQrPage() {
+export default function AttendanceQrPage({ embedded = false }) {
   usePageMeta('Attendance QR', 'Scan to sign in for employee attendance.', true);
   const [image, setImage] = useState('');
   const [error, setError] = useState('');
@@ -25,14 +25,15 @@ export default function AttendanceQrPage() {
       active = false;
     };
   }, [link]);
+  const Container = embedded ? 'section' : 'main';
   return (
-    <main className="attendance-qr-display" id="main-content">
-      <Brand />
+    <Container className="attendance-qr-display" id={embedded ? undefined : 'main-content'}>
+      {!embedded && <Brand />}
       <span className="eyebrow">
         <QrCode size={19} />
         EMPLOYEE ATTENDANCE
       </span>
-      <h1>Scan. Sign in. Record your attendance.</h1>
+      <h1>{embedded ? 'Attendance QR' : 'Scan. Sign in. Record your attendance.'}</h1>
       <p>One common QR for every employee. Your credentials identify your individual account.</p>
       {image && <img src={image} width="320" height="320" alt="Common employee attendance QR" />}
       {error && <p role="alert">{error}</p>}
@@ -51,6 +52,16 @@ export default function AttendanceQrPage() {
         </span>
       </div>
       <div className="security-header-actions">
+        {embedded && (
+          <Button
+            href="/attendance/qr"
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="secondary"
+          >
+            Open display window
+          </Button>
+        )}
         <Button href={link}>Open attendance</Button>
         {image && (
           <Button href={image} download="snr-common-attendance-qr.png" variant="secondary">
@@ -71,6 +82,6 @@ export default function AttendanceQrPage() {
           Open shared attendance device
         </Button>
       </div>
-    </main>
+    </Container>
   );
 }

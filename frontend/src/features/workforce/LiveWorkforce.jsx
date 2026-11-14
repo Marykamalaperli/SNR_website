@@ -8,10 +8,12 @@ import HrSettings from './HrSettings';
 import LiveAttendance from '../attendance/LiveAttendance';
 import EmployeeSchedule from '../attendance/EmployeeSchedule';
 import SecurityCheckReport from '../attendance/SecurityCheckReport';
+import AttendanceQrPage from '../../pages/AttendanceQrPage';
 
 export default function LiveWorkforce({ role, base }) {
   const { pathname } = useLocation();
   const section = pathname.slice(base.length).replace(/^\/|\/$/g, '');
+  if (section === 'attendance-qr') return <AttendanceQrPage embedded />;
   if (section === 'attendance' || (!section && role === 'supervisor'))
     return <LiveAttendance role={role} home={!section} />;
   if (role === 'hr') {

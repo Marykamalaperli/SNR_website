@@ -36,16 +36,19 @@ channel. Enrollment, approval/reset, policy edits, successful punches and photo
 check completion/read operations are audited. Private key material and biometric
 templates never enter this application.
 
-## Dashboard QR and the supervised shared device (0015)
+## Sidebar QR and the supervised shared device (0015)
 
-Employee, Supervisor and HR home dashboards have a prominent **Open attendance QR**
-button. It opens `/attendance/qr` in a separate window/tab without an opener. The
-display includes download and sign-in actions and a **No phone? Ask the guard**
-explanation. The common QR stays a public sign-in link, with no employee credentials.
+Employee, Supervisor and HR workspaces have a dedicated **Attendance QR** sidebar
+item. It opens `/me/attendance-qr`, `/team/attendance-qr` or `/hr/attendance-qr`
+inside the workspace, showing the QR and its actions without any employee tables.
+The QR display is separate from Dashboard, Employees and attendance reports.
+**Open display window** opens `/attendance/qr` in a separate window/tab without an
+opener. Both displays include download/sign-in actions and **No phone? Ask the
+guard**. The common QR stays a public sign-in link, with no employee credentials.
 
-For an employee without a phone, an authorized guard opens **Help an employee
-without a phone** (`/attendance/station`) on the guard's device. HR first verifies
-the guard's passkey enrollment in person, assigns an active site and explicitly
+For an employee without a phone, an authorized guard opens **Attendance QR → Open
+shared attendance device** (`/attendance/station`) on the guard's device. HR first
+verifies the guard's passkey enrollment in person, assigns an active site and explicitly
 enables **Employees → Attendance security → Shared-device guard → Enable
 shared-device duty → Confirm identity verification**. This is a narrow site-scoped
 capability for an active Employee account, not an HR role. It is Off by default.
@@ -202,9 +205,8 @@ use narrower ranges if needed.
    `frontend`**. This ships the security screen and the Worker WebAuthn verifier.
    No backend/Google deployment is needed. A push runs CI only. Do not deploy an
    older frontend after applying 0014: new punch writers intentionally reject it.
-6. Open production **Dashboard → Open attendance QR** (also available in Employees).
-   Display the new common QR
-   in its separate window or download/print it. It is the same for all employees
+6. Open production **SNR NEST sidebar → Attendance QR**. Use **Open display window**
+   for a separate QR window, or download/print the new common QR. It is the same for all employees
    and contains no credentials or personal token. Use the production HTTPS hostname;
    passkeys are scoped to that hostname. Hostname changes require enrollment/reset
    and HR approval again. Local WebAuthn tests use `localhost`, not an IP address.

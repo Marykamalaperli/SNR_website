@@ -216,6 +216,10 @@ describe('Development sample workspaces', () => {
     open(path);
     const nav = await screen.findByRole('navigation', { name });
     expect(within(nav).getByRole('link', { name: allowed })).toBeVisible();
+    expect(within(nav).getByRole('link', { name: 'Attendance QR', exact: true })).toHaveAttribute(
+      'href',
+      path + '/attendance-qr',
+    );
     expect(within(nav).queryByRole('link', { name: denied })).not.toBeInTheDocument();
   });
 });

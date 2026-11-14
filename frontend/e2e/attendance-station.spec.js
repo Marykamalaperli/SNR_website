@@ -164,19 +164,22 @@ test.beforeEach(async ({ context }) => {
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 12.971599, longitude: 77.594566, accuracy: 8 });
 });
-test('dashboard opens the common QR separately and shared-device duty requires explicit HR authorization', async ({
+test('the sidebar QR page opens the separate display and shared-device duty requires explicit HR authorization', async ({
   page,
 }) => {
   const state = await sharedDevice(page);
   await signInWorkforce(page);
   await page.goto('/me');
+  await page.getByRole('link', { name: 'Attendance QR', exact: true }).click();
+  await expect(page).toHaveURL(/\/me\/attendance-qr$/);
+  await expect(page.getByRole('table')).toHaveCount(0);
   const popup = page.waitForEvent('popup');
-  await page.getByRole('link', { name: 'Open attendance QR', exact: true }).click();
+  await page.getByRole('link', { name: 'Open display window', exact: true }).click();
   const qr = await popup;
   await expect(qr.getByRole('heading', { name: 'No phone? Ask the guard.' })).toBeVisible();
   await qr.close();
   state.stationEnabled = false;
-  await page.getByRole('link', { name: 'Help an employee without a phone' }).click();
+  await page.getByRole('link', { name: 'Open shared attendance device' }).click();
   await expect(page.getByRole('heading', { name: 'Guard authorization required' })).toBeVisible();
   await expect(page.getByLabel('Employee password')).toHaveCount(0);
   expect(await page.evaluate(() => window.attendanceCameraRequests)).toBe(0);

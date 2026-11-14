@@ -7,6 +7,7 @@ import NotFoundPage from '../../pages/NotFoundPage';
 import EmployeeWorkspace from '../employee/EmployeeWorkspace';
 import SupervisorWorkspace from '../supervisor/SupervisorWorkspace';
 import HrWorkspace from '../hr/HrWorkspace';
+import AttendanceQrPage from '../../pages/AttendanceQrPage';
 
 const roles = { me: 'employee', team: 'supervisor', hr: 'hr' };
 const people = {
@@ -96,7 +97,11 @@ function DemoInstance({ role }) {
       }}
     >
       <DashboardLayout>
-        <RoleContent section={section} />
+        {section === 'attendance-qr' ? (
+          <AttendanceQrPage embedded />
+        ) : (
+          <RoleContent section={section} />
+        )}
       </DashboardLayout>
     </WorkspaceContext.Provider>
   );

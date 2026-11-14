@@ -131,20 +131,10 @@ export default function EmployeeDirectory({ manage = false }) {
         }
         action={
           manage && (
-            <div className="directory-actions">
-              <Button
-                href="/attendance/qr"
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="secondary"
-              >
-                Open attendance QR
-              </Button>
-              <Button disabled={!canAdd} onClick={() => setEditor({ record: null })}>
-                <Plus size={17} aria-hidden="true" />
-                Add employee
-              </Button>
-            </div>
+            <Button disabled={!canAdd} onClick={() => setEditor({ record: null })}>
+              <Plus size={17} aria-hidden="true" />
+              Add employee
+            </Button>
           )
         }
       />

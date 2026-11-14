@@ -34,14 +34,40 @@ test.beforeEach(async ({ context }) => {
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 12.971599, longitude: 77.594566, accuracy: 8 });
 });
-test('HR opens the common attendance QR in a separate window and downloads the shared sign-in link', async ({
+test('HR opens Attendance QR from the sidebar without employee tables, including mobile navigation and the separate display window', async ({
   page,
 }) => {
   await workforceFixture(page, { populated: true });
   await signInWorkforce(page);
   await page.goto('/hr/employees');
+  await expect(
+    page.getByRole('heading', { name: 'Employee directory', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open attendance QR', exact: true })).toHaveCount(0);
+  await page
+    .getByRole('navigation', { name: 'HR / Admin navigation' })
+    .getByRole('link', { name: 'Attendance QR', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/hr\/attendance-qr$/);
+  await expect(page.getByRole('heading', { name: 'Attendance QR', exact: true })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Common employee attendance QR' })).toBeVisible();
+  await expect(page.getByRole('table')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Employee directory', exact: true })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole('link', { name: 'Attendance QR', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.screenshot({
+    path: '/tmp/snr-sidebar-qr-desktop.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Attendance QR', exact: true })).toBeVisible();
   const popup = page.waitForEvent('popup');
-  await page.getByRole('link', { name: 'Open attendance QR', exact: true }).click();
+  await page.getByRole('link', { name: 'Open display window', exact: true }).click();
   const display = await popup;
   await expect(display).toHaveURL(/\/attendance\/qr$/);
   await expect(display.getByRole('img', { name: 'Common employee attendance QR' })).toBeVisible();
@@ -52,7 +78,29 @@ test('HR opens the common attendance QR in a separate window and downloads the s
   const download = display.waitForEvent('download');
   await display.getByRole('link', { name: 'Download QR' }).click();
   expect((await download).suggestedFilename()).toBe('snr-common-attendance-qr.png');
+  await display.close();
   await expect(page.getByRole('button', { name: /^Attendance QR Directory/ })).toHaveCount(0);
+  await page.goto('/hr/employees');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Open workspace navigation' }).click();
+  await page
+    .getByRole('dialog', { name: 'Workspace navigation' })
+    .getByRole('link', { name: 'Attendance QR', exact: true })
+    .click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Attendance QR', exact: true })).toBeVisible();
+  await expect(page.getByRole('table')).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Common employee attendance QR' })).toBeVisible();
+  expect(
+    (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze())
+      .violations,
+  ).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({
+    path: '/tmp/snr-sidebar-qr-mobile.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
   await page.goto('/login?attendance=1');
   await expect(page.getByRole('heading', { name: 'Sign in for attendance' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sign In', exact: true })).toBeVisible();
