@@ -196,8 +196,11 @@ All four flags should be true for the current release. Interpret the result:
   objects together. Verify the earlier migrations before attempting 0014. The
   flags are representative object checks, not proof of a complete migration;
   inspect any partial/inconsistent setup instead of rerunning deployed files.
-- If `migration_0014_ready` is false, apply the missing 0014 migration after 0013.
-- If `migration_0015_ready` is false, apply the missing 0015 migration after 0014.
+- A false 0014/0015 flag means the checked entry points are not ready; some
+  internal objects can still exist. Run the combined inventory before deciding
+  to apply a migration. `partial_inspect_before_applying` requires inspection.
+- Apply 0014 after 0013, and 0015 after 0014, only when the relevant setup is
+  confirmed not installed. Existing/partial setup needs a targeted recovery.
 - Once installed, run `notify pgrst, 'reload schema';` in that SQL Editor, then
   retry the attendance page. Reloading the schema does not install migrations.
 - If `employee_workspace_rpc_granted` is false, have the administrator inspect
@@ -219,6 +222,23 @@ access tokens, service keys or request headers. The initial workspace call uses
 the employee JWT and publishable key, without the private upload/admin binding.
 Missing `SUPABASE_ADMIN_KEY` affects enrollment/photo operations later; it should
 not be assumed to explain an initial workspace-load error.
+
+An error such as `42723: function "security_employee" already exists` is evidence
+of existing setup, even when the public workspace flag is false. Stop rerunning
+0014/0015 and run `supabase/setup/inspect-security-attendance.sql` in SQL Editor.
+It lists only function signatures and table names. Do not drop schemas/tables,
+use `CASCADE`, or replace every `CREATE` in a deployed migration. Preserve existing
+passkeys, attendance intents and immutable photo/audit evidence while reviewing
+which definitions and wrappers were installed. The error can also mean 0014
+already finished in a previous run. Refresh the readiness check after inspecting
+the current inventory: if 0014 is ready and 0015 is not, skip 0014 and apply only
+0015. A prior false result does not override objects installed afterward. Deployed
+migration files stay unchanged; a genuinely partial installation needs a targeted
+recovery based on its actual inventory and separate testing.
+Successful DDL normally reports **Success. No rows returned**. That is a completed
+migration, not a request to run it again. Use the separate readiness query to
+verify the result. The preserved `complete_identity_before_service_actor` helper
+in 0015 must not be dropped or renamed to get past a duplicate error.
 
 1. Confirm migrations **0001–0013** have already succeeded in the intended Supabase
    project. Back up production and review the new migration; do not rerun or edit

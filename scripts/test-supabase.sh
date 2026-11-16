@@ -77,8 +77,29 @@ snr_psql < "$snr_project_root/supabase/tests/employee-qr-attendance-access.sql"
 snr_attendance_readiness="$(snr_psql --tuples-only --no-align --field-separator=, < "$snr_project_root/supabase/setup/check-security-attendance.sql")"
 test "$snr_attendance_readiness" = 't,f,f,f'
 
+# A leftover helper must be reported as partial, not treated as an absent 0014.
+# The synthetic probe is rolled back before normal migration/permission tests.
+snr_partial_readiness="$(
+  {
+    cat <<'SQL'
+begin;
+create function snr_private.security_employee() returns public.employee_profiles
+language sql set search_path='' as $$ select null::public.employee_profiles $$;
+SQL
+    cat "$snr_project_root/supabase/setup/check-attendance-migrations.sql"
+    printf '%s\n' 'rollback;'
+  } | snr_psql --quiet --tuples-only --no-align --field-separator=,
+)"
+case "$snr_partial_readiness" in
+  *'0014,f,partial_inspect_before_applying'*) ;;
+  *) echo 'Partial attendance setup was not detected.' >&2; exit 1 ;;
+esac
+
 snr_psql < "$snr_project_root/supabase/migrations/202611130014_security_attendance.sql"
 snr_psql < "$snr_project_root/supabase/tests/security-attendance.sql"
+
+snr_attendance_readiness="$(snr_psql --tuples-only --no-align --field-separator=, < "$snr_project_root/supabase/setup/check-security-attendance.sql")"
+test "$snr_attendance_readiness" = 't,t,f,t'
 
 snr_psql < "$snr_project_root/supabase/migrations/202611140015_supervised_attendance.sql"
 snr_psql < "$snr_project_root/supabase/tests/supervised-attendance.sql"
@@ -86,4 +107,24 @@ snr_psql < "$snr_project_root/supabase/tests/supervised-attendance.sql"
 snr_attendance_readiness="$(snr_psql --tuples-only --no-align --field-separator=, < "$snr_project_root/supabase/setup/check-security-attendance.sql")"
 test "$snr_attendance_readiness" = 't,t,t,t'
 snr_psql < "$snr_project_root/supabase/setup/check-attendance-migrations.sql"
+snr_psql < "$snr_project_root/supabase/setup/inspect-security-attendance.sql"
 echo 'PASS: read-only attendance readiness detects missing setup before 0014 and installed objects/grants after 0015'
+
+# A repeated migration can fail at its first duplicate even when setup succeeded
+# earlier. PostgreSQL must roll that attempt back with definitions/grants intact.
+snr_security_definitions() {
+  snr_psql --quiet --tuples-only --no-align --command="select md5(string_agg(p.oid::text||':'||p.proowner::text||':'||md5(pg_get_functiondef(p.oid))||':'||coalesce(p.proacl::text,''),E'\\n' order by p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in('public','snr_private') and p.prokind='f';"
+}
+snr_before_retry="$(snr_security_definitions)"
+for snr_migration in 202611130014_security_attendance.sql 202611140015_supervised_attendance.sql; do
+  if snr_retry_error="$(snr_psql --set=VERBOSITY=verbose < "$snr_project_root/supabase/migrations/$snr_migration" 2>&1)"; then
+    echo 'A previously applied attendance migration unexpectedly succeeded twice.' >&2
+    exit 1
+  fi
+  case "$snr_retry_error" in
+    *'42723'*'already exists'*) ;;
+    *) printf '%s\n' "$snr_retry_error" >&2; exit 1 ;;
+  esac
+  test "$(snr_security_definitions)" = "$snr_before_retry"
+done
+echo 'PASS: duplicate 0014/0015 attempts roll back without altering installed function definitions or grants'

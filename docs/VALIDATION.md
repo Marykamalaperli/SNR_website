@@ -436,3 +436,36 @@ Executed checks:
 
 These checks verify the diagnostics/error-handling change, not activation of the
 owner's live database. Supabase migrations and the frontend release remain manual.
+
+## 16 November 2026 · Duplicate migration and partial-install diagnostics
+
+The owner reported duplicate-function errors while running 0014 and 0015. Their
+current inventory included the 0014 public workspace RPC, storage wrappers and
+all eight 0014 security tables; the older false readiness result was no longer
+sufficient evidence that 0014 was absent. The later 0015 archive-name duplicate
+requires a current station-object check before choosing further action. No
+production object was dropped, renamed or reset by this work, and the deployed
+0014/0015 files remain unchanged.
+
+Added a read-only catalog inventory and installation-state descriptions. The
+setup guide now explains that false entry-point checks can coexist with installed
+internal objects, duplicate errors can follow a successful earlier run, and
+"Success. No rows returned" is normal for DDL. Preserve the identity archive and
+inspect current state rather than rerunning files or changing every CREATE.
+
+Executed verification:
+
+- `bash -n scripts/test-supabase.sh` and `git diff --check`: passed.
+- `bash scripts/test-supabase.sh`: all PostgreSQL 16 migration/authorization,
+  storage and concurrency suites passed. A rolled-back helper-only fixture was
+  detected as partial. Readiness was `t,f,f,f` before 0014, `t,t,f,t` after 0014,
+  and `t,t,t,t` after 0015. The catalog inventory executed successfully.
+- In that disposable database only, repeated complete 0014 and 0015 files both
+  reproduced SQLSTATE 42723. Hashes covering existing function OIDs, owners,
+  definitions and grants were identical after each failed attempt rolled back.
+- Frontend `npm run format:check`, `npm run lint` and `npm run build`: passed.
+  Application/server source was unchanged; their test suites were not rerun for
+  these SQL diagnostic/documentation changes.
+
+Live setup remains manual. The diagnostic flags inspect representative objects;
+actual employee login, attendance and passkey acceptance require a live check.
