@@ -136,6 +136,13 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       if (result.status === 204 && allowNoContent) return null;
       const data = await result.json();
       if (!result.ok) {
+        // A missing RPC/table after a frontend release is an activation problem.
+        // Never return provider messages, schema names, SQL or credentials.
+        if (['PGRST202', '42883', '42P01', '42703'].includes(data.code))
+          throw new Failure(503, 'attendance_setup_required');
+        if (['PGRST301', 'PGRST303'].includes(data.code))
+          throw new Failure(401, 'sign_in_required');
+        if (data.code === '42501') throw new Failure(403, 'workforce_access_denied');
         const status = /^PT(401|403|404|409|422|429)$/.test(data.code)
           ? Number(data.code.slice(2))
           : 503;

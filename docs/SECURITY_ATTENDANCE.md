@@ -185,6 +185,41 @@ use narrower ranges if needed.
 
 ## Manual activation
 
+If the attendance screen reports **Attendance is unavailable**, first check the
+live database setup. In the intended project's Supabase **SQL Editor**, run
+`supabase/setup/check-security-attendance.sql`. This is a read-only catalog/grant
+check: it does not change employee, attendance, photo, credential or audit data.
+All four flags should be true for the current release. Interpret the result:
+
+- If the 0013 prerequisite flag is false, run the combined read-only inventory
+  `supabase/setup/check-attendance-migrations.sql` to check the earlier setup
+  objects together. Verify the earlier migrations before attempting 0014. The
+  flags are representative object checks, not proof of a complete migration;
+  inspect any partial/inconsistent setup instead of rerunning deployed files.
+- If `migration_0014_ready` is false, apply the missing 0014 migration after 0013.
+- If `migration_0015_ready` is false, apply the missing 0015 migration after 0014.
+- Once installed, run `notify pgrst, 'reload schema';` in that SQL Editor, then
+  retry the attendance page. Reloading the schema does not install migrations.
+- If `employee_workspace_rpc_granted` is false, have the administrator inspect
+  the authenticated function grants from migration 0014. Keep RLS and employee
+  ownership checks enabled.
+
+The gateway maps missing RPCs/tables/columns to `attendance_setup_required`, so
+the page asks the administrator to activate security attendance. Provider SQL,
+schema details, hints and tokens are not sent to the browser. A setup rejection
+is definitive and does not retain a photo action as an uncertain completed punch.
+Expired JWTs and denied grants produce sign-in/access messages. Other server
+failures ask for an administrator check without guessing the cause.
+
+These readiness flags do not verify an employee login or GPS/camera/passkey
+hardware. If the flags are true and refreshing the schema does not resolve the
+error, inspect the authenticated `/api/attendance/security/workspace` response and
+Cloudflare Function logs. Share the bounded error code/status, not passwords,
+access tokens, service keys or request headers. The initial workspace call uses
+the employee JWT and publishable key, without the private upload/admin binding.
+Missing `SUPABASE_ADMIN_KEY` affects enrollment/photo operations later; it should
+not be assumed to explain an initial workspace-load error.
+
 1. Confirm migrations **0001–0013** have already succeeded in the intended Supabase
    project. Back up production and review the new migration; do not rerun or edit
    deployed migrations.

@@ -34,6 +34,21 @@ test.beforeEach(async ({ context }) => {
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 12.971599, longitude: 77.594566, accuracy: 8 });
 });
+test('missing security attendance setup shows an activation message and never opens a camera', async ({
+  page,
+}) => {
+  await workforceFixture(page, { role: 'employee', populated: true });
+  await installAttendanceCamera(page);
+  await page.route('**/api/attendance/security/workspace', (route) =>
+    route.fulfill({ status: 503, json: { error: { code: 'attendance_setup_required' } } }),
+  );
+  await signInWorkforce(page);
+  await expect(page.getByRole('heading', { name: 'Attendance is unavailable' })).toBeVisible();
+  await expect(page.getByText(/Security attendance setup is incomplete/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Clock in', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Enroll attendance passkey' })).toHaveCount(0);
+  expect(await page.evaluate(() => window.attendanceCameraRequests)).toBe(0);
+});
 test('HR opens Attendance QR from the sidebar without employee tables, including mobile navigation and the separate display window', async ({
   page,
 }) => {

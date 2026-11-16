@@ -3,6 +3,7 @@ import { getAuthClient } from '../services/authService';
 import {
   loadAttendanceRecords,
   loadAttendanceWorkspace,
+  attendanceGatewayRequest,
   loadEmployeeShifts,
   loadAttendanceLocations,
   recordAttendance,
@@ -29,6 +30,39 @@ beforeEach(() => {
 });
 
 afterEach(() => vi.unstubAllGlobals());
+it.each([
+  ['attendance_setup_required', 503, 'Security attendance setup is incomplete', false],
+  ['workforce_access_denied', 403, 'does not have access', false],
+  ['sign_in_required', 401, 'session has expired', false],
+  [
+    'attendance_request_failed',
+    503,
+    'administrator to check the attendance server and database',
+    true,
+  ],
+])(
+  'shows actionable %s workspace errors without exposing provider details',
+  async (code, status, message, retryable) => {
+    fetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { code, message: 'PRIVATE SQL AND TOKEN', details: 'PRIVATE DETAILS' },
+        }),
+        { status, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    let failure;
+    try {
+      await attendanceGatewayRequest('security/workspace', { clientId: 'client' });
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure.message).toContain(message);
+    expect(failure.message).not.toContain('PRIVATE');
+    expect(failure.retryable).toBe(retryable);
+  },
+);
 it('sends a punch intent and expected state without client-selected identity, tenant or timestamps', async () => {
   await recordAttendance({
     type: 'clock_in',

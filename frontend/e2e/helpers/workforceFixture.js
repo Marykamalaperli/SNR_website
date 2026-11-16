@@ -812,5 +812,12 @@ export async function signInWorkforce(page) {
   // Sign-in verifies membership asynchronously before navigating. Do not let a
   // caller's next navigation race with LoginPage's final workspace redirect.
   await page.waitForURL((url) => /^\/(hr|me|team)$/.test(url.pathname));
-  if (new URL(page.url()).pathname === '/me') await page.goto('/attendance');
+  if (new URL(page.url()).pathname === '/me') {
+    await page.goto('/attendance');
+    // A full reload restores Auth asynchronously. Wait for the verified screen
+    // before a test navigates again and aborts that restoration's requests.
+    await page
+      .getByRole('heading', { name: 'Your attendance. Your identity.', exact: true })
+      .waitFor();
+  }
 }

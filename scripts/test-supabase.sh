@@ -74,8 +74,16 @@ python3 "$snr_project_root/scripts/test_employee_qr_concurrency.py" "$snr_pg_con
 snr_psql < "$snr_project_root/supabase/migrations/202611110013_employee_qr_attendance_access.sql"
 snr_psql < "$snr_project_root/supabase/tests/employee-qr-attendance-access.sql"
 
+snr_attendance_readiness="$(snr_psql --tuples-only --no-align --field-separator=, < "$snr_project_root/supabase/setup/check-security-attendance.sql")"
+test "$snr_attendance_readiness" = 't,f,f,f'
+
 snr_psql < "$snr_project_root/supabase/migrations/202611130014_security_attendance.sql"
 snr_psql < "$snr_project_root/supabase/tests/security-attendance.sql"
 
 snr_psql < "$snr_project_root/supabase/migrations/202611140015_supervised_attendance.sql"
 snr_psql < "$snr_project_root/supabase/tests/supervised-attendance.sql"
+
+snr_attendance_readiness="$(snr_psql --tuples-only --no-align --field-separator=, < "$snr_project_root/supabase/setup/check-security-attendance.sql")"
+test "$snr_attendance_readiness" = 't,t,t,t'
+snr_psql < "$snr_project_root/supabase/setup/check-attendance-migrations.sql"
+echo 'PASS: read-only attendance readiness detects missing setup before 0014 and installed objects/grants after 0015'

@@ -49,6 +49,47 @@ const receipt = {
 };
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+test('workspace reports missing schema, expired sessions and denied grants safely before any capture or privileged call', async () => {
+  for (const [upstreamCode, expectedStatus, expectedCode] of [
+    ['PGRST202', 503, 'attendance_setup_required'],
+    ['42883', 503, 'attendance_setup_required'],
+    ['42P01', 503, 'attendance_setup_required'],
+    ['42703', 503, 'attendance_setup_required'],
+    ['PGRST301', 401, 'sign_in_required'],
+    ['PGRST303', 401, 'sign_in_required'],
+    ['42501', 403, 'workforce_access_denied'],
+    ['XX000', 503, 'attendance_request_failed'],
+  ]) {
+    const calls = [];
+    const response = await handleAttendance(
+      req({ clientId: requestId }, 'security/workspace'),
+      { ...settings, adminKey: '' },
+      {
+        fetcher: async (address, options) => {
+          const path = new URL(address).pathname;
+          calls.push(path);
+          assert.equal(options.headers.apikey, settings.supabaseKey);
+          assert.equal(options.headers.Authorization, 'Bearer fixture-user-token');
+          if (path === '/auth/v1/user') return json({ id: user });
+          assert.equal(path, '/rest/v1/rpc/security_attendance_workspace');
+          assert.deepEqual(JSON.parse(options.body), { p_client_id: requestId });
+          return json(
+            {
+              code: upstreamCode,
+              message: 'PRIVATE SQL, schema details and tokens',
+              details: 'PRIVATE DETAILS',
+              hint: 'PRIVATE HINT',
+            },
+            400,
+          );
+        },
+      },
+    );
+    assert.equal(response.status, expectedStatus);
+    assert.deepEqual(await response.json(), { error: { code: expectedCode } });
+    assert.deepEqual(calls, ['/auth/v1/user', '/rest/v1/rpc/security_attendance_workspace']);
+  }
+});
 test('shared-device visits verify both Auth identities and caller-scoped flows before a narrow service-only open', async () => {
   const guard = 'e1000000-0000-4000-8000-000000000002';
   for (const scenario of [

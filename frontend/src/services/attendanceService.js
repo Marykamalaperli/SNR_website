@@ -1,6 +1,11 @@
 import { getAuthClient } from './authService';
 
 const messages = {
+  attendance_setup_required:
+    'Security attendance setup is incomplete. Ask your administrator to activate attendance in Supabase before trying again.',
+  attendance_request_failed:
+    'The attendance service could not complete this request. Ask your administrator to check the attendance server and database, then try again.',
+  workforce_access_denied: 'Your account does not have access to this action. Contact HR.',
   station_operator_required:
     'HR must authorize you as a shared-device guard for your assigned site.',
   station_operator_setup_required:
@@ -203,7 +208,7 @@ export async function attendanceGatewayRequest(
           ? messages[code]
           : 'This request could not be completed. Please try again.',
       ),
-      { retryable: response.status >= 500 },
+      { retryable: response.status >= 500 && code !== 'attendance_setup_required' },
     );
   }
   return result;

@@ -400,3 +400,39 @@ Executed from `frontend/`:
 - Desktop/mobile QR screenshots were visually reviewed. No live deployment or
   Supabase changes were performed. This navigation update needs only the manual
   frontend release; existing migration 0015 activation remains separate.
+
+## 16 November 2026 · Diagnose unavailable security attendance
+
+The owner reported that live setup checks for the 0013, 0014 and 0015 entry-point
+functions returned false. No live migration was applied. Public-site access from
+this environment was blocked by the outbound proxy (CONNECT 403); live employee
+requests were not inspected. Earlier prerequisite inventory remains an operator
+step before choosing the first missing migration.
+
+The attendance gateway now maps missing RPC/table/column errors to a bounded
+activation code instead of its generic failure. Expired sessions and denied
+function grants retain distinct sign-in/access responses. SQL bodies, schema
+names, hints and credentials are not returned. A definitive setup rejection is
+not retained as an uncertain attendance punch. Added two read-only SQL catalog
+checks and a manual recovery section; deployed migrations are unchanged.
+
+Executed checks:
+
+- `npm run test:server`: **37 passed**, including missing-schema/session/grant
+  error classification without privileged calls, uploads or provider data leaks.
+- `npm test`: **159 passed**, including actionable messages and retry semantics.
+- `npm run format:check`, `npm run lint` and `npm run build`: passed.
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium CI=1 npm run test:browser`:
+  final full run **54 passed**. The new setup-error scenario verifies no camera or
+  punch controls. An initial run exposed a test navigation race: it navigated away
+  during restored Auth verification. The sign-in helper now waits for the verified
+  attendance heading before another navigation; no timeout or assertion was relaxed.
+- `bash scripts/test-supabase.sh`: all disposable PostgreSQL suites through 0015
+  passed. The readiness check returned `t,f,f,f` before 0014, then `t,t,t,t` after
+  0015. The full representative-object inventory returned true for all 15 versions.
+- Pinned Wrangler 4.158.0 `scripts/test-worker-runtime.mjs`: passed with compatibility
+  dates 2021-11-02 and 2026-11-07, exercising account/attendance requests and native
+  WebAuthn signature verification against synthetic upstream responses.
+
+These checks verify the diagnostics/error-handling change, not activation of the
+owner's live database. Supabase migrations and the frontend release remain manual.
