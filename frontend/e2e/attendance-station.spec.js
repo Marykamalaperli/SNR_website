@@ -42,6 +42,9 @@ async function sharedDevice(page) {
     employee_number: person.employee_number,
     security_flow_id: state.stationEmployeeFlow,
     security_credential_approved: false,
+    personal_qr_required: true,
+    personal_qr_bound: true,
+    guard_photo_required: true,
     security_checks_per_shift: state.securityChecksPerShift,
     server_time: new Date().toISOString(),
   });
@@ -116,6 +119,8 @@ async function sharedDevice(page) {
     return route.fallback();
   });
   await page.route('**/api/attendance/station/workspace', async (route) => {
+    if (route.request().postDataJSON().qrToken !== state.employeeQrs.get(state.people[0].id)?.token)
+      return route.fulfill({ status: 403, json: { error: { code: 'employee_qr_invalid' } } });
     if (!state.stationEnabled)
       return route.fulfill({ status: 403, json: { error: { code: 'station_operator_required' } } });
     if (route.request().headers()['x-employee-authorization'] !== 'Bearer ' + employeeToken)
@@ -137,6 +142,11 @@ async function sharedDevice(page) {
   return state;
 }
 async function employeeSignIn(page, password = 'employee-password') {
+  if (await page.getByLabel('Employee email', { exact: true }).isDisabled()) {
+    await page.getByLabel('Employee attendance ID', { exact: true }).fill('SNR-000000000001');
+    await page.getByRole('button', { name: 'Find employee QR', exact: true }).click();
+    await page.getByRole('button', { name: 'Use this employee QR on the shared device' }).click();
+  }
   await page.getByLabel('Employee email', { exact: true }).fill('employee@example.invalid');
   await page.getByLabel('Employee password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Continue to photo & location' }).click();
@@ -149,6 +159,7 @@ async function witnessedPhoto(page, action) {
     .check();
   await page.getByRole('button', { name: action, exact: true }).click();
   const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Take photo', exact: true }).click();
   await dialog.getByRole('button', { name: 'Take photo', exact: true }).click();
   const confirm = dialog.getByRole('button', {
     name: 'Confirm ' + action.toLowerCase(),
@@ -176,7 +187,7 @@ test('the sidebar QR page opens the separate display and shared-device duty requ
   const popup = page.waitForEvent('popup');
   await page.getByRole('link', { name: 'Open display window', exact: true }).click();
   const qr = await popup;
-  await expect(qr.getByRole('heading', { name: 'No phone? Ask the guard.' })).toBeVisible();
+  await expect(qr).toHaveURL(/\/login\?card=1#employee-card=/);
   await qr.close();
   state.stationEnabled = false;
   await page.getByRole('link', { name: 'Open shared attendance device' }).click();
@@ -277,6 +288,7 @@ test('shared-device photo checks use fresh employee sign-in and guard verificati
   await page.getByRole('button', { name: 'Verify now', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: 'Take photo', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Take photo', exact: true }).click();
   await dialog.getByRole('checkbox', { name: /I, Workspace Test User, checked/ }).check();
   await dialog.getByRole('button', { name: 'Confirm security photo' }).click();
   await expect(page.getByLabel('Employee password')).toBeVisible();
@@ -309,7 +321,8 @@ test('an unattended employee turn clears its session and closes the camera after
     page.getByRole('dialog').getByRole('button', { name: 'Take photo', exact: true }),
   ).toBeEnabled();
   await page.clock.fastForward('05:01');
-  await expect(page.getByLabel('Employee email')).toBeEnabled();
+  await expect(page.getByLabel('Employee email')).toBeDisabled();
+  await expect(page.getByLabel('Employee attendance ID', { exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toContainText('timed out and was cleared');
   await expect.poll(() => state.stationLogouts.length).toBe(1);
   expect(state.punches).toHaveLength(0);

@@ -92,6 +92,7 @@ export function createStaffAccount(values, requestId, mode = 'create') {
     account_mode: mode,
     profile: {
       display_name: values.display_name.trim(),
+      ...(values.designation?.trim() ? { designation: values.designation.trim() } : {}),
       employee_number: values.employee_number.trim(),
       site_id: values.site_id,
       department_id: values.department_id,

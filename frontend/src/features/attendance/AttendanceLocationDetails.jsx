@@ -76,7 +76,7 @@ function SavedPoint({ point, label, timezone, emptyText = 'Location not collecte
       {point.supervised_by && (
         <p className="notice">
           Staff ID and live photo witnessed by <strong>{point.supervised_by.operator_name}</strong>{' '}
-          on a shared attendance device.
+          during an in-person security check.
         </p>
       )}
       {point.photo?.jpeg_base64 || point.photo?.signed_url ? (
@@ -98,6 +98,14 @@ function SavedPoint({ point, label, timezone, emptyText = 'Location not collecte
         </div>
       ) : (
         <p className="field-hint">Photo evidence was not collected for this older event.</p>
+      )}
+      {point.guard_photo?.signed_url && (
+        <div className="saved-attendance-photo">
+          <img src={point.guard_photo.signed_url} alt={label + ' guard approval photo'} />
+          <p className="field-hint">
+            Guard photo captured {momentLabel(point.guard_photo.captured_at, timezone)}
+          </p>
+        </div>
       )}
       <a className="text-link" href={map.href} target="_blank" rel="noopener noreferrer">
         View {label.toLowerCase()} on map

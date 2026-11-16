@@ -13,6 +13,13 @@ const fixture = readFileSync(
 );
 const image = Buffer.from(fixture.match(/'jpeg_base64','([A-Za-z0-9+/=]+)'/)[1], 'base64');
 const hash = createHash('sha256').update(image).digest('hex');
+const guardImage = Buffer.concat([
+  image.subarray(0, 2),
+  Buffer.from([255, 254, 0, 9]),
+  Buffer.from('guard16'),
+  image.subarray(2),
+]);
+const guardHash = createHash('sha256').update(guardImage).digest('hex');
 const settings = {
   supabaseUrl: 'https://storage.snr-nest.test',
   supabaseKey: 'sb_publishable_fixture',
@@ -106,6 +113,7 @@ test('shared-device visits verify both Auth identities and caller-scoped flows b
         {
           flowId: 'guard-flow',
           clientId: 'employee-client',
+          qrToken: requestId,
           employeeId: 'forged-employee',
           organizationId: 'forged-org',
         },
@@ -137,9 +145,9 @@ test('shared-device visits verify both Auth identities and caller-scoped flows b
               ? json({ code: 'PT403', message: 'station_operator_required' }, 403)
               : json({ flow_id: 'verified-guard-flow', user_id: guard });
           }
-          if (path.endsWith('/security_attendance_workspace')) {
+          if (path.endsWith('/personal_employee_attendance_workspace')) {
             assert.equal(auth, 'Bearer fixture-employee-token');
-            assert.deepEqual(parameters, { p_client_id: 'employee-client' });
+            assert.deepEqual(parameters, { p_client_id: 'employee-client', p_token: requestId });
             return json({
               security_flow_id: 'verified-employee-flow',
               display_name: 'Verified employee',
@@ -215,6 +223,8 @@ function upstream({
         return json(replay ? { receipt } : photoIntent);
       if (target.pathname.endsWith('hr_workspace_settings'))
         return denied ? json({ code: 'PT403', message: 'workforce_access_denied' }, 403) : json({});
+      if (target.pathname.endsWith('verify_attendance_guard_upload'))
+        return new Response(null, { status: 204 });
       if (target.pathname.endsWith('verify_attendance_photo_upload'))
         return verificationNoContent ? new Response(null, { status: 204 }) : json(null);
       if (target.pathname.endsWith('record_attendance_storage')) return json(receipt);
@@ -225,14 +235,23 @@ function upstream({
             headers: { Location: 'https://untrusted.example.invalid/' },
           });
         if (options.method === 'POST') {
-          assert.deepEqual(Buffer.from(options.body), image);
+          assert.deepEqual(
+            Buffer.from(options.body),
+            target.pathname.includes('/attendance-guard-photos/') ? guardImage : image,
+          );
           assert.equal(options.headers['x-upsert'], 'false');
           assert.equal(options.headers.apikey, settings.adminKey);
           return duplicate
             ? json({ error: 'Duplicate' }, 409)
             : json({ Key: photoIntent.object_path });
         }
-        return new Response(mismatch ? Buffer.from('wrong bytes') : image);
+        return new Response(
+          mismatch
+            ? Buffer.from('wrong bytes')
+            : target.pathname.includes('/attendance-guard-photos/')
+              ? guardImage
+              : image,
+        );
       }
       if (target.hostname === 'maps.app.goo.gl')
         return new Response(null, {
@@ -476,10 +495,27 @@ test('retired unsigned QR paths require sign-in and never call upstream services
   }
   assert.equal(called, false);
 });
-test('security photo preparation binds flow, identity proof and caller JWT before upload', async () => {
+const supervisedAction = {
+  ...action,
+  evidence: {
+    ...action.evidence,
+    guard_photo: {
+      ...photo,
+      jpeg_base64: guardImage.toString('base64'),
+      location: action.location,
+    },
+  },
+};
+const guardIntent = {
+  ...intent,
+  bucket_id: 'attendance-guard-photos',
+  sha256: guardHash,
+  object_path: '2026-11-17/Guard_2026-11-17_09-30-00.123456_' + requestId + '.jpg',
+};
+test('security photo preparation binds flow, identity proof and caller JWT before uploading both private photos', async () => {
   const base = upstream();
   const response = await handleAttendance(
-    req({ ...action, flowId: 'flow', identityId: 'proof' }, 'security/photos'),
+    req({ ...supervisedAction, flowId: 'flow', identityId: 'proof' }, 'security/photos'),
     settings,
     {
       fetcher: async (url, options) => {
@@ -488,8 +524,8 @@ test('security photo preparation binds flow, identity proof and caller JWT befor
           const body = JSON.parse(options.body);
           assert.equal(body.p_flow_id, 'flow');
           assert.equal(body.p_identity_id, 'proof');
-          assert.deepEqual(body.p_action, action);
-          return json(intent);
+          assert.deepEqual(body.p_action, supervisedAction);
+          return json({ ...intent, guard_photo: guardIntent });
         }
         return base.fetcher(url, options);
       },
@@ -497,9 +533,14 @@ test('security photo preparation binds flow, identity proof and caller JWT befor
   );
   assert.equal(response.status, 200);
   assert.ok(base.calls.some((c) => c.path.endsWith('record_attendance_storage')));
+  assert.ok(base.calls.some((c) => c.path.includes('/attendance-guard-photos/')));
 });
 test('random security photos use their private bucket and expired requests never upload', async () => {
-  const checkIntent = { ...intent, bucket_id: 'attendance-security-checks' };
+  const checkIntent = {
+    ...intent,
+    bucket_id: 'attendance-security-checks',
+    guard_photo: guardIntent,
+  };
   const base = upstream({ photoIntent: checkIntent });
   const make = (expired) => ({
     fetcher: async (url, options) => {
@@ -515,7 +556,7 @@ test('random security photos use their private bucket and expired requests never
     },
   });
   const body = {
-    ...action,
+    ...supervisedAction,
     type: 'security_check',
     checkId: 'check',
     flowId: 'flow',
@@ -528,4 +569,30 @@ test('random security photos use their private bucket and expired requests never
   const expired = await handleAttendance(req(body, 'security/check-photos'), settings, make(true));
   assert.equal(expired.status, 409);
   assert.equal(base.calls.filter((c) => c.path.startsWith('/storage/')).length, uploads);
+});
+
+test('a rejected guard photo upload cannot commit employee attendance', async () => {
+  const base = upstream();
+  const response = await handleAttendance(
+    req({ ...supervisedAction, flowId: 'flow', identityId: 'proof' }, 'security/photos'),
+    settings,
+    {
+      fetcher: async (url, options) => {
+        if (url.endsWith('prepare_security_attendance_photo'))
+          return json({ ...intent, guard_photo: guardIntent });
+        if (url.includes('/storage/v1/object/attendance-guard-photos/'))
+          return json({ error: 'unavailable' }, 503);
+        return base.fetcher(url, options);
+      },
+    },
+  );
+  assert.equal(response.status, 503);
+  assert.equal(
+    base.calls.some((c) => c.path.endsWith('record_attendance_storage')),
+    false,
+  );
+  assert.equal(
+    base.calls.some((c) => c.path.endsWith('verify_attendance_guard_upload')),
+    false,
+  );
 });

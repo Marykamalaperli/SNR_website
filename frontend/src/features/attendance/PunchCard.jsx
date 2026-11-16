@@ -118,6 +118,7 @@ export default function PunchCard({
         receipt.photo_saved !== true ||
         receipt.qr_required !== false ||
         receipt.storage_saved !== true ||
+        (workspace.guard_photo_required && receipt.guard_photo_saved !== true) ||
         (securityFlowId && receipt.security_identity_verified !== true) ||
         !Number.isFinite(Date.parse(receipt.occurred_at))
       ) {

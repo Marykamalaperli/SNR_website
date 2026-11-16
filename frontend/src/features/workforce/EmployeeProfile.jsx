@@ -36,6 +36,8 @@ export default function EmployeeProfile() {
             {[
               ['Name', profile.display_name],
               ['Employee number', profile.employee_number],
+              ['Attendance ID', profile.attendance_id],
+              ['Designation', profile.designation],
               ['Email', session.email],
               ['Organization', session.organization_name],
               ['Department', profile.department_name],

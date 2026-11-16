@@ -24,11 +24,12 @@ export default function AppRoutes() {
     ['/me/attendance', '/attendance'].includes(location.pathname) &&
     location.hash.startsWith('#employee-qr=')
   )
-    return <Navigate to="/login?attendance=1" replace />;
+    return <Navigate to={'/login?attendance=1' + location.hash} replace />;
   return (
     <Suspense fallback={<LoadingState />}>
       <Routes>
         <Route path="attendance" element={<QrAttendancePage />} />
+        <Route path="attendance/employee" element={<QrAttendancePage />} />
         <Route path="attendance/qr" element={<AttendanceQrPage />} />
         <Route path="attendance/station" element={<AttendanceStationPage />} />
         <Route element={<PublicLayout />}>

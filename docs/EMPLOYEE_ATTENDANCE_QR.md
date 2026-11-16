@@ -1,5 +1,9 @@
 # Attendance QR
 
+> Current behavior is superseded by migration **0016**: [individual QR attendance,
+> separate employee/guard photos and manual activation](PERSONAL_QR_SECURITY_ATTENDANCE.md).
+> This document retains earlier setup diagnostics; never rerun a deployed migration.
+
 The current requirement is implemented by migration **0014**: a **common QR →
 Employee sign-in → security attendance** flow with an HR-approved passkey and
 fresh in-store photo/location evidence.

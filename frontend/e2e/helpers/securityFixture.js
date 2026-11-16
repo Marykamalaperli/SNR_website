@@ -157,11 +157,24 @@ export async function securityFixture(
       return reply({ error: { code: 'sign_in_required' } }, 401);
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith('/workspace')) {
+      const qr = state.employeeQrs.get(state.people[0]?.id);
+      if (body.qrToken && body.qrToken !== qr?.token)
+        return reply({ error: { code: 'employee_qr_invalid' } }, 403);
+      if (body.qrToken) state.personalQrBinding = { token: body.qrToken, version: qr.version };
       if (state.securityClientId && state.securityClientId !== body.clientId)
         return reply({ error: { code: 'attendance_open_elsewhere' } }, 409);
       state.securityClientId = body.clientId;
       return reply({
         ...buildWorkspace(),
+        ...(state.personalQrEnabled
+          ? {
+              personal_qr_required: true,
+              personal_qr_bound: !!state.personalQrBinding,
+              guard_photo_required: true,
+              attendance_id: state.people[0]?.attendance_id,
+              designation: state.people[0]?.designation,
+            }
+          : {}),
         security_flow_id: flowId,
         security_credential_approved: state.securityApproved,
         security_credential_pending: state.securityPending,
@@ -185,6 +198,11 @@ export async function securityFixture(
       body.employeeId !== state.people[0]?.id
     )
       return reply({ error: { code: 'security_flow_required' } }, 403);
+    if (
+      state.personalQrEnabled &&
+      state.personalQrBinding?.version !== state.employeeQrs.get(state.people[0]?.id)?.version
+    )
+      return reply({ error: { code: 'employee_qr_invalid' } }, 403);
     if (path.endsWith('/location')) {
       state.calls.push({
         name: 'validate_attendance_location',
@@ -220,6 +238,7 @@ export async function securityFixture(
         photo_saved: true,
         location_saved: true,
         occurred_at: new Date().toISOString(),
+        guard_photo_saved: !!body.evidence?.guard_photo,
       };
       state.securityCheckPhotos.push(receipt);
       state.securityCheck = null;
@@ -227,7 +246,14 @@ export async function securityFixture(
     }
     state.calls.push({ name: 'record_attendance', parameters });
     return handlePhoto(route, parameters, (json, status = 200) =>
-      wrap({ ...json, security_identity_verified: true }, status),
+      wrap(
+        {
+          ...json,
+          security_identity_verified: true,
+          guard_photo_saved: !!body.evidence?.guard_photo,
+        },
+        status,
+      ),
     );
   });
 }

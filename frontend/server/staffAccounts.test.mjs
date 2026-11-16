@@ -333,3 +333,28 @@ test('the Web Request handler serves representative account requests over local 
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('designation is validated and normalized before the account fingerprint and private profile operation', async () => {
+  const setup = fixture();
+  const response = await handleStaffAccounts(
+    request({ ...body, profile: { ...profile, designation: '  Security officer  ' } }),
+    settings,
+    setup,
+  );
+  assert.equal(response.status, 200);
+  const started = setup.calls.find((c) => c.path.endsWith('/hr_begin_staff_account'));
+  assert.equal(started.parameters.p_profile.designation, 'Security officer');
+  for (const designation of ['', ' '.repeat(3), 'x'.repeat(121), { role: 'hr' }]) {
+    const invalidSetup = fixture();
+    const denied = await handleStaffAccounts(
+      request({ ...body, profile: { ...profile, designation } }),
+      settings,
+      invalidSetup,
+    );
+    assert.equal(denied.status, 422);
+    assert.deepEqual(
+      invalidSetup.calls.map((c) => c.path),
+      ['/auth/v1/user'],
+    );
+  }
+});

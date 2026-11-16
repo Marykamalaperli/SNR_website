@@ -73,7 +73,7 @@
 .attendance-qr-display h1 {
   font-size: clamp(1.8rem, 4vw, 2.6rem);
 }
-.attendance-qr-display > img {
+.attendance-qr-display img {
   display: block;
   width: min(100%, 320px);
   height: auto;
@@ -154,4 +154,69 @@
   padding: 1.5rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+}
+
+.employee-qr-search {
+  display: flex;
+  align-items: end;
+  gap: var(--space-4);
+  max-width: 42rem;
+  margin: 1.5rem auto;
+  text-align: left;
+}
+.employee-qr-search .form-field {
+  flex: 1;
+}
+.employee-qr-card {
+  max-width: 46rem;
+  margin: 1.5rem auto;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+}
+.employee-qr-card h2 {
+  margin: 0.75rem 0;
+}
+.employee-qr-designation {
+  font-size: 1.15rem;
+}
+.guard-photo-stage {
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+.attendance-two-photos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.attendance-two-photos img {
+  width: 100%;
+  border-radius: var(--radius-md);
+}
+@media (max-width: 600px) {
+  .employee-qr-search {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .attendance-two-photos {
+    grid-template-columns: 1fr;
+  }
+}
+
+.security-content > section,
+.employee-qr-search .form-field {
+  min-width: 0;
+}
+.employee-qr-search input {
+  min-width: 0;
+}
+.security-review-card > .attendance-qr-display {
+  width: 100%;
+  padding-inline: 0;
+}
+.attendance-qr-display .button {
+  max-width: 100%;
+  white-space: normal;
 }

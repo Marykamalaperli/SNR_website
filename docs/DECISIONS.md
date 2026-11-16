@@ -340,3 +340,18 @@ QR window, with a single main landmark and the existing signed-in role gate on
 workspace routes. The optional display window, shared-device flow, employee
 security configuration and server attendance controls retain their existing
 behavior. This navigation change needs a frontend release and no new migration.
+
+## 2026-11-17 · Individual QR routing with a two-photo guard witness (0016)
+
+The owner restored individual QR links with matching employee credentials, a permanent
+server-generated attendance ID and a scoped sidebar search showing name/designation.
+The common QR is superseded; unsigned bearer/store QR attendance stays disabled.
+Every new punch/check requires a distinct HR-authorized site guard, two separately
+captured location-gated photos and that guard's action-bound passkey. On an employee's
+phone the guard uses a temporary in-memory session; on a shared phone the employee
+does. Neither session replaces the primary signed-in user. New SQL wrappers preserve
+existing attendance state, historical buckets/names, audit events and exact retries.
+QR regeneration expires outstanding flows and is rechecked before commit. The extra
+private guard bucket does not replace the employee photo buckets. These controls
+provide scoped authorization and evidence, not facial recognition or a guarantee
+against collusion/GPS spoofing. See [current architecture and activation](PERSONAL_QR_SECURITY_ATTENDANCE.md).

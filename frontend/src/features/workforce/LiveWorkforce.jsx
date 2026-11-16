@@ -13,6 +13,7 @@ import AttendanceQrPage from '../../pages/AttendanceQrPage';
 export default function LiveWorkforce({ role, base }) {
   const { pathname } = useLocation();
   const section = pathname.slice(base.length).replace(/^\/|\/$/g, '');
+  if (section === 'security') return <AttendanceQrPage embedded searchOnly />;
   if (section === 'attendance-qr') return <AttendanceQrPage embedded />;
   if (section === 'attendance' || (!section && role === 'supervisor'))
     return <LiveAttendance role={role} home={!section} />;
@@ -20,7 +21,7 @@ export default function LiveWorkforce({ role, base }) {
     if (!section) return <HrDashboard />;
     if (section === 'employees') return <EmployeeDirectory manage />;
     if (section === 'sites') return <OrganizationSetup />;
-    if (section === 'security') return <SecurityCheckReport />;
+    if (section === 'security-checks') return <SecurityCheckReport />;
     if (section === 'settings') return <HrSettings />;
   }
   if (role === 'supervisor' && section === 'members') return <EmployeeDirectory />;

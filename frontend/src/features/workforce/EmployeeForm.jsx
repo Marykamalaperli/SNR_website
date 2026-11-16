@@ -43,7 +43,10 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
         }
       }
       if (record) onSaved('Employee changes saved.');
-      else onSaved('Employee account and profile saved.');
+      else
+        onSaved(
+          'Employee account, profile and individual QR created. Find the Attendance ID in the directory and open Security · QR search.',
+        );
     } catch (error) {
       if (error.operationClosed) {
         setPending(null);
@@ -69,6 +72,20 @@ export default function EmployeeForm({ record, organization, onClose, onSaved })
       onSave={submit}
     >
       {nameField}
+      <FormField
+        label="Designation"
+        name="designation"
+        required={!record}
+        maxLength={120}
+        defaultValue={record?.designation || ''}
+        autoComplete="organization-title"
+        hint="Shown with the employee’s name on their personal attendance QR."
+      />
+      <p className="field-hint">
+        {record?.attendance_id
+          ? `Attendance ID: ${record.attendance_id}`
+          : 'A permanent attendance ID and individual QR are generated automatically when this profile is saved.'}
+      </p>
       {!record && (
         <FormField label="Account setup">
           {(attributes) => (

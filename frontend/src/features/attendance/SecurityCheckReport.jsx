@@ -114,6 +114,16 @@ export default function SecurityCheckReport() {
             src={photo.signed_url}
             alt="Employee security check evidence"
           />
+          {photo.guard_photo?.signed_url && (
+            <>
+              <h3>Guard approval · {photo.guard_photo.operator_name}</h3>
+              <img
+                className="security-report-photo"
+                src={photo.guard_photo.signed_url}
+                alt="Guard security check approval evidence"
+              />
+            </>
+          )}
           <p>
             Store check: {Number(photo.distance_meters).toFixed(1)} metres · radius{' '}
             {photo.radius_meters} metres.

@@ -28,8 +28,9 @@ const messages = {
     'Your attendance screen is active in another tab or device. Close that screen and wait 90 seconds before retrying here.',
   security_check_expired:
     'The two-minute photo-check window has ended. This check is recorded for HR review; do not submit an older photo.',
-  personal_qr_retired:
-    'Individual QR codes have been replaced. Use the common attendance QR and sign in with your own account.',
+  guard_approval_required: 'An HR-authorized guard must check your ID and approve this attendance.',
+  guard_photo_required:
+    'Take two separate live photos: the employee and the authorized guard. Retake both photos if they have expired.',
 
   employee_qr_invalid:
     'This QR is invalid, replaced, or no longer active. Ask HR for the current employee QR.',
@@ -122,14 +123,13 @@ async function request(name, parameters = {}, callerClient = null) {
 }
 
 export const loadAttendanceWorkspace = () => request('attendance_workspace');
-export const loadEmployeeQr = (employeeId, rotate = false, version = null) =>
-  request('hr_employee_attendance_qr', {
+export const loadEmployeeQr = (employeeId = null, rotate = false, version = null, code = null) =>
+  request('employee_attendance_card', {
     p_employee_id: employeeId,
+    p_code: code,
     p_rotate: rotate,
     p_version: version,
   });
-export const loadQrAttendanceWorkspace = (token) =>
-  request('employee_qr_attendance_workspace', { p_token: token });
 export function loadAttendanceRecords({
   from,
   to,
@@ -244,6 +244,16 @@ export function attendanceActionPayload({
             captured_at: evidence.photo.captured_at,
             consent_version: evidence.photo.consent_version,
           },
+          ...(evidence.guard_photo
+            ? {
+                guard_photo: {
+                  jpeg_base64: evidence.guard_photo.jpeg_base64,
+                  captured_at: evidence.guard_photo.captured_at,
+                  consent_version: evidence.guard_photo.consent_version,
+                  location: evidence.guard_photo.location_at_capture,
+                },
+              }
+            : {}),
         }
       : null,
     ...(type === 'security_check' ? { checkId } : {}),
@@ -260,16 +270,26 @@ export async function loadAttendanceLocations(id) {
   const result = await request('attendance_location_details', { p_session_id: id });
   const client = await getAuthClient();
   for (const kind of ['clock_in', 'clock_out']) {
-    const photo = result[kind]?.photo;
-    if (photo?.bucket_id && photo.object_path) {
-      if (!['attendance-clock-in', 'attendance-clock-out'].includes(photo.bucket_id))
-        throw new Error('Invalid saved photo bucket.');
-      const { data, error } = await client.storage
-        .from(photo.bucket_id)
-        .createSignedUrl(photo.object_path, 60);
-      if (error || !data?.signedUrl)
-        throw new Error('The saved photo could not be opened. Refresh its details and try again.');
-      photo.signed_url = data.signedUrl;
+    for (const field of ['photo', 'guard_photo']) {
+      const photo = result[kind]?.[field];
+      if (photo?.bucket_id && photo.object_path) {
+        if (
+          !(
+            field === 'guard_photo'
+              ? ['attendance-guard-photos']
+              : ['attendance-clock-in', 'attendance-clock-out']
+          ).includes(photo.bucket_id)
+        )
+          throw new Error('Invalid saved photo bucket.');
+        const { data, error } = await client.storage
+          .from(photo.bucket_id)
+          .createSignedUrl(photo.object_path, 60);
+        if (error || !data?.signedUrl)
+          throw new Error(
+            'The saved photo could not be opened. Refresh its details and try again.',
+          );
+        photo.signed_url = data.signedUrl;
+      }
     }
   }
   return result;

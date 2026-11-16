@@ -41,30 +41,37 @@ export async function signInStationEmployee(email, password) {
     throw failure;
   }
 }
-export const loadStationContext = (flowId) =>
-  attendanceRpc('security_station_context', { p_flow_id: flowId });
+export const loadStationContext = (flowId, client = null) =>
+  attendanceRpc('security_station_context', { p_flow_id: flowId }, client);
 export const loadStationDue = (flowId) =>
   attendanceRpc('security_station_due', { p_flow_id: flowId });
-export const closeStationVisit = (flowId, visitId) =>
-  attendanceRpc('security_station_close', { p_flow_id: flowId, p_visit_id: visitId });
+export const closeStationVisit = (flowId, visitId, client = null) =>
+  attendanceRpc('security_station_close', { p_flow_id: flowId, p_visit_id: visitId }, client);
 export const manageStationOperator = (employeeId, values = {}) =>
   attendanceRpc('hr_attendance_station', {
     p_employee_id: employeeId,
     p_enabled: values.enabled ?? null,
     p_version: values.version ?? null,
   });
-export async function openStationVisit(flowId, employeeClient, clientId) {
+export async function openStationVisit(
+  flowId,
+  employeeClient,
+  clientId,
+  qrToken,
+  guardClient = null,
+) {
   const { data } = await employeeClient.auth.getSession();
   if (!data?.session?.access_token) throw new Error('The employee must sign in again.');
   return attendanceGatewayRequest(
     'station/workspace',
-    { flowId, clientId },
+    { flowId, clientId, qrToken },
     {
+      client: guardClient,
       headers: { 'X-Employee-Authorization': 'Bearer ' + data.session.access_token },
     },
   );
 }
-export function stationTransport(employeeClient, guardFlowId, visitId) {
+export function stationTransport(employeeClient, guardFlowId, visitId, guardClient = null) {
   return {
     validateLocation: (action, location) =>
       attendanceGatewayRequest(
@@ -80,18 +87,26 @@ export function stationTransport(employeeClient, guardFlowId, visitId) {
       ),
     verifyIdentity: async (_flowId, action) => {
       try {
-        const challenge = await attendanceGatewayRequest('identity/station-options', {
-          flowId: guardFlowId,
-          visitId,
-          action: attendanceActionPayload(action),
-        });
+        const challenge = await attendanceGatewayRequest(
+          'identity/station-options',
+          {
+            flowId: guardFlowId,
+            visitId,
+            action: attendanceActionPayload(action),
+          },
+          { client: guardClient },
+        );
         const response = await startAuthentication({ optionsJSON: challenge.options });
-        const result = await attendanceGatewayRequest('identity/station-verify', {
-          flowId: guardFlowId,
-          visitId,
-          challengeId: challenge.id,
-          response,
-        });
+        const result = await attendanceGatewayRequest(
+          'identity/station-verify',
+          {
+            flowId: guardFlowId,
+            visitId,
+            challengeId: challenge.id,
+            response,
+          },
+          { client: guardClient },
+        );
         return result.id;
       } catch (failure) {
         if (failure.name === 'NotAllowedError' || failure.code === 'ERROR_CEREMONY_ABORTED')

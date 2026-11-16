@@ -55,6 +55,8 @@ export async function workforceFixture(
       id: id('4', n),
       display_name: `Directory Person ${String(n).padStart(2, '0')}`,
       employee_number: `SNR-${String(n).padStart(3, '0')}`,
+      attendance_id: `SNR-${String(n).padStart(12, '0')}`,
+      designation: 'Security officer',
       site_id: id('2'),
       site_name: 'Main office',
       department_id: id('3'),
@@ -74,6 +76,11 @@ export async function workforceFixture(
     ];
     state.departments = [{ id: id('3'), name: 'Operations', version: 1 }];
     state.people = Array.from({ length: 23 }, (_, i) => profile(i + 1));
+    for (const p of state.people)
+      state.employeeQrs.set(p.id, {
+        token: '90000000-0000-4000-8000-' + p.id.slice(-12),
+        version: 1,
+      });
   }
   function addProfile(parameters) {
     const p = parameters.profile;
@@ -81,6 +88,7 @@ export async function workforceFixture(
       ...profile(state.people.length + 1),
       display_name: p.display_name,
       employee_number: p.employee_number,
+      designation: p.designation || null,
       email: parameters.email,
       site_id: p.site_id,
       department_id: p.department_id,
@@ -90,6 +98,10 @@ export async function workforceFixture(
       department_name: state.departments.find((d) => d.id === p.department_id).name,
     };
     state.people.push(person);
+    state.employeeQrs.set(person.id, {
+      token: '90000000-0000-4000-8000-' + person.id.slice(-12),
+      version: 1,
+    });
     return person;
   }
   async function handlePhoto(route, parameters, reply) {
@@ -503,7 +515,43 @@ export async function workforceFixture(
           : [],
       });
     }
-    if (name === 'hr_security_presence_report') return reply({ rows: [], limit: 500 });
+    if (name === 'hr_security_presence_report')
+      return reply({ rows: state.securityReport || [], limit: 500 });
+    if (name === 'security_presence_details')
+      return state.securityPhotoDetails?.[parameters.p_id]
+        ? reply(state.securityPhotoDetails[parameters.p_id])
+        : reply({ code: 'PT404', message: 'record_unavailable' }, 404);
+    if (name === 'employee_attendance_card') {
+      const person = state.people.find((p) =>
+        parameters.p_code
+          ? p.attendance_id === parameters.p_code.toUpperCase().trim()
+          : parameters.p_employee_id
+            ? p.id === parameters.p_employee_id
+            : p.is_self,
+      );
+      if (!person || (role === 'employee' && !person.is_self && !state.stationEnabled))
+        return reply({ code: 'PT404', message: 'record_unavailable' }, 404);
+      let qr = state.employeeQrs.get(person.id) || {
+        token: '90000000-0000-4000-8000-' + person.id.slice(-12),
+        version: 1,
+      };
+      if (parameters.p_rotate) {
+        if (role !== 'hr') return reply({ code: 'PT403', message: 'workforce_access_denied' }, 403);
+        if (parameters.p_version !== qr.version)
+          return reply({ code: 'PT409', message: 'record_changed' }, 409);
+        qr = { token: '91000000-0000-4000-8000-' + person.id.slice(-12), version: qr.version + 1 };
+      }
+      state.employeeQrs.set(person.id, qr);
+      return reply({
+        employee_id: person.id,
+        attendance_id: person.attendance_id,
+        display_name: person.display_name,
+        designation: person.designation,
+        site_name: person.site_name,
+        ...qr,
+        can_regenerate: role === 'hr',
+      });
+    }
     if (name === 'hr_employee_attendance_qr') {
       const person = state.people.find((p) => p.id === parameters.p_employee_id);
       if (role !== 'hr' || !person)
@@ -728,12 +776,13 @@ export async function workforceFixture(
         page_size: 20,
       });
     }
-    if (name === 'hr_save_employee') {
+    if (name === 'hr_save_employee_identity') {
       const index = state.people.findIndex((p) => p.id === parameters.p_id);
       const person = {
         ...(index < 0 ? profile(state.people.length + 1) : state.people[index]),
         display_name: parameters.p_display_name,
         employee_number: parameters.p_employee_number,
+        designation: parameters.p_designation,
         email: parameters.p_email,
         role: parameters.p_role,
         active: parameters.p_active,

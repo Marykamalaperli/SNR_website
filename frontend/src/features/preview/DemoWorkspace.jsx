@@ -97,7 +97,7 @@ function DemoInstance({ role }) {
       }}
     >
       <DashboardLayout>
-        {section === 'attendance-qr' ? (
+        {['attendance-qr', 'security'].includes(section) ? (
           <AttendanceQrPage embedded />
         ) : (
           <RoleContent section={section} />

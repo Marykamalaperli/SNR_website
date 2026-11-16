@@ -162,7 +162,7 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       throw new Failure(415, 'json_required');
     const bytes = await readBytes(
       request,
-      url.pathname.endsWith('/resolve-map-link') ? 5000 : 215000,
+      url.pathname.endsWith('/resolve-map-link') ? 5000 : 430000,
     );
     let body;
     try {
@@ -192,8 +192,9 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
         throw new Failure(403, 'station_different_employee_required');
       const employeeRpc = (name, parameters) =>
         rpc(name, parameters, { callerAuthorization: employeeAuthorization });
-      const workspace = await employeeRpc('security_attendance_workspace', {
+      const workspace = await employeeRpc('personal_employee_attendance_workspace', {
         p_client_id: body.clientId,
+        p_token: body.qrToken || '',
       });
       const context = await employeeRpc('security_station_employee_context', {
         p_flow_id: workspace.security_flow_id,
@@ -215,7 +216,12 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       });
     }
     if (securityMode && url.pathname.endsWith('/workspace'))
-      return json(await rpc('security_attendance_workspace', { p_client_id: body.clientId }));
+      return json(
+        await rpc(
+          body.qrToken ? 'personal_employee_attendance_workspace' : 'security_attendance_workspace',
+          { p_client_id: body.clientId, ...(body.qrToken ? { p_token: body.qrToken } : {}) },
+        ),
+      );
     if (securityMode && url.pathname.endsWith('/location'))
       return json(
         await rpc('security_attendance_location', {
@@ -302,60 +308,96 @@ export async function handleAttendance(request, settings, { fetcher = fetch } = 
       : body.type === 'clock_in'
         ? 'attendance-clock-in'
         : 'attendance-clock-out';
-    const path = intent.object_path;
-    const legacyPath = new RegExp(
-      '^[0-9a-f-]{36}/' +
-        identity.id +
-        '/' +
-        identity.id +
-        '_[0-9-]+_[0-9.-]+_' +
-        body.id +
-        '[.]jpg$',
-    );
-    const namedPath = new RegExp(
-      '^(\\d{4}-\\d{2}-\\d{2})/[A-Za-z0-9][A-Za-z0-9_]{0,79}_\\1_' +
-        '\\d{2}-\\d{2}-\\d{2}[.]\\d{6}_' +
-        body.id +
-        '[.]jpg$',
-    );
-    if (
-      intent.user_id !== identity.id ||
-      intent.intent_id !== body.id ||
-      intent.bucket_id !== expectedBucket ||
-      typeof path !== 'string' ||
-      !(legacyPath.test(path) || namedPath.test(path)) ||
-      intent.sha256 !== (await digest(image))
-    )
-      throw new Failure(503, 'attendance_upload_unavailable');
-    const object = '/storage/v1/object/' + expectedBucket + '/' + path;
-    const uploaded = await upstream(
-      object,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'image/jpeg', 'x-upsert': 'false', 'cache-control': 'no-store' },
-        body: image,
-      },
-      true,
-    );
-    if (!uploaded.ok) {
-      const detail = await uploaded.json().catch(() => ({}));
-      if (uploaded.status !== 409 && detail.error !== 'Duplicate' && detail.code !== 'Duplicate')
+    async function uploadPhoto(intent, image, expectedBucket, verifier) {
+      const path = intent.object_path;
+      const legacyPath = new RegExp(
+        '^[0-9a-f-]{36}/' +
+          identity.id +
+          '/' +
+          identity.id +
+          '_[0-9-]+_[0-9.-]+_' +
+          body.id +
+          '[.]jpg$',
+      );
+      const namedPath = new RegExp(
+        '^(\\d{4}-\\d{2}-\\d{2})/[A-Za-z0-9][A-Za-z0-9_]{0,79}_\\1_' +
+          '\\d{2}-\\d{2}-\\d{2}[.]\\d{6}_' +
+          body.id +
+          '[.]jpg$',
+      );
+      if (
+        intent.user_id !== identity.id ||
+        intent.intent_id !== body.id ||
+        intent.bucket_id !== expectedBucket ||
+        typeof path !== 'string' ||
+        !(legacyPath.test(path) || namedPath.test(path)) ||
+        intent.sha256 !== (await digest(image))
+      )
         throw new Failure(503, 'attendance_upload_unavailable');
-      const existing = await upstream(
-        object.replace('/object/', '/object/authenticated/'),
-        {},
+      const object = '/storage/v1/object/' + expectedBucket + '/' + path;
+      const uploaded = await upstream(
+        object,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'image/jpeg',
+            'x-upsert': 'false',
+            'cache-control': 'no-store',
+          },
+          body: image,
+        },
         true,
       );
-      if (!existing.ok || (await digest(await readBytes(existing, 153600))) !== intent.sha256)
-        throw new Failure(409, 'attendance_request_changed');
-    } else {
-      await uploaded.body?.cancel();
+      if (!uploaded.ok) {
+        const detail = await uploaded.json().catch(() => ({}));
+        if (uploaded.status !== 409 && detail.error !== 'Duplicate' && detail.code !== 'Duplicate')
+          throw new Failure(503, 'attendance_upload_unavailable');
+        const existing = await upstream(
+          object.replace('/object/', '/object/authenticated/'),
+          {},
+          true,
+        );
+        if (!existing.ok || (await digest(await readBytes(existing, 153600))) !== intent.sha256)
+          throw new Failure(409, 'attendance_request_changed');
+      } else {
+        await uploaded.body?.cancel();
+      }
+      await rpc(
+        verifier,
+        { p_intent_id: intent.intent_id, p_sha256: intent.sha256 },
+        { elevated: true, allowNoContent: true },
+      );
     }
-    await rpc(
+    await uploadPhoto(
+      intent,
+      image,
+      expectedBucket,
       presenceMode ? 'verify_security_presence_upload' : 'verify_attendance_photo_upload',
-      { p_intent_id: intent.intent_id, p_sha256: intent.sha256 },
-      { elevated: true, allowNoContent: true },
     );
+    if (securityMode) {
+      const guardEncoded = action.evidence?.guard_photo?.jpeg_base64;
+      let guardImage;
+      try {
+        guardImage = Uint8Array.from(atob(guardEncoded), (c) => c.charCodeAt(0));
+      } catch {
+        throw new Failure(422, 'guard_photo_required');
+      }
+      if (
+        !intent.guard_photo ||
+        guardImage.length < 32 ||
+        guardImage.length > 153600 ||
+        guardImage[0] !== 255 ||
+        guardImage[1] !== 216 ||
+        guardImage.at(-1) !== 217
+      )
+        throw new Failure(422, 'guard_photo_required');
+      await uploadPhoto(
+        intent.guard_photo,
+        guardImage,
+        'attendance-guard-photos',
+        'verify_attendance_guard_upload',
+      );
+    }
     const receipt = presenceMode
       ? await rpc('commit_security_presence', { p_flow_id: body.flowId, p_id: body.id })
       : await rpc('record_attendance_storage', {

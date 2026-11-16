@@ -57,6 +57,7 @@ export default function EmployeeDirectory({ manage = false }) {
           <div>
             <strong>{row.display_name}</strong>
             <small>{row.employee_number}</small>
+            {row.attendance_id && <small>Attendance ID: {row.attendance_id}</small>}
           </div>
         </div>
       ),

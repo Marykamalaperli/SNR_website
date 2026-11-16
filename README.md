@@ -48,23 +48,16 @@ employee name, local date/time and request UUID in the filename. Add employee as
 for Full name first. See [attendance photo names](docs/ATTENDANCE_PHOTO_NAMES.md)
 for the naming format, store time zone, safe-name rules and activation.
 
-Migration **0014** replaces personal QR credentials with one common QR leading to
-Employee sign-in and a separate security attendance page. New punches require an
-HR-approved passkey plus the existing 50-metre, location-first selfie checks.
-HR can enable three or four random, two-minute photo checks per security employee's
-future attendance sessions. The common QR opens in its own display window.
-Store QR stays disabled and old history/photos are preserved. See
-[security attendance setup](docs/SECURITY_ATTENDANCE.md) for manual activation,
-enrollment, privacy and the limits of proxy-attendance prevention.
-
-The **Attendance QR** sidebar item opens a dedicated QR page without employee
-tables, with an optional separate display window. Migration **0015** adds a supervised
-shared-device page for employees without phones. The employee enters their own
-credentials; an HR-authorized guard checks their staff ID/photo in person and
-approves each action with a passkey at the authorized site. Employee sessions clear
-after each turn. Guard authorization, witness history and the same location/photo,
-retry and two-minute photo-check rules are enforced by the server. Apply 0015
-after 0014 and deploy manually using [security attendance setup](docs/SECURITY_ATTENDANCE.md).
+Migration **0016** restores an individual QR for every employee, with their own
+credential sign-in and a permanent, server-generated attendance ID. **Security · QR
+search** opens a dedicated sidebar page with the employee's QR, name and designation,
+plus download and separate-window actions. An HR-authorized guard must check the
+employee's ID, take a separate guard photo alongside the employee's live photo, and
+approve each action with a passkey. Both photos require the existing accurate
+50-metre location checks before the camera and at capture. The same supervised
+protocol supports personal phones and shared guard devices. Regeneration immediately
+invalidates the previous QR; overnight pairs, retries, audits and old photos remain.
+See [individual QR attendance and manual activation](docs/PERSONAL_QR_SECURITY_ATTENDANCE.md).
 
 ## Stack and architecture
 

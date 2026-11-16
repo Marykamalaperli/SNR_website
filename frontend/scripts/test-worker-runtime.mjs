@@ -77,6 +77,13 @@ const photoBytes = Buffer.from(
   photoFixture.match(/'jpeg_base64','([A-Za-z0-9+/=]+)'/)[1],
   'base64',
 );
+const guardPhotoBytes = Buffer.concat([
+  photoBytes.subarray(0, 2),
+  Buffer.from([255, 254, 0, 9]),
+  Buffer.from('guard16'),
+  photoBytes.subarray(2),
+]);
+const guardPhotoHash = createHash('sha256').update(guardPhotoBytes).digest('hex');
 const photoHash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', photoBytes))]
   .map((n) => n.toString(16).padStart(2, '0'))
   .join('');
@@ -212,7 +219,8 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
                   flow_id: 'guard-flow',
                   credential: identityCredential,
                 });
-              if (path === '/rest/v1/rpc/security_attendance_workspace') {
+              if (path === '/rest/v1/rpc/personal_employee_attendance_workspace') {
+                assert.equal(data.p_token, operation);
                 assert.equal(request.headers.get('Authorization'), 'Bearer fixture-employee-token');
                 return json({
                   security_flow_id: 'employee-flow',
@@ -289,20 +297,41 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
                   bucket_id: 'attendance-clock-in',
                   object_path: photoPath,
                   sha256: photoHash,
+                  ...(path.endsWith('/prepare_security_attendance_photo')
+                    ? {
+                        guard_photo: {
+                          intent_id: operation,
+                          user_id: actor,
+                          bucket_id: 'attendance-guard-photos',
+                          object_path: photoPath,
+                          sha256: guardPhotoHash,
+                        },
+                      }
+                    : {}),
                 });
               if (path === '/storage/v1/object/attendance-clock-in/' + photoPath) {
                 assert.deepEqual(Buffer.from(data), photoBytes);
                 assert.equal(request.headers.get('apikey'), settings.adminKey);
                 return json({ Key: photoPath });
               }
-              if (path === '/rest/v1/rpc/verify_attendance_photo_upload') {
+              if (path === '/storage/v1/object/attendance-guard-photos/' + photoPath) {
+                assert.deepEqual(Buffer.from(data), guardPhotoBytes);
+                assert.equal(request.headers.get('apikey'), settings.adminKey);
+                return json({ Key: photoPath });
+              }
+              if (
+                [
+                  '/rest/v1/rpc/verify_attendance_photo_upload',
+                  '/rest/v1/rpc/verify_attendance_guard_upload',
+                ].includes(path)
+              ) {
                 assert.equal(request.headers.get('apikey'), settings.adminKey);
                 assert.equal(request.headers.get('Authorization'), 'Bearer ' + settings.adminKey);
                 return new RuntimeResponse(null, { status: 204 });
               }
               if (path === '/rest/v1/rpc/record_attendance_storage') {
                 assert.equal(request.headers.get('Authorization'), 'Bearer fixture-user-token');
-                return json({ id: operation, storage_saved: true });
+                return json({ id: operation, storage_saved: true, guard_photo_saved: true });
               }
               if (path === '/rest/v1/rpc/hr_begin_staff_account') return json(context);
               if (path === '/rest/v1/rpc/hr_staff_account_context') return json(context);
@@ -457,6 +486,49 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
     console.log(
       `PASS Worker ${compatibilityDate}: WebAuthn signature verified; wrong origin refused`,
     );
+    calls = [];
+    const supervised = await runtime.dispatchFetch(
+      'https://workspace.snr-nest.test/api/attendance/security/photos',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer fixture-user-token' },
+        body: JSON.stringify({
+          id: operation,
+          employeeId: employee,
+          type: 'clock_in',
+          previousId: null,
+          flowId: 'employee-flow',
+          identityId: operation,
+          location: { latitude: 12.97 },
+          evidence: {
+            photo: {
+              jpeg_base64: photoBytes.toString('base64'),
+              captured_at: new Date().toISOString(),
+              consent_version: 'attendance-photo-location-v1',
+            },
+            guard_photo: {
+              jpeg_base64: guardPhotoBytes.toString('base64'),
+              captured_at: new Date().toISOString(),
+              consent_version: 'attendance-photo-location-v1',
+              location: { latitude: 12.97 },
+            },
+          },
+        }),
+      },
+    );
+    assert.equal(supervised.status, 200);
+    assert.equal((await supervised.json()).guard_photo_saved, true);
+    assert.ok(
+      calls.some((c) => c.path === '/storage/v1/object/attendance-guard-photos/' + photoPath),
+    );
+    assert.ok(calls.some((c) => c.path.endsWith('verify_attendance_guard_upload')));
+    assert.ok(
+      calls.findIndex((c) => c.path.endsWith('verify_attendance_guard_upload')) <
+        calls.findIndex((c) => c.path.endsWith('record_attendance_storage')),
+    );
+    console.log(
+      `PASS Worker ${compatibilityDate}: distinct employee/guard bytes in private buckets verified before commit`,
+    );
     const station = await runtime.dispatchFetch(
       'https://workspace.snr-nest.test/api/attendance/station/workspace',
       {
@@ -466,7 +538,7 @@ for (const compatibilityDate of ['2021-11-02', '2026-11-07']) {
           Authorization: 'Bearer fixture-user-token',
           'X-Employee-Authorization': 'Bearer fixture-employee-token',
         },
-        body: JSON.stringify({ flowId: 'guard-flow', clientId: operation }),
+        body: JSON.stringify({ flowId: 'guard-flow', clientId: operation, qrToken: operation }),
       },
     );
     assert.equal(station.status, 200);

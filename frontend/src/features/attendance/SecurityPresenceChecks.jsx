@@ -102,7 +102,8 @@ export default function SecurityPresenceChecks({
       if (
         receipt.id !== action.id ||
         receipt.photo_saved !== true ||
-        receipt.location_saved !== true
+        receipt.location_saved !== true ||
+        (workspace.guard_photo_required && receipt.guard_photo_saved !== true)
       )
         throw Object.assign(
           new Error('The photo result could not be confirmed. Check the same request.'),

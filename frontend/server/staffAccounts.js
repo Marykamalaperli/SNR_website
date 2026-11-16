@@ -151,6 +151,7 @@ function cleanInput(body, action) {
         (key) =>
           ![
             'display_name',
+            'designation',
             'employee_number',
             'site_id',
             'department_id',
@@ -161,6 +162,10 @@ function cleanInput(body, action) {
       typeof p.display_name !== 'string' ||
       p.display_name.trim().length < 1 ||
       p.display_name.trim().length > 120 ||
+      (p.designation !== undefined &&
+        (typeof p.designation !== 'string' ||
+          p.designation.trim().length < 1 ||
+          p.designation.trim().length > 120)) ||
       typeof p.employee_number !== 'string' ||
       p.employee_number.trim().length < 1 ||
       p.employee_number.trim().length > 40 ||
@@ -176,6 +181,7 @@ function cleanInput(body, action) {
       );
     body.profile = {
       display_name: p.display_name.trim(),
+      ...(p.designation !== undefined ? { designation: p.designation.trim() } : {}),
       employee_number: p.employee_number.trim(),
       site_id: p.site_id.toLowerCase(),
       department_id: p.department_id.toLowerCase(),

@@ -17,6 +17,7 @@ export default function AttendanceCapture({
   employeeName,
 }) {
   const [photo, setPhoto] = useState(null);
+  const [guardPhoto, setGuardPhoto] = useState(null);
   const [witnessConfirmed, setWitnessConfirmed] = useState(false);
   return (
     <Modal
@@ -57,7 +58,30 @@ export default function AttendanceCapture({
               alt="Your attendance photo for review"
             />
           </div>
-          <p>Your photo and its capture location will be saved with this punch.</p>
+          <p>Employee photo taken. Keep both people at the store for the separate guard photo.</p>
+          {witnessName && !guardPhoto && (
+            <section className="guard-photo-stage" aria-label="Guard photo capture">
+              <h3>Now take the guard’s photo · {witnessName}</h3>
+              <p>
+                Hand the device to the guard. Location is checked before the camera and again at the
+                shutter. Both photos are private attendance evidence.
+              </p>
+              <AttendanceCamera
+                key="guard-photo"
+                beforeOpen={checkLocation}
+                beforePhoto={checkLocation}
+                onPhoto={setGuardPhoto}
+              />
+            </section>
+          )}
+          {guardPhoto && (
+            <div className="attendance-photo-review">
+              <img
+                src={'data:image/jpeg;base64,' + guardPhoto.jpeg_base64}
+                alt="Guard’s live approval photo for review"
+              />
+            </div>
+          )}
           {witnessName && (
             <label className="station-witness">
               <input
@@ -75,6 +99,7 @@ export default function AttendanceCapture({
               variant="secondary"
               onClick={() => {
                 setPhoto(null);
+                setGuardPhoto(null);
                 setWitnessConfirmed(false);
               }}
               disabled={busy}
@@ -82,8 +107,10 @@ export default function AttendanceCapture({
               Retake photo
             </Button>
             <Button
-              onClick={() => onConfirm({ photo })}
-              disabled={busy || Boolean(witnessName && !witnessConfirmed)}
+              onClick={() =>
+                onConfirm({ photo, ...(guardPhoto ? { guard_photo: guardPhoto } : {}) })
+              }
+              disabled={busy || Boolean(witnessName && (!witnessConfirmed || !guardPhoto))}
             >
               {busy
                 ? 'Recording…'

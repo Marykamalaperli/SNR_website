@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { ShieldCheck, QrCode, MapPin, Camera, LogOut } from 'lucide-react';
 import Brand from '../components/common/Brand';
 import Button from '../components/common/Button';
@@ -14,11 +14,14 @@ import {
   enrollAttendancePasskey,
 } from '../services/securityAttendanceService';
 import SecurityPresenceChecks from '../features/attendance/SecurityPresenceChecks';
+import GuardApprovedAttendance from '../features/attendance/GuardApprovedAttendance';
 import PunchCard from '../features/attendance/PunchCard';
 import '../styles/security-attendance.css';
 
 function EmployeeAttendance() {
   const { session, signOut } = useAuth();
+  const { hash } = useLocation();
+  const qrToken = new URLSearchParams(hash.slice(1)).get('employee-qr');
   const [clientId] = useState(() => {
     try {
       const key = 'snr-security-client:' + session.user_id;
@@ -32,7 +35,7 @@ function EmployeeAttendance() {
   const [enrolling, setEnrolling] = useState(false),
     [enrollError, setEnrollError] = useState(''),
     [heartbeatError, setHeartbeatError] = useState('');
-  const loader = useCallback(() => loadSecurityWorkspace(clientId), [clientId]);
+  const loader = useCallback(() => loadSecurityWorkspace(clientId, qrToken), [clientId, qrToken]);
   const state = useRemoteData(loader);
   const flowId = state.data?.security_flow_id;
   const approved = state.data?.security_credential_approved;
@@ -44,7 +47,7 @@ function EmployeeAttendance() {
       if (running) return;
       running = true;
       try {
-        const current = await loadSecurityWorkspace(clientId);
+        const current = await loadSecurityWorkspace(clientId, qrToken);
         if (active)
           setHeartbeatError(
             current.security_flow_id !== flowId
@@ -63,7 +66,7 @@ function EmployeeAttendance() {
       active = false;
       clearInterval(timer);
     };
-  }, [flowId, clientId, approved]);
+  }, [flowId, clientId, approved, qrToken]);
   async function leave() {
     if (flowId) await releaseSecurityFlow(flowId).catch(() => {});
     await signOut();
@@ -137,14 +140,36 @@ function EmployeeAttendance() {
               />
             </Card>
           )}
-          {state.data && state.data.security_credential_approved && !heartbeatError && (
-            <PunchCard
-              workspace={state.data}
-              securityFlowId={flowId}
-              onRecorded={state.reload}
-              onRefresh={state.reload}
-            />
-          )}
+          {state.data?.personal_qr_required &&
+            !heartbeatError &&
+            (state.data.personal_qr_bound && qrToken ? (
+              <GuardApprovedAttendance
+                workspace={state.data}
+                clientId={clientId}
+                qrToken={qrToken}
+                onRefresh={state.reload}
+              />
+            ) : (
+              <Card>
+                <h2>Open your individual QR first</h2>
+                <p>
+                  Your attendance ID and QR belong only to your account. Open your card or ask the
+                  guard to find it by ID.
+                </p>
+                <Button to="/me/attendance-qr">Open my employee QR</Button>
+              </Card>
+            ))}
+          {state.data &&
+            !state.data.personal_qr_required &&
+            state.data.security_credential_approved &&
+            !heartbeatError && (
+              <PunchCard
+                workspace={state.data}
+                securityFlowId={flowId}
+                onRecorded={state.reload}
+                onRefresh={state.reload}
+              />
+            )}
           {heartbeatError && (
             <Card>
               <ErrorState
@@ -154,49 +179,53 @@ function EmployeeAttendance() {
               />
             </Card>
           )}
-          {state.data && !state.data.security_credential_approved && (
-            <Card className="live-punch-card">
-              <h2>
-                {state.data.security_credential_pending
-                  ? 'Ask HR to approve your passkey'
-                  : 'Secure your attendance identity'}
-              </h2>
-              <p>
-                Use a passkey on your own device. Your fingerprint, Face ID or device PIN verifies
-                each attendance confirmation; the application receives no biometric template.
-              </p>
-              <p>
-                HR must verify you in person before approving the enrollment. Never share your
-                passkey or device PIN.
-              </p>
-              {enrollError && (
-                <p className="form-error" role="alert">
-                  {enrollError}
+          {state.data &&
+            !state.data.security_credential_approved &&
+            !state.data.personal_qr_bound && (
+              <Card className="live-punch-card">
+                <h2>
+                  {state.data.security_credential_pending
+                    ? 'Ask HR to approve your passkey'
+                    : 'Secure your attendance identity'}
+                </h2>
+                <p>
+                  Use a passkey on your own device. Your fingerprint, Face ID or device PIN verifies
+                  each attendance confirmation; the application receives no biometric template.
                 </p>
-              )}
-              {!state.data.security_credential_pending && (
-                <Button onClick={enroll} disabled={enrolling}>
-                  {enrolling ? 'Setting up…' : 'Enroll attendance passkey'}
+                <p>
+                  HR must verify you in person before approving the enrollment. Never share your
+                  passkey or device PIN.
+                </p>
+                {enrollError && (
+                  <p className="form-error" role="alert">
+                    {enrollError}
+                  </p>
+                )}
+                {!state.data.security_credential_pending && (
+                  <Button onClick={enroll} disabled={enrolling}>
+                    {enrolling ? 'Setting up…' : 'Enroll attendance passkey'}
+                  </Button>
+                )}
+                <Button variant="secondary" onClick={state.reload}>
+                  Check HR approval
                 </Button>
-              )}
-              <Button variant="secondary" onClick={state.reload}>
-                Check HR approval
-              </Button>
-            </Card>
-          )}
-          {state.data?.security_credential_approved && flowId && !heartbeatError && (
-            <SecurityPresenceChecks flowId={flowId} workspace={state.data} />
-          )}
+              </Card>
+            )}
+          {!state.data?.personal_qr_required &&
+            state.data?.security_credential_approved &&
+            flowId &&
+            !heartbeatError && <SecurityPresenceChecks flowId={flowId} workspace={state.data} />}
         </section>
         <aside className="security-guide">
           <Card>
             <h2>Before you record attendance</h2>
             <ol>
               <li>
-                Use your own account and approved passkey. Never share your password or device PIN.
+                Scan your own QR and use your own credentials. Ask the authorized guard to check
+                your ID and confirm with their passkey.
               </li>
               <li>Allow a fresh, precise location at your assigned store.</li>
-              <li>Take a new selfie after location is verified.</li>
+              <li>Take separate live employee and guard photos after location is verified.</li>
               <li>Review and confirm your clock-in or clock-out.</li>
             </ol>
             <p>
@@ -223,15 +252,16 @@ function EmployeeAttendance() {
 export default function QrAttendancePage() {
   usePageMeta('Security attendance', 'Sign in to record your own attendance securely.', true);
   const { session, loading } = useAuth();
+  const { hash } = useLocation();
   if (loading) return <LoadingState label="Checking your sign-in…" />;
-  if (!session) return <Navigate to="/login" replace state={{ from: '/attendance' }} />;
+  if (!session) return <Navigate to={'/login?attendance=1' + hash} replace />;
   if (session.role !== 'employee')
     return (
       <main className="security-attendance" id="main-content">
         <Brand />
         <ErrorState
           title="Employee sign-in required"
-          description="Use your personal Employee account to record attendance. A shared QR never grants attendance access to another account."
+          description="Use your personal Employee account to record attendance. An individual QR requires its matching Employee account."
           href={session.workspace}
         />
         <Button href="/attendance/qr" target="_blank" rel="noopener noreferrer">

@@ -42,6 +42,7 @@ test('HR configures a workplace, adds an employee, edits access, and reloads per
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Account email').fill('new-person@example.invalid');
   await dialog.getByLabel('Initial password').fill('Synthetic-Password-17');
+  await dialog.getByLabel('Designation').fill('Security officer');
   await dialog.getByLabel('Full name').fill('New Team Member');
   await dialog.getByLabel('Employee number').fill('SNR-001');
   await dialog.getByLabel('Site', { exact: true }).selectOption({ label: 'Main office' });
@@ -128,7 +129,8 @@ for (const width of [1440, 390]) {
     await expect(dialog).toHaveCount(0);
     await expect(page.getByText('Employee changes saved.', { exact: true })).toBeVisible();
     expect(
-      state.calls.find((call) => call.name === 'hr_save_employee').parameters.p_display_name,
+      state.calls.find((call) => call.name === 'hr_save_employee_identity').parameters
+        .p_display_name,
     ).toBe('Mary Kamal');
     expect(state.people[0].display_name).toBe('Mary Kamal');
     await page.reload();
@@ -154,6 +156,7 @@ test('a rejected save keeps entered fields and exposes no privileged role choice
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Account email').fill('unconfirmed@example.invalid');
   await dialog.getByLabel('Initial password').fill('Synthetic-Password-17');
+  await dialog.getByLabel('Designation').fill('Security officer');
   await dialog.getByLabel('Full name').fill('Pending Person');
   await dialog.getByLabel('Employee number').fill('SNR-099');
   await dialog.getByLabel('Site', { exact: true }).selectOption({ label: 'Main office' });

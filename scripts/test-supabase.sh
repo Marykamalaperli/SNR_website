@@ -101,6 +101,16 @@ snr_psql < "$snr_project_root/supabase/tests/security-attendance.sql"
 snr_attendance_readiness="$(snr_psql --tuples-only --no-align --field-separator=, < "$snr_project_root/supabase/setup/check-security-attendance.sql")"
 test "$snr_attendance_readiness" = 't,t,f,t'
 
+# 0016 must refuse an incomplete prerequisite before creating any card data.
+if snr_missing_prerequisite="$(snr_psql < "$snr_project_root/supabase/migrations/202611170016_personal_qr_guard_photos.sql" 2>&1)"; then
+  echo 'Individual QR setup accepted missing 0015 prerequisites.' >&2; exit 1
+fi
+case "$snr_missing_prerequisite" in
+  *'Verify the complete 0015 supervised attendance installation'*) ;;
+  *) printf '%s\n' "$snr_missing_prerequisite" >&2; exit 1 ;;
+esac
+test "$(snr_psql --tuples-only --no-align --command="select to_regclass('snr_private.employee_attendance_cards') is null;")" = t
+
 snr_psql < "$snr_project_root/supabase/migrations/202611140015_supervised_attendance.sql"
 snr_psql < "$snr_project_root/supabase/tests/supervised-attendance.sql"
 
@@ -128,3 +138,10 @@ for snr_migration in 202611130014_security_attendance.sql 202611140015_supervise
   test "$(snr_security_definitions)" = "$snr_before_retry"
 done
 echo 'PASS: duplicate 0014/0015 attempts roll back without altering installed function definitions or grants'
+
+snr_psql < "$snr_project_root/supabase/migrations/202611170016_personal_qr_guard_photos.sql"
+snr_psql < "$snr_project_root/supabase/tests/personal-qr-guard-photos.sql"
+
+snr_personal_readiness="$(snr_psql --tuples-only --no-align --field-separator=, < "$snr_project_root/supabase/setup/check-personal-qr-attendance.sql")"
+test "$snr_personal_readiness" = 't,t,t,t,t'
+echo 'PASS: read-only individual QR and private photo readiness after 0016'

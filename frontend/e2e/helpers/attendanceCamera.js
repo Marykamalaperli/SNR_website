@@ -14,7 +14,7 @@ export async function installAttendanceCamera(page) {
         context.fillRect(0, 0, 600, 600);
         context.fillStyle = '#264653';
         context.font = '24px sans-serif';
-        context.fillText('Synthetic attendance photo', 100, 300);
+        context.fillText('Synthetic attendance photo ' + window.attendanceCameraRequests, 100, 300);
       }
       draw();
       const stream = canvas.captureStream(10);

@@ -1,5 +1,9 @@
 # Security and permission boundaries
 
+> Attendance entry is now governed by **0016**: individual employee QR + matching
+> credentials + two-photo guard approval. See [the current contract](PERSONAL_QR_SECURITY_ATTENDANCE.md).
+> Earlier common/bearer QR descriptions below are migration history.
+
 The browser is untrusted. Backend authorization must check verified identity,
 active organization membership, exact role, employee ownership and team/site scope
 on **every** data request. Route guards improve UX; they do not secure data.
@@ -191,3 +195,18 @@ employee Auth client is memory-only and cleared at completion/cancellation/timeo
 the guard's regular session is never overwritten. Human ID verification and a
 managed shared device are essential; this does not certify physical identity or
 prevent a colluding guard. See SECURITY_ATTENDANCE.md.
+
+## Individual QR routing with a two-photo guard witness (0016)
+
+The owner restored individual QR links with matching employee credentials, a permanent
+server-generated attendance ID and a scoped sidebar search showing name/designation.
+The common QR is superseded; unsigned bearer/store QR attendance stays disabled.
+Every new punch/check requires a distinct HR-authorized site guard, two separately
+captured location-gated photos and that guard's action-bound passkey. On an employee's
+phone the guard uses a temporary in-memory session; on a shared phone the employee
+does. Neither session replaces the primary signed-in user. New SQL wrappers preserve
+existing attendance state, historical buckets/names, audit events and exact retries.
+QR regeneration expires outstanding flows and is rechecked before commit. The extra
+private guard bucket does not replace the employee photo buckets. These controls
+provide scoped authorization and evidence, not facial recognition or a guarantee
+against collusion/GPS spoofing. See [current architecture and activation](PERSONAL_QR_SECURITY_ATTENDANCE.md).

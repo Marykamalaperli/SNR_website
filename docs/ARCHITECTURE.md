@@ -1,5 +1,9 @@
 # Architecture
 
+> Attendance entry is now governed by **0016**: individual employee QR + matching
+> credentials + two-photo guard approval. See [the current contract](PERSONAL_QR_SECURITY_ATTENDANCE.md).
+> Earlier common/bearer QR descriptions below are migration history.
+
 Supervised attendance (migration 0015) adds `/attendance/station` to the common QR
 flow. The guard retains their normal verified session; an employee uses a separate
 memory-only Auth client for one turn. The gateway verifies both Auth subjects and
@@ -291,3 +295,18 @@ buckets/naming. Employees receive only the current due request; HR has scoped
 review and short-lived signed photo reads. Offline/background behavior is reported
 as missed evidence, never an automatic attendance rewrite. See SECURITY_ATTENDANCE.md
 for the complete contract, threat limits and manual rollout.
+
+## Individual QR routing with a two-photo guard witness (0016)
+
+The owner restored individual QR links with matching employee credentials, a permanent
+server-generated attendance ID and a scoped sidebar search showing name/designation.
+The common QR is superseded; unsigned bearer/store QR attendance stays disabled.
+Every new punch/check requires a distinct HR-authorized site guard, two separately
+captured location-gated photos and that guard's action-bound passkey. On an employee's
+phone the guard uses a temporary in-memory session; on a shared phone the employee
+does. Neither session replaces the primary signed-in user. New SQL wrappers preserve
+existing attendance state, historical buckets/names, audit events and exact retries.
+QR regeneration expires outstanding flows and is rechecked before commit. The extra
+private guard bucket does not replace the employee photo buckets. These controls
+provide scoped authorization and evidence, not facial recognition or a guarantee
+against collusion/GPS spoofing. See [current architecture and activation](PERSONAL_QR_SECURITY_ATTENDANCE.md).

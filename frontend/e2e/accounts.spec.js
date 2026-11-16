@@ -74,6 +74,7 @@ test('an interrupted account creation is recovered from Pending account requests
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Account email').fill('pending-login@example.invalid');
   await dialog.getByLabel('Initial password').fill('Synthetic-Password-17');
+  await dialog.getByLabel('Designation').fill('Security officer');
   await dialog.getByLabel('Full name').fill('Pending Account Person');
   await dialog.getByLabel('Employee number').fill('PENDING-1');
   await dialog.getByLabel('Site', { exact: true }).selectOption({ label: 'Main office' });

@@ -5,10 +5,14 @@ import {
   attendanceActionPayload,
 } from './attendanceService';
 
-export const loadSecurityWorkspace = (clientId) =>
-  attendanceGatewayRequest('security/workspace', { clientId });
-export const releaseSecurityFlow = (flowId) =>
-  attendanceRpc('security_release_flow', { p_flow_id: flowId });
+export const loadSecurityWorkspace = (clientId, qrToken = null, client = null) =>
+  attendanceGatewayRequest(
+    'security/workspace',
+    { clientId, ...(qrToken ? { qrToken } : {}) },
+    { client },
+  );
+export const releaseSecurityFlow = (flowId, client = null) =>
+  attendanceRpc('security_release_flow', { p_flow_id: flowId }, client);
 export const loadSecurityChecks = (flowId) =>
   attendanceRpc('security_presence_status', { p_flow_id: flowId });
 export const manageEmployeeSecurity = (employeeId, values = {}) =>
@@ -73,10 +77,16 @@ export async function openSecurityPhoto(id) {
     throw new Error('Invalid security photo bucket.');
   const { getAuthClient } = await import('./authService');
   const client = await getAuthClient();
-  const { data, error } = await client.storage
-    .from(photo.bucket_id)
-    .createSignedUrl(photo.object_path, 60);
-  if (error || !data?.signedUrl)
-    throw new Error('This private photo could not be opened. Try again.');
-  return { ...photo, signed_url: data.signedUrl };
+  for (const [item, bucket] of [
+    [photo, 'attendance-security-checks'],
+    [photo.guard_photo, 'attendance-guard-photos'],
+  ]) {
+    if (!item) continue;
+    if (item.bucket_id !== bucket) throw new Error('Invalid security photo bucket.');
+    const { data, error } = await client.storage.from(bucket).createSignedUrl(item.object_path, 60);
+    if (error || !data?.signedUrl)
+      throw new Error('This private photo could not be opened. Try again.');
+    item.signed_url = data.signedUrl;
+  }
+  return photo;
 }

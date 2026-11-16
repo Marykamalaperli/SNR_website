@@ -49,12 +49,13 @@ it('includes both edit versions and explicit account access in an employee save'
     },
     { id: 'profile', version: 3, membership_version: 7 },
   );
-  expect(rpc).toHaveBeenCalledWith('hr_save_employee', {
+  expect(rpc).toHaveBeenCalledWith('hr_save_employee_identity', {
     p_id: 'profile',
     p_version: 3,
     p_membership_version: 7,
     p_email: 'account@example.invalid',
     p_display_name: 'Person',
+    p_designation: null,
     p_employee_number: 'SNR-1',
     p_site_id: 'site',
     p_department_id: 'department',

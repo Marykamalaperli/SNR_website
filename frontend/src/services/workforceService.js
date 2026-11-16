@@ -101,6 +101,7 @@ export const saveWorkspaceSettings = (values, version) =>
     p_name: values.name.trim(),
     p_timezone: values.timezone.trim(),
     p_display_name: values.display_name.trim(),
+    p_designation: values.designation?.trim() || null,
   });
 export const loadPendingAccounts = () => request('hr_pending_staff_accounts');
 export const closePendingAccount = (id) =>
@@ -142,12 +143,13 @@ export function saveOrganizationRecord(kind, values, record = null) {
 }
 
 export function saveEmployee(values, record = null) {
-  return request('hr_save_employee', {
+  return request('hr_save_employee_identity', {
     p_id: record?.id || null,
     p_version: record?.version || null,
     p_membership_version: record?.membership_version || null,
     p_email: values.email.trim(),
     p_display_name: values.display_name.trim(),
+    p_designation: values.designation?.trim() || null,
     p_employee_number: values.employee_number.trim(),
     p_site_id: values.site_id,
     p_department_id: values.department_id,

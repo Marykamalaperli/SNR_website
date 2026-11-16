@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { QrCode, ShieldCheck, UsersRound, LogOut } from 'lucide-react';
 import Brand from '../components/common/Brand';
 import Button from '../components/common/Button';
@@ -19,12 +19,18 @@ import {
   closeStationVisit,
   stationTransport,
 } from '../services/attendanceStationService';
+import AttendanceQrPage from './AttendanceQrPage';
 import PunchCard from '../features/attendance/PunchCard';
 import SecurityPresenceChecks from '../features/attendance/SecurityPresenceChecks';
 import '../styles/security-attendance.css';
 
 function SharedStation() {
   const { session, signOut } = useAuth();
+  const { hash } = useLocation();
+  const [selectedQr, setSelectedQr] = useState(() =>
+    new URLSearchParams(hash.slice(1)).get('employee-qr'),
+  );
+  const [selectedName, setSelectedName] = useState('');
   const [clientId] = useState(() => {
     try {
       const key = 'snr-security-client:' + session.user_id;
@@ -65,6 +71,8 @@ function SharedStation() {
     const current = employeeRef.current;
     employeeRef.current = null;
     setVisit(null);
+    setSelectedQr(null);
+    setSelectedName('');
     setNotice(message);
     setError('');
     if (current) {
@@ -145,7 +153,7 @@ function SharedStation() {
   }, [visit, finish]);
   async function start(event) {
     event.preventDefault();
-    if (starting.current || employeeRef.current) return;
+    if (starting.current || employeeRef.current || !selectedQr) return;
     starting.current = true;
     setBusy(true);
     setError('');
@@ -160,10 +168,10 @@ function SharedStation() {
       const employeeClientId = crypto.randomUUID();
       let data;
       try {
-        data = await openStationVisit(flowId, login.client, employeeClientId);
+        data = await openStationVisit(flowId, login.client, employeeClientId, selectedQr);
       } catch (failure) {
         if (!failure.retryable) throw failure;
-        data = await openStationVisit(flowId, login.client, employeeClientId);
+        data = await openStationVisit(flowId, login.client, employeeClientId, selectedQr);
       }
       if (!active.current) {
         await closeStationVisit(flowId, data.visit_id).catch(() => {});
@@ -280,7 +288,19 @@ function SharedStation() {
           <section aria-label="Shared-device employee attendance">
             {!visit ? (
               <Card className="security-review-card">
-                <span className="eyebrow">STEP 1 · EMPLOYEE SIGN-IN</span>
+                {!selectedQr && (
+                  <AttendanceQrPage
+                    embedded
+                    searchOnly
+                    onSelect={(card) => {
+                      setSelectedQr(card.token);
+                      setSelectedName(card.display_name);
+                    }}
+                  />
+                )}
+                <span className="eyebrow">
+                  EMPLOYEE SIGN-IN{selectedName && ' · ' + selectedName}
+                </span>
                 <h2>Employee, enter your own credentials</h2>
                 <p>
                   Your password stays private. Do not give it to the guard or let another employee
@@ -294,7 +314,7 @@ function SharedStation() {
                     autoComplete="off"
                     autoCapitalize="none"
                     required
-                    disabled={busy || Boolean(paused)}
+                    disabled={busy || Boolean(paused) || !selectedQr}
                   />
                   <FormField
                     label="Employee password"
@@ -302,9 +322,9 @@ function SharedStation() {
                     name="password"
                     autoComplete="off"
                     required
-                    disabled={busy || Boolean(paused)}
+                    disabled={busy || Boolean(paused) || !selectedQr}
                   />
-                  <Button type="submit" disabled={busy || Boolean(paused)}>
+                  <Button type="submit" disabled={busy || Boolean(paused) || !selectedQr}>
                     {busy ? 'Verifying employee…' : 'Continue to photo & location'}
                   </Button>
                 </form>
@@ -418,8 +438,9 @@ export default function AttendanceStationPage() {
     true,
   );
   const { session, loading } = useAuth();
+  const { hash } = useLocation();
   if (loading) return <LoadingState />;
-  if (!session) return <Navigate to="/login?station=1" replace />;
+  if (!session) return <Navigate to={'/login?station=1' + hash} replace />;
   if (session.role !== 'employee')
     return (
       <main className="security-attendance" id="main-content">

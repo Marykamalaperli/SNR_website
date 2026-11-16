@@ -1,5 +1,9 @@
 # Common QR and security attendance
 
+> Current behavior is superseded by migration **0016**: [individual QR attendance,
+> separate employee/guard photos and manual activation](PERSONAL_QR_SECURITY_ATTENDANCE.md).
+> This document retains earlier setup diagnostics; never rerun a deployed migration.
+
 Migration **0014** replaces personal QR credentials with one common attendance QR.
 The QR contains only the production `/login?attendance=1` URL, which asks for
 credentials even if that browser tab already has a session. Successful employee

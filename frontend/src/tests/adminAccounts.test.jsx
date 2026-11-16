@@ -46,6 +46,7 @@ beforeEach(() => {
 async function fillEmployee(user) {
   await user.type(screen.getByLabelText('Account email'), 'new@example.invalid');
   await user.type(screen.getByLabelText('Initial password'), 'Synthetic-Password-17');
+  await user.type(screen.getByLabelText('Designation'), 'Security officer');
   await user.type(screen.getByLabelText('Full name'), 'New Person');
   await user.type(screen.getByLabelText('Employee number'), 'TEST-1');
   await user.selectOptions(screen.getByLabelText('Site', { exact: true }), 'site');
@@ -100,6 +101,7 @@ it('links an existing account through the same server flow without requiring its
   await user.selectOptions(screen.getByLabelText('Account setup'), 'existing');
   expect(screen.getByLabelText('New password')).not.toBeRequired();
   await user.type(screen.getByLabelText('Account email'), 'legacy@example.invalid');
+  await user.type(screen.getByLabelText('Designation'), 'Security officer');
   await user.type(screen.getByLabelText('Full name'), 'Legacy Person');
   await user.type(screen.getByLabelText('Employee number'), 'OLD-1');
   await user.selectOptions(screen.getByLabelText('Site', { exact: true }), 'site');

@@ -11,13 +11,23 @@ export default function LoginPage() {
   usePageMeta('Sign In', 'Sign in to your SNR NEST workspace.', true);
   const { session, signIn } = useAuth();
   const navigate = useNavigate();
-  const { state, search } = useLocation();
+  const { state, search, hash } = useLocation();
   const attendanceEntry = new URLSearchParams(search).get('attendance') === '1';
   const stationEntry = new URLSearchParams(search).get('station') === '1';
+  const qrToken = new URLSearchParams(hash.slice(1)).get('employee-qr');
+  const cardEntry = new URLSearchParams(search).get('card') === '1';
+  const cardId = new URLSearchParams(hash.slice(1)).get('employee-card');
+  const qrHash = qrToken && /^[0-9a-f-]{36}$/i.test(qrToken) ? '#employee-qr=' + qrToken : '';
+  const cardReturn = cardEntry
+    ? '/attendance/qr' +
+      (cardId && /^[0-9a-f-]{36}$/i.test(cardId) ? '#employee-card=' + cardId : '')
+    : null;
   const attendanceReturn = stationEntry
-    ? '/attendance/station'
+    ? '/attendance/station' + qrHash
     : attendanceEntry || state?.from === '/attendance'
-      ? '/attendance'
+      ? qrHash
+        ? '/attendance/employee' + qrHash
+        : '/attendance'
       : null;
   const [visible, setVisible] = useState(false);
   const [errors, setErrors] = useState({});
@@ -42,7 +52,10 @@ export default function LoginPage() {
     try {
       const confirmed = await signIn(email, password);
       navigate(
-        confirmed.role === 'employee' && attendanceReturn ? attendanceReturn : confirmed.workspace,
+        cardReturn ||
+          (confirmed.role === 'employee' && attendanceReturn
+            ? attendanceReturn
+            : confirmed.workspace),
         { replace: true },
       );
     } catch (error) {
@@ -52,7 +65,7 @@ export default function LoginPage() {
     }
   }
 
-  if (session && !attendanceEntry && !stationEntry)
+  if (session && !attendanceEntry && !stationEntry && !cardEntry)
     return (
       <Navigate
         to={session.role === 'employee' && attendanceReturn ? attendanceReturn : session.workspace}
@@ -76,7 +89,7 @@ export default function LoginPage() {
           {stationEntry
             ? 'Use your HR-authorized guard account to open a shared attendance device.'
             : attendanceReturn
-              ? 'Use your own Employee account, then verify your passkey, store location and fresh photo.'
+              ? 'Use your own Employee account, then verify your store location and take separate employee and guard photos with guard approval.'
               : 'Sign in and settle into your workday.'}
         </p>
       </div>
