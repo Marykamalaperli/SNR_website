@@ -1,5 +1,8 @@
 # Initial implementation report
 
+> **Historical record.** This report describes the earlier Supabase/Cloudflare
+> implementation and must not be used to claim the final source architecture exists.
+
 The dashboard account release now removes the separate Auth-user creation step:
 staff creation/linking, login-detail edits, interrupted-operation recovery and
 workspace/own settings are implemented in the app. Its activation guide is

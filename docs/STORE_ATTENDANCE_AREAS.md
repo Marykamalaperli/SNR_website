@@ -1,5 +1,8 @@
 # Store attendance areas
 
+> **Superseded implementation history.** Fixed-radius location enforcement is not a
+> target MVP requirement unless the privacy and attendance policy is amended.
+
 > Migration 0010 fixes the radius at 50 metres and disables QR scanning.
 > See [current photo-only attendance](ATTENDANCE_PHOTO_ONLY.md) for activation.
 
@@ -13,7 +16,7 @@ accuracy leave attendance unchanged.
 
 1. Apply migrations 0001–0006 first. If 0006 is not installed, apply
    [202611070006_attendance_locations.sql](../supabase/migrations/202611070006_attendance_locations.sql)
-   once using the existing Supabase SQL Editor. Do not rerun migration 0005 against
+   once using your Supabase project's SQL Editor. Do not rerun migration 0005 against
    existing attendance and never apply files under `supabase/tests` to production.
 2. Apply only the new
    [202611080007_store_attendance_areas.sql](../supabase/migrations/202611080007_store_attendance_areas.sql)

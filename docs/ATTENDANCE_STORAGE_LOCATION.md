@@ -1,5 +1,8 @@
 # Store map links, location-first cameras and private photo buckets
 
+> **Superseded implementation history.** The target storage provider is private S3
+> through FastAPI-authorized upload and download intents.
+
 > Migration 0011 adds date folders and saved employee names to new photo filenames.
 > See [employee-name photo storage](ATTENDANCE_PHOTO_NAMES.md) for the current format.
 

@@ -1,5 +1,8 @@
 # Employee names and date folders for attendance photos
 
+> **Superseded implementation history.** The target uses opaque object keys and must
+> not place employee names in private S3 keys.
+
 Migration 0011 extends 0010. Both private buckets use date folders at the root:
 
 ```text

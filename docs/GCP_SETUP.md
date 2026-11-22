@@ -1,5 +1,8 @@
 # Google Cloud setup for SNR NEST
 
+> **Superseded implementation history.** Google Cloud Run is not the selected target
+> deployment. Do not provision these resources for the final plan.
+
 Selected project ID: `snr-nest`. Frontend URL reported by the owner:
 `https://snr-nest.pages.dev`. The proposed backend region is `asia-south1` (Mumbai).
 The backend is not deployed yet. This managed task has no connected Google identity;

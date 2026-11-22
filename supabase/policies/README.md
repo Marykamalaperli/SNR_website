@@ -1,5 +1,8 @@
 # Isolation validation before enabling data access
 
+> **Superseded provider history.** Supabase RLS is not the target persistence
+> boundary. Preserve these cases as input to FastAPI/PostgreSQL authorization tests.
+
 The foundation migration is not applied automatically. It enables RLS, grants only
 authenticated SELECT, narrowly scopes profiles/events/requests, denies document
 metadata by default, and denies direct browser table writes. No Storage bucket or public

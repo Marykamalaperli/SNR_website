@@ -4,3 +4,6 @@ pydantic==2.14.3
 pydantic-settings==2.13.1
 uvicorn==0.42.0
 PyJWT[crypto]==2.12.1
+SQLAlchemy==2.0.48
+alembic==1.18.4
+psycopg[binary]==3.3.3

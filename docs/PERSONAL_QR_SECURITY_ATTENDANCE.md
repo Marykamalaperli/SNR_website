@@ -1,5 +1,8 @@
 # Individual QR attendance and two-photo guard approval (0016)
 
+> **Superseded implementation history.** Personal QR, guard photos and guard passkey
+> approval are not the final SRS attendance workflow.
+
 Migration **0016** supersedes the common QR entry introduced by 0014/0015. It
 restores an individual QR **with employee sign-in**, while retaining the supervised
 guard authorization from 0015. It does not restore unsigned bearer access or the

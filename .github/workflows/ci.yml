@@ -5,6 +5,43 @@ on:
 permissions:
   contents: read
 jobs:
+  target-foundation:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: snr_nest
+          POSTGRES_USER: snr_nest
+          POSTGRES_PASSWORD: snr_nest_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U snr_nest -d snr_nest"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql+psycopg://snr_nest:snr_nest_ci@127.0.0.1:5432/snr_nest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - run: python -m pip install -r requirements.txt
+        working-directory: backend
+      - run: python -m alembic upgrade head
+        working-directory: backend
+      - run: python -m alembic downgrade base
+        working-directory: backend
+      - run: python -m alembic upgrade head
+        working-directory: backend
+      - name: Verify target containers build
+        run: |
+          docker build --file infra/docker/backend.Dockerfile --tag snr-nest-api:ci .
+          docker build --file infra/docker/frontend.Dockerfile --tag snr-nest-frontend:ci .
   database:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -28,6 +65,7 @@ jobs:
       - run: node --test ../scripts/deployment.test.mjs
       - run: npm run format:check
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm run test:server
       - run: npm run test
       - run: npm run build

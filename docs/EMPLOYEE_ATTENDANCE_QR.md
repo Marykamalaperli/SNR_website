@@ -1,5 +1,8 @@
 # Attendance QR
 
+> **Superseded implementation history.** Individual employee QR credentials are
+> replaced by short-lived server-signed store QR challenges in the final source.
+
 > Current behavior is superseded by migration **0016**: [individual QR attendance,
 > separate employee/guard photos and manual activation](PERSONAL_QR_SECURITY_ATTENDANCE.md).
 > This document retains earlier setup diagnostics; never rerun a deployed migration.

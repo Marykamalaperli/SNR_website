@@ -22,3 +22,5 @@ frontend/.wrangler/
 gha-creds-*.json
 /.local/
 frontend/attendance-demo-dist/
+/.playwright-mcp/
+/node-*.msi

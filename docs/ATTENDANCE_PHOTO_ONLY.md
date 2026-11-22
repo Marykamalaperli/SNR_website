@@ -1,5 +1,8 @@
 # Photo-only attendance within 50 metres
 
+> **Superseded implementation history.** Photo-only and fixed-radius behavior is not
+> the final attendance contract.
+
 > Migration 0011 adds date folders and saved employee names to new photo filenames.
 > See [employee-name photo storage](ATTENDANCE_PHOTO_NAMES.md) for the current format.
 

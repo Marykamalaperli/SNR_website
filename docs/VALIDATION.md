@@ -1,5 +1,8 @@
 # Validation record — 5 November 2026
 
+> **Historical validation.** These results apply to the earlier implementation only.
+> New target work must record separate validation and must not inherit these results.
+
 Validated in the managed Linux environment with Node 24.22.1, npm 11.9.0,
 Python 3.12.14 and system Chromium. No external application was deployed.
 
@@ -106,11 +109,10 @@ The bootstrap `--plan` command ran offline for `snr-nest` and `asia-south1`.
 
 ## Supabase authentication follow-up
 
-Google Cloud work was paused by the owner. The selected Supabase origin is
-`https://emvppphhkmbpgqduikup.supabase.co`; its public key is configured only in ignored
-local frontend settings. The project has not been changed remotely. A read-only
-Auth settings request was blocked by this environment's proxy (403 tunnel denial),
-so actual project readiness and a live user login remain unverified.
+Google Cloud work was paused by the owner. The Supabase project used for earlier
+setup belonged to a friend and is not the destination for this owner. No owner-owned
+Supabase project is currently configured. Earlier network checks did not verify
+project readiness or establish a live user login.
 
 Final local results:
 
@@ -248,7 +250,7 @@ No SQL, dependencies, hosting compatibility settings or credentials changed. The
 SQL suite was not rerun because the schema is unchanged. No live Supabase account
 or private data was used in validation. A frontend release and owner verification
 against the configured project are still needed; this is a local runtime regression
-result, not a claim that the live project has been tested.
+result, not a claim that an owner-controlled live project has been tested.
 
 ## Assigned shifts and normal attendance
 
@@ -290,8 +292,9 @@ Final executed checks on 7 November 2026:
   both tested Workers compatibility settings. All outbound contracts are synthetic.
 
 No dependencies or cloud credentials changed. Google Cloud remains paused.
-The owner must apply only migration 0005, deploy the frontend, and verify a test
-employee's actual punches in the existing project. Routine shift assignments and
+The owner must apply migration 0005 to the new owner-controlled project, deploy the
+frontend with its new public configuration, and verify a test employee's actual
+punches. Routine shift assignments and
 attendance then stay in SNR NEST. Corrections/approval and private-document
 workflows remain unimplemented; no payroll or inferred attendance policy is claimed.
 

@@ -1,5 +1,8 @@
 # Attendance and employee shifts
 
+> **Superseded implementation history.** The target uses FastAPI, PostgreSQL,
+> short-lived store QR challenges and private S3 photo evidence.
+
 > Migration 0010 fixes the radius at 50 metres and disables QR scanning.
 > See [current photo-only attendance](ATTENDANCE_PHOTO_ONLY.md) for activation.
 
@@ -16,7 +19,7 @@ and narrow database functions; attendance does not use the administrative key.
 ## One-time activation
 
 1. Apply only [202611070005_attendance.sql](../supabase/migrations/202611070005_attendance.sql)
-   in the existing project's SQL Editor, after migrations 0001–0004. Do not rerun
+   in your new project's SQL Editor, after migrations 0001–0004. Do not rerun
    previous migrations or anything under `supabase/tests`. The migration refuses
    to proceed if pre-existing attendance needs an explicit import review; it never
    rewrites or deletes that history.

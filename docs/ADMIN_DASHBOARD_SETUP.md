@@ -1,5 +1,9 @@
 # Dashboard-managed accounts and information
 
+> **Superseded implementation history.** This Supabase/Cloudflare procedure is not
+> part of the final source architecture. Retain it only for reuse analysis and data
+> transition evidence; do not use it to provision the target system.
+
 After this release, everyday staff and workspace administration happens in SNR
 NEST. Staff do not need to be created or edited in the Supabase dashboard first.
 Cloudflare Pages Functions provides a small Auth administration gateway; Google
@@ -10,24 +14,25 @@ dependency for these account operations.
 
 These are hosting/database setup steps, not a recurring staff workflow.
 
-1. In the existing Supabase SQL Editor, run
+1. In your new owner-controlled Supabase project's SQL Editor, run
    [202611070004_dashboard_accounts.sql](../supabase/migrations/202611070004_dashboard_accounts.sql)
    once. It requires migrations 0001–0003 already used by the live site. Keep all
    existing records; do not rerun old migrations or apply anything under tests.
 2. In Supabase **Project Settings → API Keys**, obtain a server **secret key**
    (`sb_secret_…`) or the legacy **service_role** key. A dedicated named secret
-   makes rotation easier. This is different from the existing public publishable key.
+   makes rotation easier. This is different from your new project's public publishable key.
 3. In Cloudflare **Workers & Pages → snr-nest → Settings → Variables and Secrets**
    (called Environment variables in some dashboards), select **Production** and
    add an encrypted **Secret** named **`SUPABASE_ADMIN_KEY`** with that value.
    Save it directly in Cloudflare. Never paste it into chat, source, a `VITE_*`
-   variable, or a public GitHub variable. The existing public build settings remain.
+   variable, or a public GitHub variable. Set the public build settings to your
+   new project's URL and publishable key as described in `SUPABASE_SETUP.md`.
 4. After this code is on `main`, run GitHub **Actions → Deploy application → Run
    workflow → main → frontend**. The existing deployment includes the server
    functions automatically. A fresh deployment is needed after setting the binding.
 
 The build generates an ignored server configuration file containing only the
-existing public project URL/key. The administrative key is read only from the
+new project's public URL/key. The administrative key is read only from the
 Cloudflare runtime binding. It is never passed to Vite or generated into a bundle.
 Without that binding, account administration fails closed; normal scoped profile
 reads/edits do not acquire elevated access. Preview deployments have no privileged

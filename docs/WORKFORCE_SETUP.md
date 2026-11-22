@@ -1,19 +1,23 @@
 # Activate organization setup and the employee directory
 
+> **Superseded implementation history.** Target workforce administration uses the
+> FastAPI/PostgreSQL contracts and roles defined in the final SRS.
+
 For the subsequent account-management release, first follow
 [Admin dashboard setup](ADMIN_DASHBOARD_SETUP.md). Staff creation and edits now
 happen entirely in the app; the Supabase dashboard is used only for initial
 project/migration/secret setup.
 
-The owner confirmed that live sign-in works. This release connects real workforce
-records to HR organization setup, employee onboarding/editing, an employee's own
-profile and the supervisor's assigned roster. Cloudflare still hosts the frontend;
-Google Cloud stays paused. No new frontend key or server secret is needed.
+Earlier live sign-in used a project that belongs to a friend; it must not be used
+for this activation. After connecting your new owner-controlled project, this
+release connects real workforce records to HR organization setup, employee
+onboarding/editing, an employee's own profile and the supervisor's assigned
+roster. Cloudflare still hosts the frontend; Google Cloud stays paused.
 
 ## 1. Apply the new migration
 
-In the existing [Supabase project](https://supabase.com/dashboard/project/emvppphhkmbpgqduikup/sql/new),
-open **SQL Editor → New query**. Copy the full contents of
+In your new owner-controlled Supabase project, open **SQL Editor → New query**.
+Copy the full contents of
 [202611070003_workforce_directory.sql](../supabase/migrations/202611070003_workforce_directory.sql)
 and run it once as the project owner. It requires the two migrations already used
 for authentication. Do not rerun the foundation, reset the database, or apply test
@@ -26,8 +30,9 @@ changed by this coding task.
 
 ## 2. Deploy the frontend
 
-After the code is on `main`, open GitHub **Actions → Deploy application → Run
-workflow → main → frontend**. Keep the existing public Supabase variables and
+Set production `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to your
+new project's public values. After the code is on `main`, open GitHub
+**Actions → Deploy application → Run workflow → main → frontend**. Keep the
 Cloudflare deployment secret. No backend/Google deployment is required.
 
 Without the migration, the new screens show an actionable setup error; they do not

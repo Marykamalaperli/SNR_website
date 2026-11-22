@@ -1,0 +1,73 @@
+name: snr-nest
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: snr_nest
+      POSTGRES_USER: snr_nest
+      POSTGRES_PASSWORD: snr_nest_dev
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - snr_nest_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U snr_nest -d snr_nest"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://snr_nest:snr_nest_dev@db:5432/snr_nest
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://snr_nest:snr_nest_dev@db:5432/snr_nest
+      CORS_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173"]'
+      ALLOWED_HOSTS: '["localhost","127.0.0.1","api","testserver"]'
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/ready')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  snr_nest_postgres:

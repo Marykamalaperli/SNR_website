@@ -1,5 +1,8 @@
 # Common QR and security attendance
 
+> **Superseded implementation history.** Preserve useful threat analysis, but apply
+> the active store-QR, FastAPI, PostgreSQL and private-S3 security contract.
+
 > Current behavior is superseded by migration **0016**: [individual QR attendance,
 > separate employee/guard photos and manual activation](PERSONAL_QR_SECURITY_ATTENDANCE.md).
 > This document retains earlier setup diagnostics; never rerun a deployed migration.

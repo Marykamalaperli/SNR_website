@@ -1,5 +1,8 @@
 # Clock-in and clock-out locations
 
+> **Superseded implementation history.** The final SRS treats browser location as
+> optional metadata unless an approved policy changes that decision.
+
 The owner requested device location capture and storage for both attendance
 actions. Notice version `attendance-location-v1` covers this per-event purpose:
 
@@ -14,7 +17,7 @@ timeouts leave attendance unchanged and show an actionable error.
 
 ## One-time activation
 
-1. In the existing Supabase SQL Editor, run only
+1. In your new project's Supabase SQL Editor, run only
    [202611070006_attendance_locations.sql](../supabase/migrations/202611070006_attendance_locations.sql)
    after migrations 0001–0005. Do not rerun migration 0005 against existing
    attendance or run files under `supabase/tests` in the live project.

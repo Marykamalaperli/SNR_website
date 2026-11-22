@@ -1,5 +1,8 @@
 # Isolated attendance review demo
 
+> **Historical preview.** This demo may support UI reuse analysis but does not prove
+> the target store-QR, FastAPI, PostgreSQL or private-S3 attendance flow.
+
 The owner requested a live demo before the next production push. The dedicated
 frontend/attendance-demo entry builds separately from the production application.
 It has synthetic staff/site records, guided location/photo steps, a sample

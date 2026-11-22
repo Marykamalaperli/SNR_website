@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     app_env: Literal["development", "test", "production"] = "development"
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
     allowed_hosts: list[str] = ["localhost", "127.0.0.1", "testserver"]
+    database_url: str = ""
     supabase_url: str = ""
     supabase_publishable_key: str = ""
     supabase_jwt_issuer: str = ""
@@ -22,6 +23,13 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security(self):
+        self.database_url = self.database_url.strip()
+        if self.database_url and not self.database_url.startswith(
+            ("postgresql://", "postgresql+psycopg://")
+        ):
+            raise ValueError("DATABASE_URL must use PostgreSQL")
+        if self.app_env == "production" and not self.database_url:
+            raise ValueError("Production requires DATABASE_URL")
         self.supabase_url = self.supabase_url.strip().rstrip("/")
         if self.supabase_url:
             project = urlsplit(self.supabase_url)

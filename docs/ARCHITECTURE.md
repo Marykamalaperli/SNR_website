@@ -1,312 +1,101 @@
-# Architecture
+# Target architecture
 
-> Attendance entry is now governed by **0016**: individual employee QR + matching
-> credentials + two-photo guard approval. See [the current contract](PERSONAL_QR_SECURITY_ATTENDANCE.md).
-> Earlier common/bearer QR descriptions below are migration history.
+The final architecture is defined by the supplied SRS and technical-design DOCX.
+The current Supabase, Cloudflare and personal-QR implementation is transition input,
+not the production target.
 
-Supervised attendance (migration 0015) adds `/attendance/station` to the common QR
-flow. The guard retains their normal verified session; an employee uses a separate
-memory-only Auth client for one turn. The gateway verifies both Auth subjects and
-scoped flows before a service-only visit open. An explicit HR site-scoped guard
-grant and a required-UV guard WebAuthn signature authorize only that employee's
-exact photo/GPS/action. PostgreSQL rechecks both sessions/flows, site, grant and key
-versions at preparation/commit, then appends witness evidence and ends the visit.
-Personal attendance still requires the employee's own approved passkey. Shared
-random checks reuse the existing private photo bucket and fixed two-minute server
-deadline. No general impersonation, guard photo-history access or face matching is
-introduced. See [security attendance](SECURITY_ATTENDANCE.md).
-
-## Current implementation and boundaries
-
-The public React site, login interface, isolated synthetic previews, and FastAPI
-health/session boundary run locally. Organization setup and scoped employee
-profiles, shift assignments and normal attendance now use Supabase database
-functions; corrections/documents remain unimplemented. Authentication uses Supabase Auth plus the
-RLS-protected `current_workspace()` RPC. The optional FastAPI membership adapter
-calls the same RPC using a verified caller JWT. Missing configuration or assignment
-is denied. The owner confirmed live login and workforce screens; the account
-gateway has a separate one-time activation. No API returns demo data.
+## System context
 
 ```mermaid
 flowchart LR
-  Browser[User browser] --> Pages[Cloudflare Pages · React]
-  Pages -->|Bearer access token · HTTPS| API[Cloud Run · FastAPI]
-  Pages -->|Sign in| Auth[Supabase Auth]
-  Pages -->|Caller JWT · narrow workforce RPCs| DB
-  API -->|JWKS verification| Auth
-  API -->|Scoped queries + RLS| DB[(Supabase PostgreSQL)]
-  API -->|Authorized short-lived URLs| Storage[Supabase private Storage]
+  User[Employee or administrator] -->|HTTPS| CF[CloudFront]
+  CF -->|OAC| Web[(Private S3 frontend)]
+  User -->|HTTPS JSON| Proxy[Reverse proxy]
+  Proxy --> API[FastAPI modular monolith]
+  API --> DB[(PostgreSQL)]
+  API -->|Presigned PUT and GET| Evidence[(Private S3 evidence and payslips)]
+  Jobs[Scheduled jobs] --> DB
+  Jobs --> Backup[(Encrypted off-server backups)]
 ```
 
-The frontend was reported live at `https://snr-nest.pages.dev`. Google Cloud Run is
-paused; the selected Supabase project is `emvppphhkmbpgqduikup`. The authentication
-path can run without Cloud Run. An unconfigured/unassigned install grants no private session.
-Development `/preview/*` routes import synthetic fixtures only in Vite development
-mode. The production route table and bundle omit those imports. The normal `/me`,
-`/team`, and `/hr` routes always use the auth gate.
+The browser never receives AWS credentials or database access. CloudFront serves
+versioned static assets from a private S3 bucket through Origin Access Control.
+FastAPI authorizes business requests and brokers narrowly scoped, short-lived object
+access. PostgreSQL is private and reachable only by the application and approved
+administrative paths.
 
-## Request and authentication flow
+## Frontend
 
-1. Sign-in email/password goes directly to Supabase over HTTPS. Staff account
-   creation and credential edits use the separate authorized Pages gateway below;
-   its request credentials are never logged or persisted.
-2. The SDK obtains an access token; Auth `getUser` verifies identity against Supabase.
-3. With the default `supabase` session source, `current_workspace()` executes in
-   PostgreSQL as the authenticated caller under RLS. It accepts no identity/role/org
-   arguments and returns only that user's active database assignment. Zero/multiple
-   active assignments are denied; no first-user promotion or tenant auto-selection.
-4. With explicit `api` source, FastAPI first verifies the asymmetric JWT's issuer,
-   audience, expiry and signature, then calls the same RPC with the user's token.
-   No service-role key or bypass of RLS is used. Returned user IDs must match.
-5. Only a server-confirmed workspace opens. The SDK stores credentials in tab-scoped
-   sessionStorage, rechecks membership on restoration/token refresh, and clears
-   local credentials on logout. User metadata never determines permissions.
+- React, Vite and TypeScript PWA.
+- Role-specific Employee, Store Admin and HR/Payroll experiences.
+- System Admin and Auditor interfaces remain narrow and authority-specific.
+- Controlled service-worker caching for the application shell and immutable assets.
+- Never cache authenticated API responses, attendance photos or payslips.
+- Accessible responsive behavior beginning at 360 px.
 
-The default path is browser → Supabase Auth/PostgREST → PostgreSQL. Supabase is the
-server enforcing authorization; UI state is not an authority. The third migration
-adds bounded staff projections and HR-only, audited setup/profile save functions.
-These fixed-search-path definer functions derive one active organization from
-`auth.uid()` and enforce exact role/scope checks; no browser table-write grants
-are added. FastAPI remains available for future workflows. The selected hosted
-database path while Google Cloud is paused is recorded in `DECISIONS.md`.
+Existing React components, tokens and responsive layouts may be reused after their
+roles and service calls are reconciled with the target contracts. Provider-specific
+Supabase clients and personal-QR workflows are replaced.
 
-No request accepts a browser-supplied organization or role as authority. Organization
-selection, if later needed, must be checked against memberships. Auditor and owner
-remain distinct roles without HR inheritance. See `SECURITY.md` for the matrix.
+## API and domains
 
-## Domain boundaries and data
+FastAPI is a modular monolith with these domains:
 
-Auth owns identities/memberships. Employees owns scoped profiles. Shifts owns site
-and shift assignments. Attendance owns append-only punches. Corrections owns
-requests/recommendations/final decisions. Documents owns private metadata and access
-policy. Reports exposes approved projections, never unrestricted raw access.
-Each module has a boundary document; FastAPI still routes only health/session.
-React workforce services call the separately documented Supabase RPC contracts.
+- `identity`: users, sessions, roles, scopes and audit context.
+- `workforce`: organizations, stores, employees and pay-profile references.
+- `scheduling`: shifts, assignments, holidays and approved leave inputs.
+- `attendance`: store QR challenges, uploads, events, daily summaries and corrections.
+- `payroll`: periods, rules, snapshots, calculations, approval, lock and reversal.
+- `documents`: object intents, retention, payslip generation and signed access.
+- `reporting`: scoped CSV exports and reconciliation.
+- `operations`: health, readiness, jobs, backups, metrics and structured logs.
 
-PostgreSQL organizations are the tenant boundary; composite tenant foreign keys
-prevent accidental cross-organization references. RLS is enabled on every application
-table. Initial policies allow narrowly scoped self/team/HR reads; browser writes are
-denied. Migrations are not applied automatically. The workforce migration supports
-site/department/shift-template configuration, profile onboarding/editing and scoped
-directory reads. It does not assign shifts or record attendance. Activation steps
-and role checks are in `WORKFORCE_SETUP.md`.
+Routers validate transport schemas. Services enforce business rules and authority.
+Repositories perform scoped persistence. No router or repository may accept browser-
+supplied organization, role or approval authority as trusted fact.
 
-## Attendance and review workflow (planned)
+## Data and transactions
 
-```mermaid
-sequenceDiagram
-  participant E as Employee
-  participant A as API
-  participant S as Supervisor
-  participant H as HR
-  E->>A: Punch + idempotency key
-  A->>A: Verify identity, site/shift, state; timestamp on server
-  A->>A: Append attendance event (no overwrite)
-  E->>A: Request correction + reason/evidence
-  S->>A: Recommend or flag within assigned team
-  H->>A: Final decision within organizational scope
-  A->>A: Atomically append approval, correction, audit events
-```
+- SQLAlchemy 2 and Alembic manage the target PostgreSQL schema.
+- Store timestamps in UTC and retain the applicable store IANA time zone.
+- Use `NUMERIC`/`Decimal` for all monetary values.
+- Raw attendance events, corrections, payroll snapshots and audit events are
+  append-only.
+- Attendance mutations use idempotency keys and transactional state validation.
+- Payroll approval locks the selected version. A later correction creates a reversal
+  or a new run; it never edits the locked run.
 
-Clocking, recommendations and approval currently work **only in local preview state**
-and reset on refresh. The server must later implement ordering, deduplication,
-concurrency control, self-approval restrictions and audited final authority.
+## Attendance flow
 
-## Files, logging, and operations
+1. An authorized Store Admin requests a short-lived store QR challenge.
+2. The server signs a random challenge containing store and expiry context.
+3. An Employee requests a constrained private-photo upload intent.
+4. The browser uploads directly to private S3 using the presigned operation.
+5. The Employee submits the event with an idempotency key and QR/photo references.
+6. FastAPI verifies identity, store scope, challenge signature, expiry, replay,
+   photo metadata, shift and current in/out state.
+7. PostgreSQL commits the server timestamp, raw event and audit event atomically.
 
-Sensitive files belong in private Storage buckets. The server checks purpose, owner,
-organization, media type/size, malware scanning outcome and retention before issuing
-short-lived signed access. No public document URLs or biometric processing.
-No storage bucket is provisioned by the foundation.
+Location accuracy and device/browser metadata may be retained as optional evidence
+only under the approved privacy policy. They never replace authentication or server
+authority.
 
-FastAPI returns a consistent error envelope and request ID, emits JSON request logs
-(path/status/duration, no credentials or request bodies), restricts CORS, and adds
-security/cache headers. Durable audit events are separate from operational logs and
-must be written in the same transaction as sensitive changes.
+## Payroll flow
 
-Frontend assets are static. `/api/admin/*` alone routes to Pages Functions. This
-small hosting adapter handles GoTrue account creation/linking and credential
-changes while Google Cloud is paused; it does not replace the Python business API.
-It verifies Auth identity and checked database scope before using a runtime-only
-admin key. All data RPCs retain caller JWT authorization. The private intent
-ledger, Auth operation markers and recovery UI explicitly handle the boundary
-between Auth and application transactions. SQL guards hold pending profile/role
-relationships, permit immediate membership deactivation, and prevent duplicate or
-stale operations. See `ADMIN_DASHBOARD_SETUP.md` for deployment and exact limits.
+1. HR defines a pay period and selects approved effective-dated configuration.
+2. The service reads locked attendance and blocks unresolved exceptions by default.
+3. The engine calculates with `Decimal`, stores input snapshots and an input hash,
+   and reconciles totals.
+4. An authorized approver validates and locks the run transactionally.
+5. Payslips are generated into private storage and remain hidden until release.
+6. Employees obtain only their own released payslip through expiring signed access.
 
-Cloud Run is stateless with an injected port, non-root
-container and health endpoint. Secrets stay server-side in managed configuration.
-See `DEPLOYMENT.md` and `RUNBOOK.md`. CORS and robots directives are not authorization.
+Until SRS decisions P-01 through P-10 are approved, every result remains
+`Draft - Not for payment`.
 
-## Attendance transactions
+## Transition boundary
 
-Migration 0005 adds HR-managed, effective-dated employee shift assignments and
-server-timed normal attendance. The caller supplies only an action, request UUID
-and prior event ID. PostgreSQL derives identity, organization, shift/work date and
-immutable site/department/time-zone snapshots; it serializes normal punches with
-HR profile changes, checks expected state, and atomically appends the event/audit.
-A repeated request ID returns its committed receipt without another punch or audit. Paired
-sessions derive history/duration; overnight checkout retains its start work date.
-
-Attendance reads enforce self/team/HR scope, including original event location
-and current supervisor assignments. All summaries derive from permitted filtered
-records. Direct writes and history changes stay denied; HR cannot edit original
-times. The application adds no automatic absence/lateness/payroll rules. See
-`ATTENDANCE_SETUP.md` for activation, concrete limits and owner acceptance checks.
-
-## Per-punch location capture
-
-Following owner approval, the browser requests one fresh device fix after staff
-acknowledgement/native permission. High accuracy is requested and its reported
-uncertainty is saved. A pending fix is discarded on navigation; retries reuse the
-original subject/state/location intent. Native capture does not grant authority.
-
-Migration 0006 wraps the existing private normal-punch transaction and stores its
-location atomically. GPS stays in a private RLS table without browser grants.
-Employee-self/HR-organization detail views are audited; ordinary history loads
-carry only availability flags. Supervisor views expose no precise location.
-Map links are external, user-initiated navigation; no map/geocoding SDK or new
-hosting secret is introduced. See `ATTENDANCE_LOCATIONS.md` for concrete policy,
-activation and limits. Existing history keeps its original missing-location state.
-
-Migration 0007 adds a private HR-managed store-area table and a location insert
-trigger. Server-derived event site, fresh coordinates, great-circle distance and
-reported accuracy determine eligibility for both punches. A shared area lock keeps
-the rule stable through commit; a failed check rolls back event, audit and GPS.
-Each accepted location snapshots the store centre/radius/version/distance. A matched
-committed replay returns its receipt before any new insert or distance check.
-Ordinary employee workspace metadata carries only readiness and radius; precise
-store configuration is fetched through a scoped HR RPC. Versioned admin saves
-reject stale edits. See `STORE_ATTENDANCE_AREAS.md` for configuration and rollout.
-
-## Tradeoffs
-
-This foundation prioritizes a polished, testable interface and fail-closed integration
-over speculative business policy. No payroll, leave calculations, background workers,
-PWA, correction processing or private-document workflows are added here. Production
-activation, provider acceptance, consent/retention and later attendance policies
-remain explicit owner work.
-
-## QR and photo attendance
-
-Migration 0008 adds private store QR configuration and append-only photo evidence.
-The new site-save RPC atomically commits site details, the versioned store area
-and its initial QR. HR display/replacement is scoped and audited. An employee can
-verify a scanned QR against their server-derived store, but cannot fetch tokens.
-The writer checks it again under a shared lock, retaining the QR version with proof.
-
-The QR/photo browser flow has no elevated key or file-upload endpoint. It decodes
-QR pixels locally, captures/reviews a bounded canvas JPEG, and requests a fresh
-location only on final confirmation. The existing normal/GPS transaction plus
-photo evidence commit atomically. Exact replay binds all submitted proof, while
-legacy writers reject new punches. The audited employee-self/HR reader includes
-photos; ordinary lists and supervisor projections do not. See
-ATTENDANCE_PHOTO_QR.md for storage/retention tradeoffs, activation and limits.
-
-## Location-first capture and private Storage (0009)
-
-Store setup accepts reviewed map links and preserves their coordinates/version.
-The browser obtains a fresh fix and caller-JWT server validation before either
-camera and again at the shutter. Location checks stop with the capture dialog.
-
-The existing Pages hosting adapter now also routes /api/attendance/*: an HR-only
-map-link resolver and an authenticated photo endpoint. SQL freezes a scoped upload
-intent, hash and server-derived bucket/path. The existing server binding uploads
-those exact bytes without overwrite and certifies metadata; the caller JWT alone
-commits the normal punch/GPS/reference/audit transaction. Duplicate uploads must
-match their reserved digest. The employee/HR reader and Storage RLS govern short-lived
-signed photo URLs; old database photos remain intact. See ATTENDANCE_STORAGE_LOCATION.md
-for transaction boundaries, lifecycle, activation and verification limits.
-
-## Photo-only attendance within 50 metres (0010)
-
-The owner replaced QR scanning with location-first selfie capture for both normal
-punches. Migration 0010 fixes every configured store area at 50 metres, increments
-changed area versions, and enforces that radius on all area saves. Native precise
-location and caller-JWT preflight precede the front camera; the shutter obtains
-another checked fix. Uncertain, denied, unavailable or outside positions stop it.
-
-New upload intents and attendance commits require photo/GPS without QR. The existing
-private action buckets, server-derived filenames, verified upload, atomic event/GPS/
-reference/audit transaction and replay semantics remain. Legacy QR input is accepted
-only as inert bounded payload metadata so exact older retries keep their fingerprint;
-new storage proof has null QR version and never claims QR verification. Old evidence
-is retained with its original metadata. HR QR actions and QR provisioning are disabled.
-The browser requires the new server policy flag before enabling normal punches.
-See ATTENDANCE_PHOTO_ONLY.md for activation and validation boundaries.
-
-## Date folders and employee photo names (0011)
-
-The owner requested employee names during creation and date-first bucket folders
-with name/date/time photo identifiers. The existing Full name field is required
-and appears first in account creation; HR's saved profile is the naming authority.
-Migration 0011 derives a safe name and the reservation's local calendar date/time
-from the caller's profile and assigned/open-session attendance time zone. A unique
-request suffix prevents overwrites. The private intent snapshots the full name and
-zone and freezes the path for retries; existing files/references are retained.
-
-The Pages handler accepts both trusted naming formats and retains caller/request/
-bucket/digest validation. Storage authorization follows committed scoped evidence,
-not folder structure. The 50-metre, photo-only and HTTP 204 confirmation rules
-continue to apply. See ATTENDANCE_PHOTO_NAMES.md for rollout and safe-name limits.
-
-## Personal employee QR links (0012)
-
-The dashboard issues an individual QR during active Employee account completion;
-HR can also retrieve or regenerate it through a tenant-scoped audited RPC. A
-private RLS table stores a random token/version per employee. Fragment links open
-own attendance and retain their destination through sign-in. PostgreSQL derives
-identity and checks ownership, active membership and current QR at workspace load,
-location preflight, photo reservation and commit. Regeneration serializes with
-attendance and blocks old-code unfinished captures/uploads. An insert trigger
-snapshots the checked personal version on private Storage evidence, separately
-from historical store QR metadata. Exact committed retries preserve receipts.
-All existing state, GPS, Storage naming and evidence-access transactions remain
-in use. See [personal employee QR](EMPLOYEE_ATTENDANCE_QR.md).
-
-## Attendance-only QR capability (0013)
-
-The owner superseded QR sign-in with a narrowly scoped bearer capability. The
-public `/attendance` page sends a private QR in bounded same-origin POST bodies
-to `/api/attendance/qr/{workspace,location,photos}` without account credentials.
-The Pages server invokes only `employee_qr_attendance_gateway`, a service-role-only
-allowlist. SQL derives and locks the current QR/employee, checks active role/Auth
-state, binds/restores transaction-local claims, and calls the existing attendance
-transactions. It never returns an Auth session. Workspace output is explicitly
-whitelisted, and QR access cannot fetch history/private photos or change profiles.
-The same server validates QR/location before camera/shutter/reservation/commit.
-Old fragment links redirect without reprinting. See EMPLOYEE_ATTENDANCE_QR.md.
-
-## Common QR and security attendance (0014)
-
-The owner superseded personal bearer QR access with a common link, verified
-Employee sign-in and a dedicated security screen. The old unsigned dispatcher is
-revoked in SQL and rejected by the Worker. No QR contains an identity credential.
-New punches require a session-bound attendance flow and a two-minute WebAuthn
-challenge binding the exact request/photo/GPS. A narrow Worker verifies signature,
-RP, origin and user verification; only its service-role completion RPC may mark
-proof valid. Public writers recheck active credentials/flow under the existing
-organization lock. New keys need audited in-person HR approval/reset.
-
-An HR policy of 0/3/4 schedules private per-session requests on clock-in. A check has
-a fixed two-minute server deadline and fresh GPS/photo/identity evidence. Separate
-private Storage and append-only evidence preserve normal punches and historical
-buckets/naming. Employees receive only the current due request; HR has scoped
-review and short-lived signed photo reads. Offline/background behavior is reported
-as missed evidence, never an automatic attendance rewrite. See SECURITY_ATTENDANCE.md
-for the complete contract, threat limits and manual rollout.
-
-## Individual QR routing with a two-photo guard witness (0016)
-
-The owner restored individual QR links with matching employee credentials, a permanent
-server-generated attendance ID and a scoped sidebar search showing name/designation.
-The common QR is superseded; unsigned bearer/store QR attendance stays disabled.
-Every new punch/check requires a distinct HR-authorized site guard, two separately
-captured location-gated photos and that guard's action-bound passkey. On an employee's
-phone the guard uses a temporary in-memory session; on a shared phone the employee
-does. Neither session replaces the primary signed-in user. New SQL wrappers preserve
-existing attendance state, historical buckets/names, audit events and exact retries.
-QR regeneration expires outstanding flows and is rechecked before commit. The extra
-private guard bucket does not replace the employee photo buckets. These controls
-provide scoped authorization and evidence, not facial recognition or a guarantee
-against collusion/GPS spoofing. See [current architecture and activation](PERSONAL_QR_SECURITY_ATTENDANCE.md).
+The existing repository must first receive a requirement-to-code trace. Each current
+asset is classified as reuse, adapt, replace, archive or remove. Private data is not
+moved automatically. A clean target database is preferred for the pilot unless the
+owner approves a migration design, reconciliation procedure and rollback plan.

@@ -1,5 +1,8 @@
 # Store QR, photo and location attendance
 
+> **Superseded implementation history.** Use the store-QR and private-S3 contract in
+> the final source pack, not this Supabase migration procedure.
+
 > The current flow is **location → photo within 50 metres**, with QR disabled.
 > Apply migration 0010 after earlier migrations. See [photo-only attendance](ATTENDANCE_PHOTO_ONLY.md).
 

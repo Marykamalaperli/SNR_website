@@ -1,99 +1,40 @@
-# Release the application
+# Release the target application
 
-The application foundation is pushed to GitHub. `.github/workflows/deploy.yml` is
-a manual release pipeline for Cloudflare Pages and Cloud Run. The owner reports the
-frontend live at `https://snr-nest.pages.dev`; this environment cannot independently
-verify that host under its network policy. The backend still needs Google access.
-See `DEPLOYMENT.md` for architecture, security headers and rollback guidance.
+No target AWS release is currently operational. A release requires explicit owner
+authorization after the target architecture and infrastructure are implemented.
 
-## First frontend release
+## Release prerequisites
 
-Open repository **Settings → Secrets and variables → Actions**. Configure:
+- all required format, lint, unit, integration, migration and browser checks pass;
+- critical authorization and object-access negative tests pass;
+- payroll decisions are approved or every payroll output remains draft only;
+- private S3 access, CloudFront OAC, exact CORS and production headers are verified;
+- backup and restore evidence exists;
+- migration, rollback, retention, incident ownership and known limitations are
+  reviewed;
+- the owner approves the exact frontend version, API image digest and migration set.
 
-| Kind              | Name                       | Value to supply securely                                            |
-| ----------------- | -------------------------- | ------------------------------------------------------------------- |
-| Secret            | `CLOUDFLARE_API_TOKEN`     | Account-scoped token with Cloudflare Pages Edit permission          |
-| Variable          | `CLOUDFLARE_ACCOUNT_ID`    | Selected account's 32-character ID                                  |
-| Optional variable | `CLOUDFLARE_PAGES_PROJECT` | Defaults to `snr-nest`; choose another name if needed               |
-| Optional variable | `PUBLIC_SITE_URL`          | Actual HTTPS custom domain already registered on that Pages project |
+## Planned workflow
 
-Open **Actions → Deploy application → Run workflow**, select `main` and `frontend`.
-The workflow installs dependencies, runs checks/tests, verifies production route
-protection, creates the selected Pages project only after an authenticated 404,
-and derives its canonical URL from Cloudflare's actual response. Existing projects
-must use `main` for production; other branches are not silently changed. Unknown
-custom domains are rejected. Without a custom domain, the verified Pages hostname
-is used, with a generated sitemap. After publishing it verifies the public page and
-sitemap. A successful job records its URL in GitHub's `production-frontend` environment.
+GitHub Actions uses AWS OIDC and a least-privilege role. It builds and tests, syncs
+hashed frontend assets to the private bucket, invalidates only mutable entry files,
+publishes an immutable API image and records deployment metadata. Long-lived AWS
+keys are prohibited.
 
-No deployment runs automatically on push or pull requests. Releases use only `main`
-and are serialized. GitHub environment protection rules can require review. Pages
-DNS setup and API-token creation remain account-owner tasks. Never paste secrets
-into source, issues or chat. Do not represent an unexecuted workflow as a deployment.
+## Post-release verification
 
-## Cloud Run prerequisites
+- CloudFront serves `/` and approved SPA routes over HTTPS.
+- Direct S3 frontend and evidence reads are denied.
+- API health/readiness and exact allowed-origin requests succeed.
+- Unknown origins and hosts fail.
+- Employee, Store Admin and HR/Payroll journeys work with production-like data.
+- Cross-store and object-ID attacks fail.
+- Payslips remain private and signed URLs expire.
+- Monitoring receives health, backup and security signals.
 
-For the selected Google project `snr-nest`, start with the one-time
-[Cloud Shell setup](GCP_SETUP.md). It checks billing and prepares the resources,
-scoped roles and GitHub OIDC settings described below, without private keys.
+## Rollback
 
-First deploy the public site and set `PUBLIC_SITE_URL` to its verified HTTPS origin.
-Have the Google Cloud administrator select the project/region, enable Cloud Run,
-Cloud Build and Artifact Registry APIs, create an approved Docker Artifact Registry
-repository, and configure GitHub OIDC Workload Identity Federation. No long-lived
-service-account key is required. Restrict the provider to
-`Marykamalaperli/SNR_website` on `refs/heads/main`, not arbitrary repositories/forks.
-
-Set these repository or `production-backend` environment variables:
-
-| Variable                         | Required metadata                                       |
-| -------------------------------- | ------------------------------------------------------- |
-| `GCP_PROJECT_ID`                 | Approved Google project ID                              |
-| `GCP_REGION`                     | Approved Cloud Run/Artifact Registry/Cloud Build region |
-| `GCP_ARTIFACT_REPOSITORY`        | Existing Docker repository in that region               |
-| `GCP_BUILD_SOURCE_BUCKET`        | Private source-staging bucket URI generated by setup    |
-| `GCP_SERVICE`                    | Optional; defaults to `snr-nest-api`                    |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Full workload identity provider resource name           |
-| `GCP_DEPLOY_SERVICE_ACCOUNT`     | GitHub-federated deployer service-account email         |
-| `GCP_BUILD_SERVICE_ACCOUNT`      | Build service-account email                             |
-| `GCP_RUNTIME_SERVICE_ACCOUNT`    | Least-privilege API runtime service-account email       |
-| `PUBLIC_SITE_URL`                | Actual public frontend HTTPS origin for CORS            |
-
-The deployer needs scoped permissions to submit builds/upload build sources, read
-Artifact Registry, deploy/configure the chosen Cloud Run service and its public
-invocation policy, and act as the selected build/runtime accounts. The build account
-needs source-read, repository-write and Cloud Logging write permissions. The runtime
-needs no broad Google Cloud permissions for the health/session foundation. Have an
-administrator review exact IAM bindings. This workflow does not enable billing/APIs
-or grant itself IAM roles. Cloud Build may require an approved source staging bucket.
-Do not substitute project-owner credentials for scoped IAM.
-
-## Deploy the backend, then connect the frontend
-
-Choose `backend` in the manual workflow. It tests the API, uploads only allowlisted
-backend inputs, builds with Cloud Build, resolves the Artifact Registry digest,
-deploys that immutable digest and verifies JSON health. It refuses to replace an
-existing service without `app=snr-nest`. It manages `APP_ENV`, `CORS_ORIGINS` and
-`ALLOWED_HOSTS`, preserving unrelated environment and secret bindings. A first
-revision uses TCP startup and rejects unknown HTTP hosts; a second installs the
-actual generated Cloud Run hostname. Custom API domains need an explicit extension.
-The successful job records the verified URL in `production-backend`.
-
-Set frontend variable `VITE_API_BASE_URL` to that URL and redeploy `frontend`, or
-choose `both` once all prerequisites are configured. `both` deploys backend first
-and passes its URL to the frontend build. Supabase public variables remain optional
-until the real membership adapter is implemented. This release does not expose
-sample dashboards or claim private authentication works.
-
-## Direct deployment from the managed task
-
-Alternatively, configure Cloudflare access securely in environment settings and
-connect an approved Google Cloud identity/project. The task has no authenticated
-Cloudflare account (`wrangler whoami` confirmed this) and its identity manifest has
-no Google connections. The saved environment draft lists Cloudflare access and
-account/project/region requirements. Environment settings and GitHub Actions
-settings are separate; tokens are never copied between them.
-
-The current network policy also blocks `api.github.com`; the draft requests that
-host so CI/deployment status can be inspected. Native Git push is verified and does
-not require a replacement token. Saving a draft does not apply or publish it.
+Roll back the frontend version and API image independently where schema compatibility
+permits. Restore data only through the approved recovery procedure. Never reverse a
+live migration or delete attendance/payroll history without a reviewed migration,
+backup and reconciliation plan.

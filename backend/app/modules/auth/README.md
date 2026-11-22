@@ -1,5 +1,8 @@
 # Authentication domain
 
+> **Transition note:** The target owns password sessions, roles and store scopes in
+> FastAPI/PostgreSQL. The Supabase adapter below is superseded history.
+
 JWT verification lives in `core/security.py`; `/api/v1/session` delegates membership
 to `services/memberships.py`. Configured requests use a publishable key and the
 verified caller JWT to call the RLS-protected `current_workspace()` RPC. The

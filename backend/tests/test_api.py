@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.core.config import Settings
+from app.core.database import get_readiness_checker
 from app.core.errors import DomainError
 from app.core.security import require_identity, require_organization, require_role
 from app.main import create_app
@@ -42,6 +43,25 @@ def test_health_is_meaningful_and_has_security_headers(client, path):
     assert response.headers["cache-control"] == "no-store"
     assert response.headers["x-content-type-options"] == "nosniff"
     UUID(response.headers["x-request-id"])
+
+
+def test_readiness_requires_the_target_database(app, client):
+    response = client.get("/api/v1/ready")
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "database_unavailable"
+
+    class Ready:
+        def check(self):
+            return True
+
+    app.dependency_overrides[get_readiness_checker] = Ready
+    response = client.get("/api/v1/ready")
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ready",
+        "service": "snr-nest-api",
+        "database": "available",
+    }
 
 
 def test_correlations_are_propagated_or_sanitized(client):
@@ -151,6 +171,7 @@ def test_validation_and_unexpected_errors_do_not_leak_input(app, client):
         {"cors_origins": ["*"]},
         {"app_env": "production", "cors_origins": ["http://example.org"]},
         {"allowed_hosts": ["*"]},
+        {"database_url": "sqlite:///not-target.db"},
         {"supabase_jwt_issuer": ISSUER},
         {"supabase_jwt_issuer": ISSUER, "supabase_jwks_url": "http://example.org/keys"},
     ],
@@ -162,7 +183,13 @@ def test_insecure_settings_are_rejected(kwargs):
 
 def test_production_disables_api_documentation():
     with TestClient(
-        create_app(Settings(app_env="production", cors_origins=["https://example.org"]))
+        create_app(
+            Settings(
+                app_env="production",
+                cors_origins=["https://example.org"],
+                database_url="postgresql+psycopg://app:secret@db:5432/snr_nest",
+            )
+        )
     ) as client:
         assert client.get("/docs").status_code == 404
         assert client.get("/openapi.json").status_code == 404

@@ -1,23 +1,50 @@
-# Foundation requirements
+# MVP requirements
 
-- Public `/`: responsive navigation, prescribed hero, four features, three steps, footer.
-- `/login`: email/password validation, visibility control, real Supabase boundary;
-  never fake a successful session or let users select a production role.
-- `/me`, `/team`, `/hr`: protected workspaces. Distinct navigation and relevant daily
-  tasks, no unsupported KPIs. Private access requires backend-confirmed membership.
-- `/preview/me`, `/preview/team`, `/preview/hr`: development-only synthetic workspaces,
-  explicit notice, local interactions, no real private API requests, no persistence.
-- Employee: attendance action, assigned shift, recent attendance, correction form,
-  own documents/profile. Supervisor: team roster, exceptions and recommendations.
-  HR: searchable/filterable directory, approvals, sites/shifts, documents/reports.
-- Shared semantic controls, modal, table, status, empty/loading/error states; keyboard
-  operation, visible focus, reduced motion and layouts at 360/390/768/1024/1440px.
-- FastAPI health endpoints, versioned routing, consistent errors, correlation IDs,
-  validated config, restrictive CORS, JSON logs and authentication interfaces.
-- Reviewable tenant-aware schema and RLS; no live migrations or sensitive business APIs.
-- Sitemap from `PUBLIC_SITE_URL` only; public-only indexing, private noindex, SPA refresh.
-- ESLint, Prettier, Vitest/RTL, Pytest, production build and GitHub Actions.
+The complete requirements are in `01_SRS_Attendance_Payroll_MVP.docx`. This file is
+the repository-facing summary and does not replace the SRS.
 
-Live workforce mutations, database-backed membership, RLS execution against Supabase,
-cloud deployment, penetration testing and formal accessibility certification are not
-claimed by the foundation. See `DEVELOPMENT_ROADMAP.md` for remaining work.
+## Functional scope
+
+- AUTH-01: password authentication, secure session/refresh handling and exact
+  organization/store authorization.
+- EMP-01: create, edit, activate and deactivate employees while retaining history.
+- SHIFT-01: create shifts and effective-dated assignments; reject overlaps and
+  support overnight shifts.
+- QR-01: issue short-lived signed store QR challenges and reject expiry, tampering,
+  wrong-store use and replay.
+- ATT-01: submit check-in/out with verified private photo evidence, idempotency and
+  server-authoritative time.
+- ATT-02: review and correct attendance through append-only before/after evidence,
+  reasons and approver identity.
+- PAY-01: calculate a deterministic draft payroll from locked attendance and
+  approved configuration snapshots.
+- PAY-02: validate, approve and lock a payroll run; use reversal or a new version
+  after lock.
+- SLIP-01: generate, release and authorize private employee payslips.
+- AUD-01: append security-sensitive and financial actions with actor, entity,
+  request ID, timestamp and structured metadata.
+
+## Non-functional scope
+
+- TLS, least privilege, exact CORS, rate limits and private S3.
+- Cross-store negative authorization tests for every private domain.
+- Normal API reads target 500 ms at pilot load; attendance submission targets two
+  seconds excluding upload/network.
+- Store-local scheduling with UTC persistence and explicit time-zone conversion.
+- Keyboard-operable core flows, visible focus and responsive behavior at 360 px.
+- Nightly encrypted off-server PostgreSQL backup and periodic restore evidence.
+- Privacy notice, data minimization, access logging and approved retention.
+
+## Excluded or deferred
+
+- Facial recognition, biometric templates and automated liveness.
+- Certified statutory payroll rules before qualified approval.
+- Bank payment, accounting, SMS or WhatsApp integrations.
+- Native mobile applications and offline attendance submission.
+- High availability and multi-region recovery for the initial pilot.
+
+## Release gate
+
+Authorization, store isolation, QR security, idempotency, payroll lock, payslip
+access, backup restore and a complete production-like pilot journey must pass. If
+P-01 through P-10 remain open, payroll remains `Draft - Not for payment`.
