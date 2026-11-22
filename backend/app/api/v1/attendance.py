@@ -33,10 +33,15 @@ def issue_challenge(
     db: Session = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
 ) -> StoreQRChallengeOut:
-    user = require_role(current, QR_ISSUERS)
+    allowed_issuers = (
+        {"store_admin", "system_admin", "employee"}
+        if settings.app_env != "production"
+        else {"store_admin", "system_admin"}
+    )
+    user = require_role(current, allowed_issuers)
     scope = user.scopes[0]
     for s in user.scopes:
-        if s.role in QR_ISSUERS:
+        if s.role in allowed_issuers:
             scope = s
             break
     return AttendanceService(db, settings).issue_qr_challenge(store_id, user, scope)

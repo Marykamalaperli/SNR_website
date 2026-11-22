@@ -43,10 +43,17 @@ describe('Target Attendance Components', () => {
   });
 
   describe('TargetPunchCard', () => {
-    it('renders Clock In button when clocked out and opens modal', () => {
+    it('renders Clock In button when clocked out and opens modal', async () => {
+      vi.mocked(targetAttendanceService.listAttendanceEvents).mockResolvedValue({
+        items: [],
+        total: 0,
+      });
+
       render(<TargetPunchCard storeId="store-1" storeName="Hyderabad Store" latestEvent={null} />);
 
-      expect(screen.getByText('Clocked out')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Clocked out')).toBeInTheDocument();
+      });
       const punchButton = screen.getByRole('button', { name: /clock in/i });
       expect(punchButton).toBeInTheDocument();
 
@@ -54,26 +61,34 @@ describe('Target Attendance Components', () => {
       expect(screen.getByText(/Step 1: Scan Store QR Challenge/i)).toBeInTheDocument();
     });
 
-    it('renders Clock Out button when latest event is clock_in', () => {
+    it('renders Clock Out button when latest event is clock_in', async () => {
+      const mockEvent = {
+        id: 'evt-1',
+        organization_id: 'org-1',
+        store_id: 'store-1',
+        employee_id: 'emp-1',
+        shift_id: null,
+        action: 'clock_in' as const,
+        server_timestamp: '2026-11-23T08:00:00Z',
+        store_timestamp: '2026-11-23T08:00:00Z',
+        photo_key: 'photo.jpg',
+      };
+      vi.mocked(targetAttendanceService.listAttendanceEvents).mockResolvedValue({
+        items: [mockEvent],
+        total: 1,
+      });
+
       render(
         <TargetPunchCard
           storeId="store-1"
           storeName="Hyderabad Store"
-          latestEvent={{
-            id: 'evt-1',
-            organization_id: 'org-1',
-            store_id: 'store-1',
-            employee_id: 'emp-1',
-            shift_id: null,
-            action: 'clock_in',
-            server_timestamp: '2026-11-23T08:00:00Z',
-            store_timestamp: '2026-11-23T08:00:00Z',
-            photo_key: 'photo.jpg',
-          }}
+          latestEvent={mockEvent}
         />,
       );
 
-      expect(screen.getByText('Clocked in')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Clocked in')).toBeInTheDocument();
+      });
       expect(screen.getByRole('button', { name: /clock out/i })).toBeInTheDocument();
     });
   });
