@@ -15,6 +15,7 @@
 | Append-only attendance and audit              | Confirmed        | Corrections add evidence rather than overwrite events                          |
 | Controlled draft payroll                      | Confirmed        | Calculations require approved rules and remain draft until compliance sign-off |
 | No facial recognition                         | Confirmed        | Photos support manual evidence review only                                     |
+| AWS staging account and workload region       | Confirmed        | Use account `376793939540` in `ap-south-1`; authenticate GitHub through OIDC    |
 
 ## Transition decisions required
 
@@ -22,7 +23,7 @@
 | ---- | ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | T-01 | Approve migration from JavaScript to TypeScript and the sequence | New target code may use TypeScript; do not mass-convert unrelated files |
 | T-02 | Clean target database or migrate existing private data           | Use a clean pilot database; do not move private data                    |
-| T-03 | Exact AWS region, account, domain and API host                   | Plan locally; do not provision                                          |
+| T-03 | Exact AWS domain and API host                                   | Account `376793939540` and `ap-south-1` are confirmed; hostnames remain open |
 | T-04 | Linux host choice and PostgreSQL operating model                 | Keep deployment configuration abstract                                  |
 | T-05 | Identity session design: secure cookies or token strategy        | Do not implement a second auth system without threat review             |
 | T-06 | Retention and deletion for photos, payslips, audit and backups   | Keep production storage disabled                                        |
