@@ -3,16 +3,17 @@
 Base path: `/api/v1`. JSON timestamps use ISO 8601 with offsets; stored instants use
 UTC. Money is serialized as decimal strings. Mutation responses include a sanitized
 `request_id`. The endpoints below are planned unless a test and implementation
-explicitly mark them operational.
+explicitly mark them operational. Identity endpoints marked **Implemented** exist
+in the target FastAPI application but are not claimed deployed.
 
 ## Identity and workforce
 
 | Method and path             | Authority and purpose                                    |
 | --------------------------- | -------------------------------------------------------- |
-| `POST /auth/login`          | Public; authenticate with generic errors and rate limits |
-| `POST /auth/refresh`        | Rotate and revoke refresh state                          |
-| `POST /auth/logout`         | Authenticated; revoke current session                    |
-| `GET /me`                   | Authenticated identity, exact roles and scopes           |
+| `POST /auth/login`          | **Implemented:** generic errors, Argon2id and pilot rate limit |
+| `POST /auth/refresh`        | **Implemented:** rotate opaque access and refresh state       |
+| `POST /auth/logout`         | **Implemented:** revoke current database session              |
+| `GET /me`                   | **Implemented:** active identity, exact roles and scopes       |
 | `GET/POST /stores`          | System Admin or approved HR scope                        |
 | `GET/POST/PATCH /employees` | Store Admin assigned store or HR organization scope      |
 | `GET/POST /shifts`          | Store Admin/HR with store validation                     |

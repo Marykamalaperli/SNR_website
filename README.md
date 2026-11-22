@@ -23,8 +23,9 @@ implementation history until the approved cleanup phase.
 This repository contains a substantial earlier React/JavaScript, Supabase and
 Cloudflare implementation. It is not yet the final source architecture. Before new
 feature work, classify existing components as reuse, adapt, replace, archive or
-remove. No AWS deployment, target PostgreSQL schema, target store-QR attendance flow
-or payroll engine is claimed operational.
+remove. No AWS application deployment, target store-QR attendance flow or payroll
+engine is claimed operational. The target identity and tenancy schema is
+implemented but is not claimed applied to a live environment.
 
 The first engineering milestone is a protected baseline and requirement-to-code
 trace. The preferred pilot starts with a clean target PostgreSQL database unless an
@@ -120,8 +121,10 @@ $env:DATABASE_URL='postgresql+psycopg://snr_nest:snr_nest_dev@localhost:5432/snr
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-The Alembic baseline intentionally creates no business tables. Identity and tenancy
-begin in Work Package 2.
+Alembic now contains target identity and tenancy tables for organizations, stores,
+users, role assignments, employees and revocable opaque sessions. Synthetic local
+identities are created only by manually running `backend/scripts/seed_dev.py` with
+`APP_ENV=development` and an explicit `SNR_DEV_SEED_PASSWORD`.
 
 ## Delivery sequence
 

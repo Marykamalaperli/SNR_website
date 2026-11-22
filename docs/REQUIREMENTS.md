@@ -24,6 +24,17 @@ the repository-facing summary and does not replace the SRS.
 - AUD-01: append security-sensitive and financial actions with actor, entity,
   request ID, timestamp and structured metadata.
 
+## Implementation trace
+
+| Requirement | Target implementation | Verification status |
+| --- | --- | --- |
+| AUTH-01 | `backend/app/services/auth.py`, `backend/app/core/security.py`, `/api/v1/auth/*`, `/api/v1/me` | Unit tests pass; PostgreSQL CI integration pending |
+| Tenant/store foundation | Alembic `202611220002`, SQLAlchemy identity models and composite store/organization foreign keys | Offline SQL generation passes; live migration CI pending |
+| EMP-01 persistence only | `employees` table with organization-unique code, lifecycle status and retained row | Administration endpoints and UI remain Work Package 3 |
+
+Only the rows marked implemented in `docs/API_CONTRACTS.md` are operational in the
+target application. This trace does not claim deployment or live migration.
+
 ## Non-functional scope
 
 - TLS, least privilege, exact CORS, rate limits and private S3.

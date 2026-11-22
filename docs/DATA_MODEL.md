@@ -10,6 +10,7 @@ chain.
 | stores                 | Organization key, unique code, local time zone and active status               |
 | users                  | Normalized login identity, password hash, status and token version             |
 | role_assignments       | Explicit organization/store scope with validated role shape                    |
+| auth_sessions          | Hashed opaque access/refresh tokens, expiry, rotation and revocation state      |
 | employees              | Unique organization employee code, home store and lifecycle dates              |
 | shifts                 | Store-local start/end and grace configuration; overnight supported             |
 | shift_assignments      | Effective dates and no overlapping assignment per employee                     |
@@ -27,6 +28,8 @@ chain.
 ## Integrity rules
 
 - Every scoped foreign key includes or validates the organization/store boundary.
+- Role scope is constrained: System Admin is global; HR/Payroll and Auditor are
+  organization scoped; Employee and Store Admin require a matching store.
 - Raw attendance events and audit events cannot be updated or deleted.
 - Employee plus idempotency key is unique for attendance commands.
 - A shift assignment date resolves to at most one active assignment.

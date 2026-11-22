@@ -25,11 +25,20 @@ self-approval conflicts and delegated authority must be explicitly modeled.
 
 - Password hashes use Argon2id or bcrypt and never leave the server.
 - Use short-lived sessions with secure refresh rotation and revocation.
+- The target uses opaque HttpOnly cookies. Access sessions last 15 minutes and
+  refresh sessions at most 30 days by default; PostgreSQL stores SHA-256 digests,
+  not raw tokens. Refresh rotates both values and logout revokes the session.
+- Session cookies are Secure and SameSite=Lax. Cookie-authenticated mutations
+  require an exact configured Origin, and credentialed CORS never uses a wildcard.
 - If cookies are selected, require `HttpOnly`, `Secure`, appropriate `SameSite` and
   CSRF protection. If bearer tokens are selected, document secure storage and XSS
   controls before implementation.
 - Login errors are generic and rate limited. Deactivated users cannot create new
   sessions or submit attendance.
+
+The pilot login throttle is process-local. Replace it with shared bounded state
+before running multiple API replicas; this limitation does not weaken generic
+errors, password hashing, database session validation or scope enforcement.
 - Secrets remain outside source, images, logs and frontend build variables.
 
 ## Tenant and store isolation

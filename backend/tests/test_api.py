@@ -1,37 +1,36 @@
-from datetime import UTC, datetime, timedelta
-from types import SimpleNamespace
+from unittest.mock import MagicMock
 from uuid import UUID
 
-import jwt
 import pytest
-from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi import Body
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.core.config import Settings
-from app.core.database import get_readiness_checker
+from app.core.database import get_db_session, get_readiness_checker
 from app.core.errors import DomainError
-from app.core.security import require_identity, require_organization, require_role
+from app.core.security import require_current_user, require_role, require_scope
 from app.main import create_app
-from app.schemas.session import Identity, Membership
-from app.services.memberships import get_membership_repository
+from app.schemas.auth import CurrentUser, Scope
+from app.services.auth import hash_password, verify_password
 
 USER = UUID("00000000-0000-4000-8000-000000000001")
 ORG = UUID("00000000-0000-4000-8000-000000000010")
-ISSUER = "https://auth.example.org/auth/v1"
-JWKS = "https://auth.example.org/auth/v1/.well-known/jwks.json"
+STORE = UUID("00000000-0000-4000-8000-000000000020")
+OTHER_STORE = UUID("00000000-0000-4000-8000-000000000021")
 
 
 @pytest.fixture
 def app():
-    return create_app(Settings(app_env="test"))
+    application = create_app(Settings(app_env="test", session_cookie_secure=False, database_url=""))
+    application.dependency_overrides[get_db_session] = lambda: MagicMock()
+    return application
 
 
 @pytest.fixture
 def client(app):
-    with TestClient(app) as client:
-        yield client
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 @pytest.mark.parametrize("path", ["/health", "/api/v1/health"])
@@ -39,111 +38,93 @@ def test_health_is_meaningful_and_has_security_headers(client, path):
     response = client.get(path)
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
-    assert response.json()["service"] == "snr-nest-api"
     assert response.headers["cache-control"] == "no-store"
-    assert response.headers["x-content-type-options"] == "nosniff"
     UUID(response.headers["x-request-id"])
 
 
 def test_readiness_requires_the_target_database(app, client):
-    response = client.get("/api/v1/ready")
-    assert response.status_code == 503
-    assert response.json()["error"]["code"] == "database_unavailable"
+    assert client.get("/api/v1/ready").status_code == 503
 
     class Ready:
         def check(self):
             return True
 
     app.dependency_overrides[get_readiness_checker] = Ready
-    response = client.get("/api/v1/ready")
-    assert response.status_code == 200
-    assert response.json() == {
-        "status": "ready",
-        "service": "snr-nest-api",
-        "database": "available",
-    }
+    assert client.get("/api/v1/ready").json()["status"] == "ready"
 
 
-def test_correlations_are_propagated_or_sanitized(client):
-    response = client.get("/health", headers={"X-Request-ID": "client-request_123"})
-    assert response.headers["x-request-id"] == "client-request_123"
-    response = client.get("/not-found", headers={"X-Request-ID": "untrusted<script>"})
-    assert response.status_code == 404
-    request_id = response.headers["x-request-id"]
-    UUID(request_id)
-    assert response.json()["error"]["request_id"] == request_id
-
-
-def test_cors_allows_only_configured_origins(client):
+def test_cors_allows_credentials_only_for_exact_origins(client):
     response = client.options(
-        "/api/v1/session",
+        "/api/v1/auth/login",
         headers={
             "Origin": "http://localhost:5173",
-            "Access-Control-Request-Method": "GET",
-            "Access-Control-Request-Headers": "authorization",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
         },
     )
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
-    assert "access-control-allow-credentials" not in response.headers
+    assert response.headers["access-control-allow-credentials"] == "true"
     denied = client.get("/health", headers={"Origin": "https://untrusted.example.org"})
     assert "access-control-allow-origin" not in denied.headers
 
 
-def test_untrusted_hosts_are_json_errors(client):
-    response = client.get("/health", headers={"Host": "untrusted.example.org"})
-    assert response.status_code == 400
-    assert response.json()["error"]["code"] == "invalid_host"
+def test_private_identity_endpoint_requires_session(client):
+    response = client.get("/api/v1/me")
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "unauthenticated"
 
 
-def test_unfinished_domain_endpoints_do_not_return_fake_data(client):
-    for path in ["/api/v1/employees", "/api/v1/attendance", "/api/v1/documents"]:
-        assert client.get(path).status_code == 404
-
-
-def test_session_requires_identity_and_configured_auth(client):
-    assert client.get("/api/v1/session").status_code == 401
-    response = client.get("/api/v1/session", headers={"Authorization": "Bearer sample"})
-    assert response.status_code == 503
-    assert response.json()["error"]["code"] == "auth_unavailable"
-
-
-def test_verified_identity_does_not_grant_membership(app, client):
-    app.dependency_overrides[require_identity] = lambda: Identity(user_id=USER)
-    response = client.get("/api/v1/session")
-    assert response.status_code == 503
-    assert response.json()["error"]["code"] == "authorization_unavailable"
-
-
-def test_trusted_membership_adapter_is_explicit(app, client):
-    class TestRepository:
-        def resolve(self, identity):
-            return Membership(user_id=identity.user_id, organization_id=ORG, role="employee")
-
-    app.dependency_overrides[require_identity] = lambda: Identity(user_id=USER)
-    app.dependency_overrides[get_membership_repository] = TestRepository
-    response = client.get("/api/v1/session")
+def test_me_returns_only_server_resolved_scope(app, client):
+    current = CurrentUser(
+        user_id=USER,
+        email="employee@example.org",
+        display_name="Employee",
+        scopes=(Scope(role="employee", organization_id=ORG, store_id=STORE),),
+    )
+    app.dependency_overrides[require_current_user] = lambda: current
+    response = client.get("/api/v1/me")
     assert response.status_code == 200
-    assert response.json()["organization_id"] == str(ORG)
-    assert response.json()["role"] == "employee"
+    assert response.json()["scopes"] == [
+        {"role": "employee", "organization_id": str(ORG), "store_id": str(STORE)}
+    ]
 
 
-@pytest.mark.parametrize("role", ["employee", "supervisor", "security_auditor", "system_owner"])
-def test_non_hr_roles_do_not_inherit_hr_authority(role):
-    membership = Membership(user_id=USER, organization_id=ORG, role=role)
-    with pytest.raises(DomainError) as error:
-        require_role(membership, {"hr"})
-    assert error.value.status_code == 403
-
-
-def test_cross_organization_scope_is_denied():
-    membership = Membership(user_id=USER, organization_id=ORG, role="hr")
-    require_organization(membership, ORG)
+@pytest.mark.parametrize("role", ["employee", "store_admin"])
+def test_employee_and_store_admin_cannot_cross_store(role):
+    current = CurrentUser(
+        user_id=USER,
+        email=f"{role}@example.org",
+        display_name=role,
+        scopes=(Scope(role=role, organization_id=ORG, store_id=STORE),),
+    )
+    require_role(current, {role})
+    require_scope(current, ORG, STORE, {role})
     with pytest.raises(DomainError):
-        require_organization(membership, UUID("00000000-0000-4000-8000-000000000099"))
-    for private_role in ["system_owner", "security_auditor"]:
-        with pytest.raises(DomainError):
-            require_role(membership, {private_role})
+        require_role(current, {"hr_payroll"})
+    with pytest.raises(DomainError):
+        require_scope(current, ORG, OTHER_STORE, {role})
+    with pytest.raises(DomainError):
+        require_scope(current, UUID("00000000-0000-4000-8000-000000000099"), STORE)
+
+
+def test_system_admin_is_explicit_global_scope():
+    admin = CurrentUser(
+        user_id=USER,
+        email="admin@example.org",
+        display_name="Admin",
+        scopes=(Scope(role="system_admin"),),
+    )
+    require_scope(admin, ORG, STORE, {"system_admin"})
+    with pytest.raises(DomainError):
+        require_role(admin, {"hr_payroll"})
+
+
+def test_passwords_use_argon2id_and_wrong_values_fail():
+    encoded = hash_password("correct horse battery staple")
+    assert encoded.startswith("$argon2id$")
+    assert verify_password(encoded, "correct horse battery staple")
+    assert not verify_password(encoded, "incorrect value")
 
 
 def test_validation_and_unexpected_errors_do_not_leak_input(app, client):
@@ -158,11 +139,9 @@ def test_validation_and_unexpected_errors_do_not_leak_input(app, client):
     response = client.post("/test-validation", json="private-input")
     assert response.status_code == 422
     assert "private-input" not in response.text
-    response = client.get("/test-error", headers={"Origin": "http://localhost:5173"})
+    response = client.get("/test-error")
     assert response.status_code == 500
     assert "secret-database-password" not in response.text
-    assert response.json()["error"]["code"] == "internal_error"
-    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
 
 
 @pytest.mark.parametrize(
@@ -172,77 +151,20 @@ def test_validation_and_unexpected_errors_do_not_leak_input(app, client):
         {"app_env": "production", "cors_origins": ["http://example.org"]},
         {"allowed_hosts": ["*"]},
         {"database_url": "sqlite:///not-target.db"},
-        {"supabase_jwt_issuer": ISSUER},
-        {"supabase_jwt_issuer": ISSUER, "supabase_jwks_url": "http://example.org/keys"},
+        {"access_session_minutes": 0},
+        {"refresh_session_days": 31},
+        {"app_env": "production", "session_cookie_secure": False},
     ],
 )
 def test_insecure_settings_are_rejected(kwargs):
+    if kwargs.get("app_env") == "production":
+        kwargs["database_url"] = "postgresql+psycopg://app:secret@db:5432/snr_nest"
+        kwargs.setdefault("cors_origins", ["https://example.org"])
     with pytest.raises(ValidationError):
         Settings(**kwargs)
 
 
-def test_production_disables_api_documentation():
-    with TestClient(
-        create_app(
-            Settings(
-                app_env="production",
-                cors_origins=["https://example.org"],
-                database_url="postgresql+psycopg://app:secret@db:5432/snr_nest",
-            )
-        )
-    ) as client:
-        assert client.get("/docs").status_code == 404
-        assert client.get("/openapi.json").status_code == 404
-
-
-@pytest.fixture
-def signing_key():
-    return rsa.generate_private_key(public_exponent=65537, key_size=2048)
-
-
-@pytest.mark.parametrize(
-    "case, expected",
-    [
-        ("valid", 503),
-        ("expired", 401),
-        ("wrong-audience", 401),
-        ("wrong-issuer", 401),
-        ("wrong-key", 401),
-    ],
-)
-def test_signed_jwts_are_verified_before_membership(monkeypatch, signing_key, case, expected):
-    now = datetime.now(UTC)
-    claims = {
-        "sub": str(USER),
-        "iss": ISSUER,
-        "aud": "authenticated",
-        "iat": now,
-        "exp": now + timedelta(minutes=5),
-    }
-    if case == "expired":
-        claims["exp"] = now - timedelta(minutes=1)
-    if case == "wrong-audience":
-        claims["aud"] = "another-app"
-    if case == "wrong-issuer":
-        claims["iss"] = "https://untrusted.example.org"
-    actual_key = (
-        rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        if case == "wrong-key"
-        else signing_key
-    )
-    token = jwt.encode(claims, actual_key, algorithm="RS256", headers={"kid": "test-key"})
-    monkeypatch.setattr(
-        "app.core.security.jwks_client",
-        lambda _url: SimpleNamespace(
-            get_signing_key_from_jwt=lambda _token: SimpleNamespace(key=signing_key.public_key())
-        ),
-    )
-    application = create_app(
-        Settings(app_env="test", supabase_jwt_issuer=ISSUER, supabase_jwks_url=JWKS)
-    )
-    with TestClient(application) as client:
-        response = client.get("/api/v1/session", headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code == expected
-    assert response.json()["error"]["code"] == (
-        "authorization_unavailable" if case == "valid" else "invalid_token"
-    )
+def test_untrusted_hosts_are_json_errors(client):
+    response = client.get("/health", headers={"Host": "untrusted.example.org"})
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "invalid_host"

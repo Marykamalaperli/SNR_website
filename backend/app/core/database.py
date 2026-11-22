@@ -1,9 +1,11 @@
+from collections.abc import Generator
 from functools import lru_cache
 from typing import Annotated, Protocol
 
 from fastapi import Depends
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
 
@@ -39,3 +41,13 @@ def get_readiness_checker(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> ReadinessChecker:
     return DatabaseReadinessChecker(create_database_engine(settings.database_url))
+
+
+def get_db_session(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> Generator[Session, None, None]:
+    engine = create_database_engine(settings.database_url)
+    if engine is None:
+        raise RuntimeError("Database is not configured")
+    with Session(engine) as session:
+        yield session

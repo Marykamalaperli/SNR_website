@@ -38,6 +38,7 @@ services:
       DATABASE_URL: postgresql+psycopg://snr_nest:snr_nest_dev@db:5432/snr_nest
       CORS_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173"]'
       ALLOWED_HOSTS: '["localhost","127.0.0.1","api","testserver"]'
+      SESSION_COOKIE_SECURE: "false"
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:

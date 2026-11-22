@@ -16,6 +16,7 @@
 | Controlled draft payroll                      | Confirmed        | Calculations require approved rules and remain draft until compliance sign-off |
 | No facial recognition                         | Confirmed        | Photos support manual evidence review only                                     |
 | AWS staging account and workload region       | Confirmed        | Use account `376793939540` in `ap-south-1`; authenticate GitHub through OIDC    |
+| First-party opaque cookie sessions             | Confirmed        | HttpOnly Secure SameSite=Lax access/refresh cookies; store only token digests and rotate/revoke server state |
 
 ## Transition decisions required
 
@@ -25,7 +26,7 @@
 | T-02 | Clean target database or migrate existing private data           | Use a clean pilot database; do not move private data                    |
 | T-03 | Exact AWS domain and API host                                   | Account `376793939540` and `ap-south-1` are confirmed; hostnames remain open |
 | T-04 | Linux host choice and PostgreSQL operating model                 | Keep deployment configuration abstract                                  |
-| T-05 | Identity session design: secure cookies or token strategy        | Do not implement a second auth system without threat review             |
+| T-05 | Identity session design: secure cookies or token strategy        | Resolved: first-party opaque cookies, PostgreSQL sessions and exact-Origin CSRF checks |
 | T-06 | Retention and deletion for photos, payslips, audit and backups   | Keep production storage disabled                                        |
 | T-07 | Malware scanning or image re-encoding approach                   | Uploaded objects remain untrusted                                       |
 | T-08 | RPO, RTO, monitoring owner and incident contacts                 | No production-readiness claim                                           |

@@ -24,6 +24,7 @@ source pack or grant permission to deploy, provision, migrate data or change DNS
 | Secure AWS delivery identity | Merged and provisioned | PR [#2](https://github.com/elite-horizon/SNR_website/pull/2), commit `4c246ba`; GitHub OIDC roles observed in account `376793939540` |
 | AWS staging edge/storage definition | Merged and validated, not provisioned | PR [#3](https://github.com/elite-horizon/SNR_website/pull/3), commit `4f578d3`; CloudFormation validation and no-execute change-set review completed |
 | Codex/Antigravity repository handoff | Implemented | Root `AGENTS.md`, `.agents/` rules and skills, and this ledger; merge evidence is in Git history |
+| Identity, roles and tenant/store isolation | Implemented and locally validated | Branch `agy/identity-tenancy`, PR [#5](https://github.com/elite-horizon/SNR_website/pull/5); Argon2id authentication, opaque session rotation/revocation, exact five-role scopes, Alembic migration; integration test flush order & detachment resolved locally |
 
 ## AWS staging boundary
 
@@ -47,25 +48,36 @@ plan and remain out of scope. Do not describe them as the target staging stack.
 
 ## Current work and next package
 
-The repository handoff package is the current documentation change. It adds a
-single progress record and makes reading and updating it part of both agent
-workflows. It changes no product behavior and no AWS resources.
+Work Package 2 is implemented on `agy/identity-tenancy` (PR [#5](https://github.com/elite-horizon/SNR_website/pull/5)).
+Initial GitHub CI run `45040867859` failed on `target-foundation` due to an
+unsequenced `db.add_all` foreign key violation in `test_identity_integration.py`.
+This has been resolved locally with ordered flushes and non-expiring test sessions
+in `test_identity_integration.py` and `seed_dev.py`, plus explicit database URL
+isolation in `test_api.py`. Local verification passed:
+- `python -m ruff check .` and `python -m ruff format --check .` passed cleanly.
+- Alembic migration upgrade `base` -> `head`, downgrade `head` -> `base`, and
+  re-upgrade `base` -> `head` against PostgreSQL completed cleanly.
+- Both PostgreSQL integration tests passed (`test_identity_integration.py`).
+- Full backend pytest suite passed against PostgreSQL (34 passed, 0 skipped, 0 failed).
+- Full frontend verification passed (`format:check`, `lint`, `typecheck`, 18 test
+  files / 159 tests passed, production build passed).
+- Container builds for `snr-nest-api:ci` (both backend and Cloud Run Dockerfiles)
+  and `snr-nest-frontend:ci` passed.
 
-The next product work package is **identity, roles and tenant/store isolation**.
-Its boundary is:
+Pending completion: commit the test fixes, obtain authorization to push to
+`elite/agy/identity-tenancy`, verify green GitHub CI on PR #5, and merge PR #5.
+No AWS resources, DNS, live migrations or private data changed.
 
-- organization, store, user, employee and role-assignment persistence;
-- secure session authentication and user deactivation;
-- server-side organization/store authorization;
-- negative tests proving cross-tenant and cross-store access is denied; and
-- migrations plus API contracts, without attendance or payroll feature scope.
-
-Do not start attendance, payroll or live deployment work inside that package.
+After Work Package 2 validation, the next product package is **employee and shift
+administration**: employee CRUD/deactivation, shifts, effective-dated assignments,
+overnight resolution and scoped admin UI. Attendance and payroll remain out of
+scope for that package.
 
 ## Open decisions and gates
 
-- Authentication/session mechanism and recovery policy require a recorded design
-  decision before Work Package 2 implementation.
+- Account recovery and administrator MFA remain open. The session mechanism is
+  resolved in `docs/DECISIONS.md`; the pilot rate limiter must move to shared state
+  before horizontal API scaling.
 - Staging hostnames, certificate and DNS changes require explicit approval.
 - Provisioning the reviewed AWS foundation requires explicit approval and a cost
   review; no-execute validation is not approval.

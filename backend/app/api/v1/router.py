@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 
+from app.api.v1.auth import router as auth_router
 from app.core.database import ReadinessChecker, get_readiness_checker
 from app.core.errors import DomainError
-from app.core.security import require_identity
-from app.schemas.session import Identity, Membership
-from app.services.memberships import MembershipRepository, get_membership_repository
+from app.core.security import require_current_user
+from app.schemas.auth import CurrentUser
 
 router = APIRouter(prefix="/api/v1")
 
@@ -23,9 +23,9 @@ def readiness(
     return {"status": "ready", "service": "snr-nest-api", "database": "available"}
 
 
-@router.get("/session", response_model=Membership, tags=["auth"])
-def session(
-    identity: Identity = Depends(require_identity),
-    repository: MembershipRepository = Depends(get_membership_repository),
-) -> Membership:
-    return repository.resolve(identity)
+router.include_router(auth_router)
+
+
+@router.get("/me", response_model=CurrentUser, tags=["auth"])
+def me(current: CurrentUser = Depends(require_current_user)) -> CurrentUser:
+    return current
