@@ -23,6 +23,21 @@ Run the manual `Verify AWS OIDC identity` workflow before granting deployment
 permissions. It can obtain temporary credentials and call STS only; it cannot
 provision application resources.
 
+`foundation.template.json` defines the first reviewable staging slice: four private
+S3 buckets and a CloudFront OAC distribution. Validate it locally with:
+
+```powershell
+aws cloudformation validate-template `
+  --profile snrnest-aws `
+  --region ap-south-1 `
+  --template-body file://infra/aws/foundation.template.json
+```
+
+The IAM documents under `iam/` separate GitHub's change-set authority from the
+CloudFormation service role's resource-management authority. Do not broaden either
+policy to administrator access. Template validation and a no-execute change set are
+required before any stack execution.
+
 ## Existing account resources
 
 The bootstrap audit found legacy `snrnest-home` deployment resources and S3 buckets.

@@ -1,0 +1,264 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "SNR NEST staging private storage and CloudFront foundation",
+  "Parameters": {
+    "Environment": {
+      "Type": "String",
+      "Default": "staging",
+      "AllowedValues": ["staging"]
+    },
+    "CloudFrontPriceClass": {
+      "Type": "String",
+      "Default": "PriceClass_200",
+      "AllowedValues": ["PriceClass_100", "PriceClass_200", "PriceClass_All"]
+    },
+    "FrontendCustomOrigin": {
+      "Type": "String",
+      "Default": "",
+      "Description": "Optional HTTPS frontend origin without a trailing slash"
+    }
+  },
+  "Conditions": {
+    "HasFrontendCustomOrigin": {
+      "Fn::Not": [{ "Fn::Equals": [{ "Ref": "FrontendCustomOrigin" }, ""] }]
+    }
+  },
+  "Resources": {
+    "FrontendBucket": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BucketName": { "Fn::Sub": "snrnest-${Environment}-web-${AWS::AccountId}-${AWS::Region}" },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [{ "BucketKeyEnabled": true, "ServerSideEncryptionByDefault": { "SSEAlgorithm": "AES256" } }]
+        },
+        "OwnershipControls": { "Rules": [{ "ObjectOwnership": "BucketOwnerEnforced" }] },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "VersioningConfiguration": { "Status": "Enabled" },
+        "LifecycleConfiguration": {
+          "Rules": [{ "Id": "AbortIncompleteUploads", "Status": "Enabled", "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 } }]
+        },
+        "Tags": [
+          { "Key": "Project", "Value": "SNR-NEST" },
+          { "Key": "Environment", "Value": { "Ref": "Environment" } },
+          { "Key": "DataClass", "Value": "public-build-artifacts" }
+        ]
+      }
+    },
+    "EvidenceBucket": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BucketName": { "Fn::Sub": "snrnest-${Environment}-evidence-${AWS::AccountId}-${AWS::Region}" },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [{ "BucketKeyEnabled": true, "ServerSideEncryptionByDefault": { "SSEAlgorithm": "AES256" } }]
+        },
+        "OwnershipControls": { "Rules": [{ "ObjectOwnership": "BucketOwnerEnforced" }] },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "VersioningConfiguration": { "Status": "Enabled" },
+        "CorsConfiguration": {
+          "CorsRules": [{
+            "AllowedHeaders": ["content-type", "x-amz-checksum-sha256", "x-amz-meta-*"],
+            "AllowedMethods": ["PUT"],
+            "AllowedOrigins": [
+              { "Fn::Sub": ["https://${Domain}", { "Domain": { "Fn::GetAtt": ["FrontendDistribution", "DomainName"] } }] },
+              { "Fn::If": ["HasFrontendCustomOrigin", { "Ref": "FrontendCustomOrigin" }, { "Ref": "AWS::NoValue" }] }
+            ],
+            "ExposedHeaders": ["ETag", "x-amz-checksum-sha256"],
+            "MaxAge": 300
+          }]
+        },
+        "LifecycleConfiguration": {
+          "Rules": [{ "Id": "AbortIncompleteUploads", "Status": "Enabled", "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 } }]
+        },
+        "Tags": [
+          { "Key": "Project", "Value": "SNR-NEST" },
+          { "Key": "Environment", "Value": { "Ref": "Environment" } },
+          { "Key": "DataClass", "Value": "private-attendance-evidence" }
+        ]
+      }
+    },
+    "PayslipBucket": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BucketName": { "Fn::Sub": "snrnest-${Environment}-payslips-${AWS::AccountId}-${AWS::Region}" },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [{ "BucketKeyEnabled": true, "ServerSideEncryptionByDefault": { "SSEAlgorithm": "AES256" } }]
+        },
+        "OwnershipControls": { "Rules": [{ "ObjectOwnership": "BucketOwnerEnforced" }] },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "VersioningConfiguration": { "Status": "Enabled" },
+        "LifecycleConfiguration": {
+          "Rules": [{ "Id": "AbortIncompleteUploads", "Status": "Enabled", "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 } }]
+        },
+        "Tags": [
+          { "Key": "Project", "Value": "SNR-NEST" },
+          { "Key": "Environment", "Value": { "Ref": "Environment" } },
+          { "Key": "DataClass", "Value": "private-payroll-documents" }
+        ]
+      }
+    },
+    "BackupBucket": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BucketName": { "Fn::Sub": "snrnest-${Environment}-backups-${AWS::AccountId}-${AWS::Region}" },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [{ "BucketKeyEnabled": true, "ServerSideEncryptionByDefault": { "SSEAlgorithm": "AES256" } }]
+        },
+        "OwnershipControls": { "Rules": [{ "ObjectOwnership": "BucketOwnerEnforced" }] },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "VersioningConfiguration": { "Status": "Enabled" },
+        "LifecycleConfiguration": {
+          "Rules": [{ "Id": "AbortIncompleteUploads", "Status": "Enabled", "AbortIncompleteMultipartUpload": { "DaysAfterInitiation": 1 } }]
+        },
+        "Tags": [
+          { "Key": "Project", "Value": "SNR-NEST" },
+          { "Key": "Environment", "Value": { "Ref": "Environment" } },
+          { "Key": "DataClass", "Value": "private-encrypted-backups" }
+        ]
+      }
+    },
+    "FrontendOriginAccessControl": {
+      "Type": "AWS::CloudFront::OriginAccessControl",
+      "Properties": {
+        "OriginAccessControlConfig": {
+          "Name": { "Fn::Sub": "snrnest-${Environment}-frontend-oac" },
+          "Description": "Private S3 frontend access for SNR NEST staging",
+          "OriginAccessControlOriginType": "s3",
+          "SigningBehavior": "always",
+          "SigningProtocol": "sigv4"
+        }
+      }
+    },
+    "FrontendCachePolicy": {
+      "Type": "AWS::CloudFront::CachePolicy",
+      "Properties": {
+        "CachePolicyConfig": {
+          "Name": { "Fn::Sub": "snrnest-${Environment}-frontend-cache" },
+          "Comment": "Honor origin cache headers and exclude cookies and query strings",
+          "DefaultTTL": 300,
+          "MaxTTL": 31536000,
+          "MinTTL": 0,
+          "ParametersInCacheKeyAndForwardedToOrigin": {
+            "CookiesConfig": { "CookieBehavior": "none" },
+            "EnableAcceptEncodingBrotli": true,
+            "EnableAcceptEncodingGzip": true,
+            "HeadersConfig": { "HeaderBehavior": "none" },
+            "QueryStringsConfig": { "QueryStringBehavior": "none" }
+          }
+        }
+      }
+    },
+    "FrontendResponseHeadersPolicy": {
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Name": { "Fn::Sub": "snrnest-${Environment}-security-headers" },
+          "Comment": "Baseline browser security headers; CSP awaits final API and domain names",
+          "SecurityHeadersConfig": {
+            "ContentTypeOptions": { "Override": true },
+            "FrameOptions": { "FrameOption": "DENY", "Override": true },
+            "ReferrerPolicy": { "ReferrerPolicy": "strict-origin-when-cross-origin", "Override": true },
+            "StrictTransportSecurity": { "AccessControlMaxAgeSec": 31536000, "IncludeSubdomains": false, "Override": true, "Preload": false },
+            "XSSProtection": { "ModeBlock": true, "Override": true, "Protection": true }
+          }
+        }
+      }
+    },
+    "SpaRewriteFunction": {
+      "Type": "AWS::CloudFront::Function",
+      "Properties": {
+        "Name": { "Fn::Sub": "snrnest-${Environment}-spa-rewrite" },
+        "AutoPublish": true,
+        "FunctionConfig": { "Comment": "Rewrite extensionless application routes to index.html", "Runtime": "cloudfront-js-2.0" },
+        "FunctionCode": "function handler(event) {\n  var request = event.request;\n  var uri = request.uri;\n  if (uri.endsWith('/')) {\n    request.uri = uri + 'index.html';\n  } else if (!uri.split('/').pop().includes('.')) {\n    request.uri = '/index.html';\n  }\n  return request;\n}\n"
+      }
+    },
+    "FrontendDistribution": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Comment": "SNR NEST staging private frontend",
+          "DefaultCacheBehavior": {
+            "AllowedMethods": ["GET", "HEAD", "OPTIONS"],
+            "CachePolicyId": { "Ref": "FrontendCachePolicy" },
+            "CachedMethods": ["GET", "HEAD", "OPTIONS"],
+            "Compress": true,
+            "FunctionAssociations": [{ "EventType": "viewer-request", "FunctionARN": { "Fn::GetAtt": ["SpaRewriteFunction", "FunctionARN"] } }],
+            "ResponseHeadersPolicyId": { "Ref": "FrontendResponseHeadersPolicy" },
+            "TargetOriginId": "private-frontend-s3",
+            "ViewerProtocolPolicy": "redirect-to-https"
+          },
+          "DefaultRootObject": "index.html",
+          "Enabled": true,
+          "HttpVersion": "http2and3",
+          "IPV6Enabled": true,
+          "Origins": [{
+            "DomainName": { "Fn::GetAtt": ["FrontendBucket", "RegionalDomainName"] },
+            "Id": "private-frontend-s3",
+            "OriginAccessControlId": { "Ref": "FrontendOriginAccessControl" },
+            "S3OriginConfig": { "OriginAccessIdentity": "" }
+          }],
+          "PriceClass": { "Ref": "CloudFrontPriceClass" },
+          "ViewerCertificate": { "CloudFrontDefaultCertificate": true, "MinimumProtocolVersion": "TLSv1.2_2021" }
+        },
+        "Tags": [
+          { "Key": "Project", "Value": "SNR-NEST" },
+          { "Key": "Environment", "Value": { "Ref": "Environment" } }
+        ]
+      }
+    },
+    "FrontendBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": { "Ref": "FrontendBucket" },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Sid": "AllowCloudFrontReadOnly",
+            "Effect": "Allow",
+            "Principal": { "Service": "cloudfront.amazonaws.com" },
+            "Action": "s3:GetObject",
+            "Resource": { "Fn::Sub": "${FrontendBucket.Arn}/*" },
+            "Condition": { "StringEquals": { "AWS:SourceArn": { "Fn::Sub": "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}" } } }
+          }]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "FrontendBucketName": { "Value": { "Ref": "FrontendBucket" } },
+    "EvidenceBucketName": { "Value": { "Ref": "EvidenceBucket" } },
+    "PayslipBucketName": { "Value": { "Ref": "PayslipBucket" } },
+    "BackupBucketName": { "Value": { "Ref": "BackupBucket" } },
+    "CloudFrontDistributionId": { "Value": { "Ref": "FrontendDistribution" } },
+    "CloudFrontDomainName": { "Value": { "Fn::GetAtt": ["FrontendDistribution", "DomainName"] } },
+    "FrontendUrl": { "Value": { "Fn::Sub": ["https://${Domain}", { "Domain": { "Fn::GetAtt": ["FrontendDistribution", "DomainName"] } }] } }
+  }
+}

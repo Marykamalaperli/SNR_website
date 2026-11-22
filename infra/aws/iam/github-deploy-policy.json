@@ -1,0 +1,35 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ValidateTemplates",
+      "Effect": "Allow",
+      "Action": ["cloudformation:GetTemplateSummary", "cloudformation:ValidateTemplate"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageOnlyStagingFoundationStack",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:CancelUpdateStack",
+        "cloudformation:CreateChangeSet",
+        "cloudformation:DeleteChangeSet",
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:DescribeStackResources",
+        "cloudformation:DescribeStacks",
+        "cloudformation:ExecuteChangeSet",
+        "cloudformation:GetTemplate",
+        "cloudformation:ListStackResources"
+      ],
+      "Resource": "arn:aws:cloudformation:ap-south-1:376793939540:stack/snrnest-staging-foundation/*"
+    },
+    {
+      "Sid": "PassOnlyStagingCloudFormationRole",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::376793939540:role/snrnest-staging-cloudformation-service",
+      "Condition": { "StringEquals": { "iam:PassedToService": "cloudformation.amazonaws.com" } }
+    }
+  ]
+}
