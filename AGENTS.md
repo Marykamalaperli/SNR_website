@@ -14,8 +14,9 @@ code and old Markdown documents are implementation evidence, not authority when
 they conflict with the source pack.
 
 Read `README.md`, `design_system.md`, `docs/ARCHITECTURE.md`,
-`docs/DECISIONS.md`, and `docs/SECURITY.md` before major changes. Use the existing
-checkout. Do not create worktrees unless explicitly requested.
+`docs/DECISIONS.md`, `docs/SECURITY.md`, and `docs/PROGRESS.md` before major
+changes. Use the existing checkout. Do not create worktrees unless explicitly
+requested.
 
 ## Target architecture
 
@@ -97,3 +98,5 @@ production build in proportion to the change. Start changed services and issue
 representative requests. Report exact commands and actual results, including
 skipped checks and blockers. Never claim an unexecuted check passed. Update active
 documentation and the requirement trace when behavior or architecture changes.
+Update `docs/PROGRESS.md` in the same pull request with factual implementation,
+validation, merge and provisioning evidence plus the next bounded work package.

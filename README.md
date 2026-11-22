@@ -30,6 +30,9 @@ The first engineering milestone is a protected baseline and requirement-to-code
 trace. The preferred pilot starts with a clean target PostgreSQL database unless an
 approved private-data migration is required.
 
+See `docs/PROGRESS.md` for the shared, evidence-based implementation and cloud
+status used by Codex, Antigravity and human contributors.
+
 ## Target stack
 
 - React, Vite and TypeScript PWA
