@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.workforce import router as workforce_router
 from app.core.database import ReadinessChecker, get_readiness_checker
 from app.core.errors import DomainError
 from app.core.security import require_current_user
@@ -24,6 +25,7 @@ def readiness(
 
 
 router.include_router(auth_router)
+router.include_router(workforce_router)
 
 
 @router.get("/me", response_model=CurrentUser, tags=["auth"])

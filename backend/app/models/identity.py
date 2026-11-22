@@ -120,6 +120,7 @@ class Employee(Base):
     __tablename__ = "employees"
     __table_args__ = (
         UniqueConstraint("organization_id", "employee_code"),
+        UniqueConstraint("id", "organization_id"),
         CheckConstraint("status IN ('active', 'deactivated')", name="ck_employees_status"),
         ForeignKeyConstraint(
             ["home_store_id", "organization_id"], ["stores.id", "stores.organization_id"]

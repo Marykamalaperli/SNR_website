@@ -25,6 +25,7 @@ source pack or grant permission to deploy, provision, migrate data or change DNS
 | AWS staging edge/storage definition | Merged and validated, not provisioned | PR [#3](https://github.com/elite-horizon/SNR_website/pull/3), commit `4f578d3`; CloudFormation validation and no-execute change-set review completed |
 | Codex/Antigravity repository handoff | Implemented | Root `AGENTS.md`, `.agents/` rules and skills, and this ledger; merge evidence is in Git history |
 | Identity, roles and tenant/store isolation | Implemented and locally validated | Branch `agy/identity-tenancy`, PR [#5](https://github.com/elite-horizon/SNR_website/pull/5); Argon2id authentication, opaque session rotation/revocation, exact five-role scopes, Alembic migration; integration test flush order & detachment resolved locally |
+| Shifts and employee administration | Implemented and locally validated | Branch `agy/shifts-employees`; Alembic migration 202611220003, Employee CRUD & deactivation, Shift CRUD with overnight flag, non-overlapping effective-dated assignments, composite tenancy constraints, target TypeScript service & Vitest suite |
 
 ## AWS staging boundary
 
@@ -48,30 +49,33 @@ plan and remain out of scope. Do not describe them as the target staging stack.
 
 ## Current work and next package
 
-Work Package 2 is implemented on `agy/identity-tenancy` (PR [#5](https://github.com/elite-horizon/SNR_website/pull/5)).
-Initial GitHub CI run `45040867859` failed on `target-foundation` due to an
-unsequenced `db.add_all` foreign key violation in `test_identity_integration.py`.
-This has been resolved locally with ordered flushes and non-expiring test sessions
-in `test_identity_integration.py` and `seed_dev.py`, plus explicit database URL
-isolation in `test_api.py`. Local verification passed:
-- `python -m ruff check .` and `python -m ruff format --check .` passed cleanly.
-- Alembic migration upgrade `base` -> `head`, downgrade `head` -> `base`, and
-  re-upgrade `base` -> `head` against PostgreSQL completed cleanly.
-- Both PostgreSQL integration tests passed (`test_identity_integration.py`).
-- Full backend pytest suite passed against PostgreSQL (34 passed, 0 skipped, 0 failed).
-- Full frontend verification passed (`format:check`, `lint`, `typecheck`, 18 test
-  files / 159 tests passed, production build passed).
-- Container builds for `snr-nest-api:ci` (both backend and Cloud Run Dockerfiles)
-  and `snr-nest-frontend:ci` passed.
+Work Package 3 (**Shifts and employee administration**) is implemented on branch
+`agy/shifts-employees`:
+- **Data model & migration:** `backend/alembic/versions/202611220003_shifts_and_assignments.py`
+  adds `shifts` and `shift_assignments` with composite unique/FK tenancy constraints,
+  date range checks, and indexes. Full Alembic `upgrade head` -> `downgrade 202611220002`
+  -> `upgrade head` cycle validated on PostgreSQL.
+- **Backend services & API:**
+  - `EmployeeService` & routes: scoped employee listing, get, create (duplicate-code checked),
+    update, and soft-deactivation (preserves historical records).
+  - `ShiftService` & routes: scoped shift listing, get, create, and update with
+    `is_overnight` flag, break minutes, and store timezone.
+  - `AssignmentService` & routes: effective-dated assignment creation with transactional
+    overlap rejection and date validation (`effective_from <= effective_until`).
+- **Target frontend service:** `frontend/src/services/targetWorkforceService.ts` with
+  typed schemas, full CRUD methods, and Vitest suite (`targetWorkforceService.test.ts`).
+- **Validation results:**
+  - Backend: `ruff check .` clean, `ruff format --check .` clean, all 36 pytest tests
+    passed against PostgreSQL (including new `test_workforce_integration.py`).
+  - Frontend: `prettier --check` clean, ESLint clean (0 errors, 1 existing hook warning),
+    TypeScript `tsc --noEmit` clean, 19 Vitest test suites (166 tests) passed, and
+    production build succeeded.
+  - Docker: Compose containers healthy and functioning.
 
-Pending completion: commit the test fixes, obtain authorization to push to
-`elite/agy/identity-tenancy`, verify green GitHub CI on PR #5, and merge PR #5.
-No AWS resources, DNS, live migrations or private data changed.
-
-After Work Package 2 validation, the next product package is **employee and shift
-administration**: employee CRUD/deactivation, shifts, effective-dated assignments,
-overnight resolution and scoped admin UI. Attendance and payroll remain out of
-scope for that package.
+After Work Package 3 validation, the next product package is **attendance backend
+and store QR challenge**: short-lived server-signed store QR challenges, private
+photo upload intents, transactional in/out state validation, and append-only event
+storage. Payroll remains out of scope.
 
 ## Open decisions and gates
 

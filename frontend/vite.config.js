@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       setupFiles: ['./src/tests/setup.js'],
-      include: ['src/**/*.test.{js,jsx}'],
+      include: ['src/**/*.test.{js,jsx,ts,tsx}'],
       clearMocks: true,
     },
   };
