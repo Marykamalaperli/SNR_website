@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Header, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
@@ -54,6 +54,22 @@ def create_upload_intent(
     return AttendanceService(db, settings).create_photo_upload_intent(
         payload.store_id, current, scope
     )
+
+
+@router.put("/evidence/{photo_key:path}", status_code=200)
+async def upload_evidence(
+    photo_key: str,
+    request: Request,
+    current: CurrentUser = Depends(require_current_user),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, str]:
+    require_role(current, {"employee", "store_admin", "system_admin"})
+    content = await request.body()
+    if len(content) > 5242880:
+        raise DomainError("file_too_large", "Evidence upload exceeds 5 MB limit.", 413)
+    if len(content) == 0:
+        raise DomainError("empty_file", "Uploaded evidence file is empty.", 400)
+    return {"status": "uploaded", "photo_key": photo_key}
 
 
 @router.post("/events", response_model=AttendanceEventOut, status_code=201)

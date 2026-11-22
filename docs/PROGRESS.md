@@ -27,6 +27,7 @@ source pack or grant permission to deploy, provision, migrate data or change DNS
 | Identity, roles and tenant/store isolation | Merged | Branch `agy/identity-tenancy`, PR [#5](https://github.com/elite-horizon/SNR_website/pull/5), commit `fd9df20`; Argon2id authentication, opaque session rotation/revocation, exact five-role scopes, Alembic migration |
 | Shifts and employee administration | Merged | Branch `agy/shifts-employees`, PR [#6](https://github.com/elite-horizon/SNR_website/pull/6), commit `a6450d1`; Alembic migration 202611220003, Employee CRUD & deactivation, Shift CRUD with overnight flag, non-overlapping effective-dated assignments, composite tenancy constraints, target TypeScript service & Vitest suite |
 | Attendance backend and store QR challenge | Implemented and locally validated | Branch `agy/attendance-backend`; Alembic migration 202611220004, HMAC-SHA256 store QR challenge tokens & single-use anti-replay validation, photo upload intent generation, transactional in/out punch state validation, idempotency key enforcement, server/store timestamping, append-only audit logging, FastAPI auth linking, and target TypeScript service & tests |
+| Attendance frontend and capture flow | Implemented and locally validated | Branch `agy/attendance-backend`; Store QR dynamic station (`StoreQRStation.tsx`) with 60s countdown, employee photo capture flow (`TargetPunchCard.tsx`), live attendance history table (`TargetAttendanceHistory.tsx`), dev upload receiver (`PUT /evidence`), and Vitest component suite |
 
 ## AWS staging boundary
 
@@ -50,7 +51,7 @@ plan and remain out of scope. Do not describe them as the target staging stack.
 
 ## Current work and next package
 
-Work Package 4 (**Attendance backend and store QR challenge**) is implemented and validated on branch
+Work Package 4 & 5 (**Attendance backend, store QR challenge, and capture flow**) are implemented and validated on branch
 `agy/attendance-backend`:
 - **Data model & migration:** `backend/alembic/versions/202611220004_attendance_and_challenges.py`
   adds `attendance_challenges`, `attendance_events`, and `attendance_audit_logs` with
@@ -59,23 +60,28 @@ Work Package 4 (**Attendance backend and store QR challenge**) is implemented an
 - **Backend services & API:**
   - `POST /api/v1/attendance/challenges/issue`: issues 60s HMAC-SHA256 signed store QR challenges.
   - `POST /api/v1/attendance/upload-intent`: issues private signed S3 photo upload intents.
+  - `PUT /api/v1/attendance/evidence/{photo_key:path}`: local/dev evidence receiver for presigned PUTs.
   - `POST /api/v1/attendance/events`: transactional punch in/out state validation, idempotency key
     enforcement, single-use challenge verification, and append-only event & audit persistence.
   - `GET /api/v1/attendance/events`: scoped attendance event history retrieval.
   - Frontend-to-backend auth linking: FastAPI cookie session management (`/api/v1/auth/login`, `/me`,
     `/refresh`, `/logout`), CORS and seed script updates with `@dev.example.org`.
-- **Target frontend service:** `frontend/src/services/targetAttendanceService.ts` with
-  typed schemas, challenge and punch submission methods, and Vitest suite (`targetAttendanceService.test.ts`).
+- **Target frontend components & services:**
+  - `targetAttendanceService.ts`: API client with uploadBlob, issueStoreQRChallenge, recordAttendanceEvent, and listAttendanceEvents.
+  - `StoreQRStation.tsx`: dynamic store QR display rotating every 60 seconds with countdown and manual refresh.
+  - `TargetPunchCard.tsx`: interactive punch flow supporting QR challenge verification, live webcam selfie capture, photo upload to presigned PUT endpoint, and transactional in/out state submission.
+  - `TargetAttendanceHistory.tsx`: real-time attendance history table.
+  - Component Vitest suite (`targetAttendanceComponents.test.tsx`).
 - **Validation results:**
   - Backend: `ruff check .` clean, `ruff format --check .` clean, all 37 pytest tests
-    passed against PostgreSQL (including new `test_attendance_integration.py`).
+    passed against PostgreSQL (including `test_attendance_integration.py`).
   - Frontend: `prettier --check` clean, ESLint clean (0 errors, 1 existing hook warning),
-    TypeScript `tsc --noEmit` clean, 20 Vitest test suites (170 tests) passed, and
+    TypeScript `tsc --noEmit` clean, 21 Vitest test suites (174 tests) passed, and
     production build succeeded.
   - Live Docker verification: API session authentication and `/api/v1/me` profile resolution verified.
 
-After Work Package 4 is merged, the next product package is Work Package 5 (**Attendance frontend & capture flow**):
-wiring the live store camera capture and QR scanner UI to `targetAttendanceService.ts` with store geolocation verification. Payroll remains out of scope.
+After Work Packages 4 & 5 are merged, the next product package is Work Package 6 (**Attendance daily summaries, exceptions, and corrections**):
+derived daily attendance records (`attendance_days`), missing punch / late / early / overtime exception calculation without financial deductions, and immutable correction/approval workflow with optimistic concurrency. Payroll remains out of scope.
 
 ## Open decisions and gates
 

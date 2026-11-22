@@ -1,4 +1,5 @@
 import { apiRequest } from '../lib/apiClient';
+import { config } from '../lib/config';
 
 export interface StoreQRChallenge {
   challenge_token: string;
@@ -91,4 +92,19 @@ export async function listAttendanceEvents(
 
   const qs = query.toString();
   return apiRequest(`/api/v1/attendance/events${qs ? `?${qs}` : ''}`, { method: 'GET' });
+}
+
+export async function uploadPhotoBlob(uploadUrl: string, blob: Blob): Promise<void> {
+  const fullUrl = uploadUrl.startsWith('http') ? uploadUrl : `${config.apiBaseUrl}${uploadUrl}`;
+  const response = await fetch(fullUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': blob.type || 'image/jpeg',
+    },
+    body: blob,
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to upload attendance photo. Please try again.');
+  }
 }

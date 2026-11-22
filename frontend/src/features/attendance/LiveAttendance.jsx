@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import Card from '../../components/common/Card';
@@ -7,11 +8,62 @@ import { ErrorState, LoadingState } from '../../components/common/States';
 import useRemoteData from '../../hooks/useRemoteData';
 import { loadAttendanceWorkspace } from '../../services/attendanceService';
 import AttendanceRecords from './AttendanceRecords';
+import StoreQRStation from './StoreQRStation';
+import TargetPunchCard from './TargetPunchCard';
+import TargetAttendanceHistory from './TargetAttendanceHistory';
+import { config } from '../../lib/config';
 
 export default function LiveAttendance({ role, home = false }) {
   const { session } = useAuth();
-  const workspace = useRemoteData(loadAttendanceWorkspace);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const isTargetApi = Boolean(
+    config.apiBaseUrl && (!config.supabaseUrl || config.sessionSource === 'api'),
+  );
+
+  const workspace = useRemoteData(
+    isTargetApi ? () => Promise.resolve(null) : loadAttendanceWorkspace,
+  );
   const own = role === 'employee';
+
+  if (isTargetApi) {
+    const storeId = session?.store_id || '20000000-0000-4000-8000-000000000001';
+    return (
+      <>
+        <PageHeader
+          eyebrow={own ? 'YOUR WORKDAY, RECORDED' : 'STORE ATTENDANCE STATION'}
+          title={
+            home
+              ? `Welcome, ${session?.display_name || 'User'}.`
+              : own
+                ? 'My attendance'
+                : role === 'hr'
+                  ? 'Attendance'
+                  : 'Team attendance'
+          }
+          description={
+            own
+              ? 'Your attendance workstation. Scan the store QR challenge to clock in and out.'
+              : 'Live rotating store QR code and recorded attendance events.'
+          }
+        />
+        {own ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <TargetPunchCard
+              storeId={storeId}
+              onPunchSuccess={() => setRefreshTrigger((prev) => prev + 1)}
+            />
+            <TargetAttendanceHistory refreshTrigger={refreshTrigger} />
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <StoreQRStation storeId={storeId} />
+            <TargetAttendanceHistory storeId={storeId} refreshTrigger={refreshTrigger} />
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
