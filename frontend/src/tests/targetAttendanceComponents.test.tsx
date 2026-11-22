@@ -79,11 +79,7 @@ describe('Target Attendance Components', () => {
       });
 
       render(
-        <TargetPunchCard
-          storeId="store-1"
-          storeName="Hyderabad Store"
-          latestEvent={mockEvent}
-        />,
+        <TargetPunchCard storeId="store-1" storeName="Hyderabad Store" latestEvent={mockEvent} />,
       );
 
       await waitFor(() => {

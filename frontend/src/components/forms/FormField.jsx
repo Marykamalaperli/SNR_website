@@ -1,6 +1,13 @@
 import { useId } from 'react';
 
-export default function FormField({ label, error, hint, id: providedId, children, ...props }) {
+export default function FormField({
+  label,
+  error = undefined,
+  hint = undefined,
+  id: providedId = undefined,
+  children = undefined,
+  ...props
+}) {
   const generated = useId();
   const id = providedId || generated;
   return (

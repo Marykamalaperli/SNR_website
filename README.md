@@ -88,7 +88,30 @@ scripts/    verification, migration and operational helpers
 
 ## Local development
 
-Work Package 1 provides the target foundation. With a running Docker engine:
+For step-by-step instructions running PostgreSQL in Docker with native Python/Vite servers, see the [Local Setup Guide](file:///e:/Projects/SNR_website/LOCAL_SETUP_GUIDE.md).
+
+### Quick start (Docker only for PostgreSQL):
+
+```powershell
+# 1. Start PostgreSQL
+docker compose up -d db
+
+# 2. Start Backend (in backend/)
+cd backend
+pip install -r requirements-runtime.txt
+alembic upgrade head
+python scripts/seed_dev.py
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+# 3. Start Frontend (in frontend/)
+cd ../frontend
+npm install
+npm run dev
+```
+
+### Full Docker Compose stack:
+
+With a running Docker engine:
 
 ```powershell
 docker compose up --build

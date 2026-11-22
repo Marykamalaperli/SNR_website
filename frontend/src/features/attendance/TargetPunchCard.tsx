@@ -1,5 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, LogIn, LogOut, CheckCircle, AlertCircle, RefreshCw, QrCode, Upload } from 'lucide-react';
+import {
+  Camera,
+  LogIn,
+  LogOut,
+  CheckCircle,
+  AlertCircle,
+  RefreshCw,
+  QrCode,
+  Upload,
+} from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
@@ -92,7 +101,9 @@ export default function TargetPunchCard({
       }
     } catch (err: unknown) {
       setCameraError(
-        err instanceof Error ? err.message : 'Could not access camera. Please allow camera permissions or upload a selfie.',
+        err instanceof Error
+          ? err.message
+          : 'Could not access camera. Please allow camera permissions or upload a selfie.',
       );
     }
   };
@@ -259,7 +270,14 @@ export default function TargetPunchCard({
           </div>
         )}
 
-        <div style={{ margin: '1.25rem 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div
+          style={{
+            margin: '1.25rem 0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <div>
             <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Current status</span>
             <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>
@@ -321,12 +339,20 @@ export default function TargetPunchCard({
 
           {step === 'qr' && (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem',
+                }}
+              >
                 <QrCode size={20} className="text-primary" />
                 <h3 style={{ margin: 0, fontSize: '1rem' }}>Step 1: Scan Store QR Challenge</h3>
               </div>
               <p className="muted" style={{ fontSize: '0.875rem' }}>
-                Enter or scan the rotating challenge token currently displayed on the store station screen.
+                Enter or scan the rotating challenge token currently displayed on the store station
+                screen.
               </p>
 
               <FormField
@@ -347,14 +373,18 @@ export default function TargetPunchCard({
                 </Button>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '0.75rem',
+                  marginTop: '1.5rem',
+                }}
+              >
                 <Button variant="secondary" onClick={handleCloseModal}>
                   Cancel
                 </Button>
-                <Button
-                  disabled={!challengeToken.trim()}
-                  onClick={() => setStep('photo')}
-                >
+                <Button disabled={!challengeToken.trim()} onClick={() => setStep('photo')}>
                   Next: Take Photo
                 </Button>
               </div>
@@ -363,7 +393,14 @@ export default function TargetPunchCard({
 
           {step === 'photo' && (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem',
+                }}
+              >
                 <Camera size={20} className="text-primary" />
                 <h3 style={{ margin: 0, fontSize: '1rem' }}>Step 2: Take Verification Photo</h3>
               </div>
@@ -372,7 +409,14 @@ export default function TargetPunchCard({
               </p>
 
               {cameraError ? (
-                <div style={{ padding: '1rem', background: '#fef2f2', borderRadius: '6px', color: '#b91c1c' }}>
+                <div
+                  style={{
+                    padding: '1rem',
+                    background: '#fef2f2',
+                    borderRadius: '6px',
+                    color: '#b91c1c',
+                  }}
+                >
                   {cameraError}
                   <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
                     <Button variant="secondary" onClick={startCamera}>
@@ -400,17 +444,11 @@ export default function TargetPunchCard({
                   <canvas ref={canvasRef} style={{ display: 'none' }} />
 
                   <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                    <Button
-                      onClick={handleCapturePhoto}
-                      style={{ minWidth: '160px' }}
-                    >
+                    <Button onClick={handleCapturePhoto} style={{ minWidth: '160px' }}>
                       <Camera size={18} />
                       Capture Photo
                     </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
+                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
                       <Upload size={16} />
                       Upload Photo
                     </Button>
@@ -427,7 +465,9 @@ export default function TargetPunchCard({
                 onChange={handleFileChange}
               />
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}
+              >
                 <Button variant="secondary" onClick={() => setStep('qr')}>
                   Back
                 </Button>
@@ -440,7 +480,9 @@ export default function TargetPunchCard({
 
           {step === 'review' && (
             <div>
-              <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>Step 3: Confirm & Submit Punch</h3>
+              <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>
+                Step 3: Confirm & Submit Punch
+              </h3>
 
               {photoPreview && (
                 <div style={{ textAlign: 'center', margin: '1rem 0' }}>
@@ -463,18 +505,40 @@ export default function TargetPunchCard({
                 </div>
               )}
 
-              <div style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '6px', fontSize: '0.875rem' }}>
-                <div><strong>Action:</strong> {targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}</div>
-                <div><strong>Store:</strong> {storeName}</div>
-                <div><strong>Evidence:</strong> Fresh selfie captured</div>
+              <div
+                style={{
+                  background: '#f9fafb',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                }}
+              >
+                <div>
+                  <strong>Action:</strong> {targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}
+                </div>
+                <div>
+                  <strong>Store:</strong> {storeName}
+                </div>
+                <div>
+                  <strong>Evidence:</strong> Fresh selfie captured
+                </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '0.75rem',
+                  marginTop: '1.5rem',
+                }}
+              >
                 <Button variant="secondary" onClick={handleRetake} disabled={busy}>
                   Back
                 </Button>
                 <Button onClick={handleSubmitPunch} disabled={busy}>
-                  {busy ? 'Submitting…' : `Confirm ${targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}`}
+                  {busy
+                    ? 'Submitting…'
+                    : `Confirm ${targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}`}
                 </Button>
               </div>
             </div>

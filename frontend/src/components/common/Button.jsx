@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 
 export default function Button({
-  to,
-  href,
+  to = undefined,
+  href = undefined,
   variant = 'primary',
   className = '',
   children,

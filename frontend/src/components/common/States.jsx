@@ -28,8 +28,8 @@ export function LoadingState({ label = 'Loading…' }) {
 export function ErrorState({
   title = 'Something went wrong',
   description = 'Please try again in a moment.',
-  onRetry,
-  href,
+  onRetry = undefined,
+  href = undefined,
 }) {
   return (
     <div className="empty-state" role="alert">
