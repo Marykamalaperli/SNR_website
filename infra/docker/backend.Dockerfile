@@ -2,7 +2,8 @@
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
 WORKDIR /app
 COPY backend/requirements-runtime.txt backend/requirements.lock ./
@@ -12,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements-runtime.txt \
 COPY --chown=appuser:appuser backend/app ./app
 COPY --chown=appuser:appuser backend/alembic ./alembic
 COPY --chown=appuser:appuser backend/alembic.ini ./alembic.ini
+COPY --chown=appuser:appuser backend/scripts ./scripts
 
 USER appuser
 EXPOSE 8000

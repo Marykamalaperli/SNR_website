@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     access_session_minutes: int = 15
     refresh_session_days: int = 30
     session_cookie_secure: bool = True
+    qr_signing_secret: str = "snr-nest-dev-qr-signing-secret-key-32-chars-min"
+    qr_challenge_lifetime_seconds: int = 60
+    evidence_bucket_name: str = "snr-nest-evidence"
+    aws_region: str = "ap-south-1"
 
     @model_validator(mode="after")
     def validate_security(self):

@@ -23,6 +23,7 @@ services:
       dockerfile: infra/docker/backend.Dockerfile
     environment:
       APP_ENV: development
+      PYTHONPATH: /app
       DATABASE_URL: postgresql+psycopg://snr_nest:snr_nest_dev@db:5432/snr_nest
     command: ["alembic", "upgrade", "head"]
     depends_on:
@@ -35,6 +36,7 @@ services:
       dockerfile: infra/docker/backend.Dockerfile
     environment:
       APP_ENV: development
+      PYTHONPATH: /app
       DATABASE_URL: postgresql+psycopg://snr_nest:snr_nest_dev@db:5432/snr_nest
       CORS_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173"]'
       ALLOWED_HOSTS: '["localhost","127.0.0.1","api","testserver"]'

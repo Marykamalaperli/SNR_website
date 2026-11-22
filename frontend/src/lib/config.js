@@ -10,4 +10,6 @@ export const config = readPublicAuthConfig(
   { production: import.meta.env.PROD },
 );
 
-export const authConfigured = Boolean(config.supabaseUrl && config.supabaseKey);
+export const authConfigured = Boolean(
+  config.apiBaseUrl || (config.supabaseUrl && config.supabaseKey),
+);

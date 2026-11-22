@@ -24,8 +24,9 @@ source pack or grant permission to deploy, provision, migrate data or change DNS
 | Secure AWS delivery identity | Merged and provisioned | PR [#2](https://github.com/elite-horizon/SNR_website/pull/2), commit `4c246ba`; GitHub OIDC roles observed in account `376793939540` |
 | AWS staging edge/storage definition | Merged and validated, not provisioned | PR [#3](https://github.com/elite-horizon/SNR_website/pull/3), commit `4f578d3`; CloudFormation validation and no-execute change-set review completed |
 | Codex/Antigravity repository handoff | Implemented | Root `AGENTS.md`, `.agents/` rules and skills, and this ledger; merge evidence is in Git history |
-| Identity, roles and tenant/store isolation | Implemented and locally validated | Branch `agy/identity-tenancy`, PR [#5](https://github.com/elite-horizon/SNR_website/pull/5); Argon2id authentication, opaque session rotation/revocation, exact five-role scopes, Alembic migration; integration test flush order & detachment resolved locally |
-| Shifts and employee administration | Implemented and locally validated | Branch `agy/shifts-employees`; Alembic migration 202611220003, Employee CRUD & deactivation, Shift CRUD with overnight flag, non-overlapping effective-dated assignments, composite tenancy constraints, target TypeScript service & Vitest suite |
+| Identity, roles and tenant/store isolation | Merged | Branch `agy/identity-tenancy`, PR [#5](https://github.com/elite-horizon/SNR_website/pull/5), commit `fd9df20`; Argon2id authentication, opaque session rotation/revocation, exact five-role scopes, Alembic migration |
+| Shifts and employee administration | Merged | Branch `agy/shifts-employees`, PR [#6](https://github.com/elite-horizon/SNR_website/pull/6), commit `a6450d1`; Alembic migration 202611220003, Employee CRUD & deactivation, Shift CRUD with overnight flag, non-overlapping effective-dated assignments, composite tenancy constraints, target TypeScript service & Vitest suite |
+| Attendance backend and store QR challenge | Implemented and locally validated | Branch `agy/attendance-backend`; Alembic migration 202611220004, HMAC-SHA256 store QR challenge tokens & single-use anti-replay validation, photo upload intent generation, transactional in/out punch state validation, idempotency key enforcement, server/store timestamping, append-only audit logging, FastAPI auth linking, and target TypeScript service & tests |
 
 ## AWS staging boundary
 
@@ -49,33 +50,32 @@ plan and remain out of scope. Do not describe them as the target staging stack.
 
 ## Current work and next package
 
-Work Package 3 (**Shifts and employee administration**) is implemented on branch
-`agy/shifts-employees`:
-- **Data model & migration:** `backend/alembic/versions/202611220003_shifts_and_assignments.py`
-  adds `shifts` and `shift_assignments` with composite unique/FK tenancy constraints,
-  date range checks, and indexes. Full Alembic `upgrade head` -> `downgrade 202611220002`
-  -> `upgrade head` cycle validated on PostgreSQL.
+Work Package 4 (**Attendance backend and store QR challenge**) is implemented and validated on branch
+`agy/attendance-backend`:
+- **Data model & migration:** `backend/alembic/versions/202611220004_attendance_and_challenges.py`
+  adds `attendance_challenges`, `attendance_events`, and `attendance_audit_logs` with
+  composite tenancy constraints, indexes, and single-use challenge consumption.
+  Full Alembic `upgrade head` -> `downgrade 202611220003` -> `upgrade head` cycle validated on PostgreSQL.
 - **Backend services & API:**
-  - `EmployeeService` & routes: scoped employee listing, get, create (duplicate-code checked),
-    update, and soft-deactivation (preserves historical records).
-  - `ShiftService` & routes: scoped shift listing, get, create, and update with
-    `is_overnight` flag, break minutes, and store timezone.
-  - `AssignmentService` & routes: effective-dated assignment creation with transactional
-    overlap rejection and date validation (`effective_from <= effective_until`).
-- **Target frontend service:** `frontend/src/services/targetWorkforceService.ts` with
-  typed schemas, full CRUD methods, and Vitest suite (`targetWorkforceService.test.ts`).
+  - `POST /api/v1/attendance/challenges/issue`: issues 60s HMAC-SHA256 signed store QR challenges.
+  - `POST /api/v1/attendance/upload-intent`: issues private signed S3 photo upload intents.
+  - `POST /api/v1/attendance/events`: transactional punch in/out state validation, idempotency key
+    enforcement, single-use challenge verification, and append-only event & audit persistence.
+  - `GET /api/v1/attendance/events`: scoped attendance event history retrieval.
+  - Frontend-to-backend auth linking: FastAPI cookie session management (`/api/v1/auth/login`, `/me`,
+    `/refresh`, `/logout`), CORS and seed script updates with `@dev.example.org`.
+- **Target frontend service:** `frontend/src/services/targetAttendanceService.ts` with
+  typed schemas, challenge and punch submission methods, and Vitest suite (`targetAttendanceService.test.ts`).
 - **Validation results:**
-  - Backend: `ruff check .` clean, `ruff format --check .` clean, all 36 pytest tests
-    passed against PostgreSQL (including new `test_workforce_integration.py`).
+  - Backend: `ruff check .` clean, `ruff format --check .` clean, all 37 pytest tests
+    passed against PostgreSQL (including new `test_attendance_integration.py`).
   - Frontend: `prettier --check` clean, ESLint clean (0 errors, 1 existing hook warning),
-    TypeScript `tsc --noEmit` clean, 19 Vitest test suites (166 tests) passed, and
+    TypeScript `tsc --noEmit` clean, 20 Vitest test suites (170 tests) passed, and
     production build succeeded.
-  - Docker: Compose containers healthy and functioning.
+  - Live Docker verification: API session authentication and `/api/v1/me` profile resolution verified.
 
-After Work Package 3 validation, the next product package is **attendance backend
-and store QR challenge**: short-lived server-signed store QR challenges, private
-photo upload intents, transactional in/out state validation, and append-only event
-storage. Payroll remains out of scope.
+After Work Package 4 is merged, the next product package is Work Package 5 (**Attendance frontend & capture flow**):
+wiring the live store camera capture and QR scanner UI to `targetAttendanceService.ts` with store geolocation verification. Payroll remains out of scope.
 
 ## Open decisions and gates
 

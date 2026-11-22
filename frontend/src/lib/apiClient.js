@@ -15,6 +15,7 @@ export async function apiRequest(path, { token, signal, ...options } = {}) {
   try {
     response = await fetch(`${config.apiBaseUrl}${path}`, {
       ...options,
+      credentials: options.credentials || 'include',
       signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
       headers: {
         Accept: 'application/json',

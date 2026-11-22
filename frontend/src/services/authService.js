@@ -1,10 +1,10 @@
 import { apiRequest } from '../lib/apiClient';
-import { authConfigured, config } from '../lib/config';
+import { config } from '../lib/config';
 import { AUTH_STORAGE_KEY, authStorage } from '../lib/authStorage';
 
 let clientPromise;
 export async function getAuthClient() {
-  if (!authConfigured) return null;
+  if (!config.supabaseUrl || !config.supabaseKey) return null;
   clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) =>
     createClient(config.supabaseUrl, config.supabaseKey, {
       auth: {
@@ -79,4 +79,53 @@ export async function clearAuthSession(client) {
   } finally {
     authStorage.removeItem(AUTH_STORAGE_KEY);
   }
+}
+
+export function mapUserToSession(me) {
+  const scope = me.scopes?.[0] || {};
+  let uiRole = 'employee';
+  if (me.scopes?.some((s) => ['store_admin', 'supervisor'].includes(s.role))) {
+    uiRole = 'supervisor';
+  } else if (
+    me.scopes?.some((s) => ['hr_payroll', 'system_admin', 'auditor', 'hr'].includes(s.role))
+  ) {
+    uiRole = 'hr';
+  }
+  const workspaceMapping = { employee: '/me', supervisor: '/team', hr: '/hr' };
+  return {
+    user_id: me.user_id,
+    email: me.email,
+    display_name: me.display_name,
+    organization_id: scope.organization_id || '',
+    store_id: scope.store_id || '',
+    role: uiRole,
+    actual_role: scope.role,
+    scopes: me.scopes || [],
+    workspace: workspaceMapping[uiRole],
+  };
+}
+
+export async function loginWithApi(email, password) {
+  await apiRequest('/api/v1/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const me = await apiRequest('/api/v1/me', { method: 'GET' });
+  return mapUserToSession(me);
+}
+
+export async function getCurrentUserFromApi() {
+  const me = await apiRequest('/api/v1/me', { method: 'GET' });
+  return mapUserToSession(me);
+}
+
+export async function refreshApiSession() {
+  await apiRequest('/api/v1/auth/refresh', { method: 'POST' });
+  const me = await apiRequest('/api/v1/me', { method: 'GET' });
+  return mapUserToSession(me);
+}
+
+export async function logoutWithApi() {
+  return apiRequest('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
 }
