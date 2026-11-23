@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Building2,
   CheckCircle2,
@@ -21,6 +21,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import FormField from '../../components/forms/FormField';
 import { useAuth } from '../../hooks/useAuth';
 import GoogleMapLocationPicker from './GoogleMapLocationPicker';
+import TargetStoreHub from './TargetStoreHub';
 import {
   createStore,
   listStores,
@@ -40,6 +41,14 @@ const TIMEZONE_OPTIONS = [
 
 export default function TargetStoreManagement() {
   const { session } = useAuth() as { session: any };
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlStoreId = searchParams.get('storeId') || searchParams.get('store');
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(urlStoreId);
+
+  useEffect(() => {
+    if (urlStoreId) setSelectedStoreId(urlStoreId);
+  }, [urlStoreId]);
+
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState(false);
@@ -204,6 +213,21 @@ export default function TargetStoreManagement() {
     setEditRadius(st.radius_meters ? String(st.radius_meters) : '50');
     setEditActive(st.active);
     setShowEditStoreModal(true);
+  }
+
+  if (selectedStoreId) {
+    return (
+      <TargetStoreHub
+        storeId={selectedStoreId}
+        onBack={() => {
+          setSelectedStoreId(null);
+          const next = new URLSearchParams(searchParams);
+          next.delete('storeId');
+          next.delete('store');
+          setSearchParams(next);
+        }}
+      />
+    );
   }
 
   return (
@@ -460,25 +484,20 @@ export default function TargetStoreManagement() {
                     paddingTop: '0.75rem',
                     marginTop: '0.25rem',
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
                   }}
                 >
-                  <Link
-                    to="/admin/store-admins"
-                    style={{
-                      fontSize: '0.8125rem',
-                      fontWeight: 500,
-                      color: '#0284c7',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      textDecoration: 'none',
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      setSelectedStoreId(st.id);
+                      setSearchParams({ storeId: st.id });
                     }}
+                    style={{ width: '100%', justifyContent: 'center', fontSize: '0.85rem' }}
                   >
-                    <Users size={14} />
-                    Manage Store Administrators &rarr;
-                  </Link>
+                    Manage Store &rarr;
+                  </Button>
                 </div>
               </Card>
             );

@@ -5,14 +5,25 @@ import { MemoryRouter } from 'react-router-dom';
 import TargetStoreManagement from '../features/workforce/TargetStoreManagement';
 import {
   listStores,
+  getStore,
   createStore,
+  updateStore,
+  listStoreAdmins,
+  listEmployees,
+  listShifts,
+  listAssignments,
 } from '../services/targetWorkforceService';
 import { useAuth } from '../hooks/useAuth';
 
 vi.mock('../services/targetWorkforceService', () => ({
   listStores: vi.fn(),
+  getStore: vi.fn(),
   createStore: vi.fn(),
   updateStore: vi.fn(),
+  listStoreAdmins: vi.fn(),
+  listEmployees: vi.fn(),
+  listShifts: vi.fn(),
+  listAssignments: vi.fn(),
 }));
 
 vi.mock('../hooks/useAuth', () => ({
@@ -38,6 +49,11 @@ describe('TargetStoreManagement Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(listStores).mockResolvedValue({ items: mockStores, total: 1 });
+    vi.mocked(getStore).mockResolvedValue(mockStores[0]);
+    vi.mocked(listStoreAdmins).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(listEmployees).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(listShifts).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(listAssignments).mockResolvedValue({ items: [], total: 0 });
     (useAuth as any).mockReturnValue({
       session: {
         user_id: 'sys-admin-id',
@@ -59,10 +75,33 @@ describe('TargetStoreManagement Component', () => {
       expect(screen.getByText('CODE: BLR-01')).toBeInTheDocument();
       expect(screen.getByText(/Asia\/Kolkata/i)).toBeInTheDocument();
       expect(screen.getByText(/12.9716, 77.5946/i)).toBeInTheDocument();
-      expect(screen.getByText(/Manage Store Administrators/i)).toBeInTheDocument();
+      expect(screen.getByText(/Manage Store/i)).toBeInTheDocument();
     });
 
     expect(screen.getByText('Add New Store')).toBeInTheDocument();
+  });
+
+  it('clicking Manage Store opens the store hub with tabs', async () => {
+    render(
+      <MemoryRouter>
+        <TargetStoreManagement />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Bangalore Store')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Manage Store/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Back to All Stores/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Store Information' })).toBeInTheDocument();
+      expect(screen.getByText(/Manager Access/i)).toBeInTheDocument();
+      expect(screen.getByText(/Store Employees/i)).toBeInTheDocument();
+      expect(screen.getByText(/Shifts & Rosters/i)).toBeInTheDocument();
+      expect(screen.getByText(/Attendance & QR Station/i)).toBeInTheDocument();
+    });
   });
 
   it('requires choosing store location on Google Maps before submitting', async () => {

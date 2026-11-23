@@ -94,11 +94,28 @@ def create_employee(
     payload: EmployeeCreate,
     current: Annotated[CurrentUser, Depends(require_current_user)],
     db: Annotated[Session, Depends(get_db_session)],
-    organization_id: UUID = Query(...),
+    organization_id: UUID | None = Query(None),
 ) -> EmployeeOut:
     user = require_role(current, EMPLOYEE_WRITERS)
-    scope = require_scope(user, organization_id, permitted=EMPLOYEE_WRITERS)
-    employee = EmployeeService(db).create_employee(payload, organization_id, scope)
+    target_org_id = organization_id
+    if target_org_id is None:
+        store = db.get(Store, payload.home_store_id)
+        if store:
+            target_org_id = store.organization_id
+    if target_org_id is None:
+        for s in user.scopes:
+            if s.organization_id is not None:
+                target_org_id = s.organization_id
+                break
+    if target_org_id is None:
+        from app.models.identity import Organization
+        first_org = db.scalar(select(Organization.id).limit(1))
+        if not first_org:
+            raise DomainError("missing_organization", "An organization must exist.", 400)
+        target_org_id = first_org
+
+    scope = require_scope(user, target_org_id, permitted=EMPLOYEE_WRITERS)
+    employee = EmployeeService(db).create_employee(payload, target_org_id, scope)
     return EmployeeOut.model_validate(employee)
 
 
@@ -180,11 +197,28 @@ def create_shift(
     payload: ShiftCreate,
     current: Annotated[CurrentUser, Depends(require_current_user)],
     db: Annotated[Session, Depends(get_db_session)],
-    organization_id: UUID = Query(...),
+    organization_id: UUID | None = Query(None),
 ) -> ShiftOut:
     user = require_role(current, SHIFT_WRITERS)
-    scope = require_scope(user, organization_id, permitted=SHIFT_WRITERS)
-    shift = ShiftService(db).create_shift(payload, organization_id, scope)
+    target_org_id = organization_id
+    if target_org_id is None:
+        store = db.get(Store, payload.store_id)
+        if store:
+            target_org_id = store.organization_id
+    if target_org_id is None:
+        for s in user.scopes:
+            if s.organization_id is not None:
+                target_org_id = s.organization_id
+                break
+    if target_org_id is None:
+        from app.models.identity import Organization
+        first_org = db.scalar(select(Organization.id).limit(1))
+        if not first_org:
+            raise DomainError("missing_organization", "An organization must exist.", 400)
+        target_org_id = first_org
+
+    scope = require_scope(user, target_org_id, permitted=SHIFT_WRITERS)
+    shift = ShiftService(db).create_shift(payload, target_org_id, scope)
     return ShiftOut.model_validate(shift)
 
 
@@ -234,12 +268,30 @@ def create_assignment(
     payload: AssignmentCreate,
     current: Annotated[CurrentUser, Depends(require_current_user)],
     db: Annotated[Session, Depends(get_db_session)],
-    organization_id: UUID = Query(...),
+    organization_id: UUID | None = Query(None),
 ) -> AssignmentOut:
     user = require_role(current, ASSIGNMENT_WRITERS)
-    scope = require_scope(user, organization_id, permitted=ASSIGNMENT_WRITERS)
+    target_org_id = organization_id
+    if target_org_id is None:
+        from app.models.identity import Shift
+        shift = db.get(Shift, payload.shift_id)
+        if shift:
+            target_org_id = shift.organization_id
+    if target_org_id is None:
+        for s in user.scopes:
+            if s.organization_id is not None:
+                target_org_id = s.organization_id
+                break
+    if target_org_id is None:
+        from app.models.identity import Organization
+        first_org = db.scalar(select(Organization.id).limit(1))
+        if not first_org:
+            raise DomainError("missing_organization", "An organization must exist.", 400)
+        target_org_id = first_org
+
+    scope = require_scope(user, target_org_id, permitted=ASSIGNMENT_WRITERS)
     assignment = AssignmentService(db).create_assignment(
-        payload, organization_id, scope, created_by=user.user_id
+        payload, target_org_id, scope, created_by=user.user_id
     )
     return AssignmentOut.model_validate(assignment)
 

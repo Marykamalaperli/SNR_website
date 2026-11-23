@@ -218,9 +218,10 @@ export async function getEmployee(employeeId: string): Promise<Employee> {
 
 export async function createEmployee(
   payload: CreateEmployeePayload,
-  organizationId: string,
+  organizationId?: string,
 ): Promise<Employee> {
-  return apiRequest(`/api/v1/employees?organization_id=${organizationId}`, {
+  const query = organizationId ? `?organization_id=${encodeURIComponent(organizationId)}` : '';
+  return apiRequest(`/api/v1/employees${query}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -264,9 +265,10 @@ export async function listShifts(
 
 export async function createShift(
   payload: CreateShiftPayload,
-  organizationId: string,
+  organizationId?: string,
 ): Promise<Shift> {
-  return apiRequest(`/api/v1/shifts?organization_id=${organizationId}`, {
+  const query = organizationId ? `?organization_id=${encodeURIComponent(organizationId)}` : '';
+  return apiRequest(`/api/v1/shifts${query}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -293,9 +295,10 @@ export async function listAssignments(
 
 export async function createAssignment(
   payload: CreateAssignmentPayload,
-  organizationId: string,
+  organizationId?: string,
 ): Promise<ShiftAssignment> {
-  return apiRequest(`/api/v1/assignments?organization_id=${organizationId}`, {
+  const query = organizationId ? `?organization_id=${encodeURIComponent(organizationId)}` : '';
+  return apiRequest(`/api/v1/assignments${query}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
