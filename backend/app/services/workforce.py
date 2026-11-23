@@ -497,6 +497,36 @@ class StoreService:
         ]
         return items, len(items)
 
+    def list_all_store_admins(self, store_id: UUID | None, scope: Scope) -> tuple[list[dict], int]:
+        if scope.role != "system_admin":
+            raise DomainError(
+                "forbidden", "Only system administrators can list all store administrators.", 403
+            )
+        query = (
+            select(RoleAssignment, User, Store)
+            .join(User, RoleAssignment.user_id == User.id)
+            .join(Store, RoleAssignment.store_id == Store.id)
+            .where(RoleAssignment.role == "store_admin")
+        )
+        if store_id:
+            query = query.where(RoleAssignment.store_id == store_id)
+        results = self.db.execute(query).all()
+        items = [
+            {
+                "id": ra.id,
+                "user_id": u.id,
+                "email": u.email,
+                "display_name": u.display_name,
+                "store_id": st.id,
+                "store_name": st.name,
+                "role": ra.role,
+                "active": ra.active,
+                "created_at": ra.created_at,
+            }
+            for ra, u, st in results
+        ]
+        return items, len(items)
+
 
 
 

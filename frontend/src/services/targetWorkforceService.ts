@@ -176,6 +176,11 @@ export async function listStoreAdmins(storeId: string): Promise<StoreAdminListRe
   return apiRequest(`/api/v1/stores/${storeId}/admins`, { method: 'GET' });
 }
 
+export async function listAllStoreAdmins(storeId?: string): Promise<StoreAdminListResponse> {
+  const query = storeId ? `?store_id=${encodeURIComponent(storeId)}` : '';
+  return apiRequest(`/api/v1/store-admins${query}`, { method: 'GET' });
+}
+
 export async function createStoreAdmin(
   storeId: string,
   payload: CreateStoreAdminPayload,

@@ -28,3 +28,4 @@ def downgrade() -> None:
     op.drop_column("stores", "map_url")
     op.drop_column("stores", "longitude")
     op.drop_column("stores", "latitude")
+

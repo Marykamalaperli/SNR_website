@@ -227,6 +227,15 @@ def test_system_admin_store_management_lifecycle() -> None:
         assert admins_data["total"] >= 1
         assert any(a["email"] == admin_email for a in admins_data["items"])
 
+        # 8b. System Admin can list all store admins across stores via /api/v1/store-admins
+        res_all_admins_emp = client_emp.get("/api/v1/store-admins", headers={"Origin": ORIGIN})
+        assert res_all_admins_emp.status_code == 403
+
+        res_all_admins = client_sys.get("/api/v1/store-admins", headers={"Origin": ORIGIN})
+        assert res_all_admins.status_code == 200
+        all_admins_data = res_all_admins.json()
+        assert any(a["email"] == admin_email for a in all_admins_data["items"])
+
         # 9. Newly created Store Admin can log in successfully
         client_mgr = login_client(admin_email)
         res_me = client_mgr.get("/api/v1/me")

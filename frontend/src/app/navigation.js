@@ -12,6 +12,7 @@ import {
   ChartNoAxesCombined,
   Settings,
   ShieldCheck,
+  UserCheck,
   QrCode,
   Calculator,
 } from 'lucide-react';
@@ -69,6 +70,7 @@ export const workspaces = {
     label: 'SUPER ADMIN WORKSPACE',
     links: [
       ['stores', 'Stores & Work Sites', Building2],
+      ['store-admins', 'Store Administrators', UserCheck],
       ['employees', 'Employees & Workforce', UsersRound],
       ['attendance', 'Attendance Records', Clock3],
       ['attendance-qr', 'Attendance QR Station', QrCode],
@@ -86,6 +88,7 @@ export const workspaces = {
     label: 'SUPER ADMIN WORKSPACE',
     links: [
       ['stores', 'Stores & Work Sites', Building2],
+      ['store-admins', 'Store Administrators', UserCheck],
       ['employees', 'Employees & Workforce', UsersRound],
       ['attendance', 'Attendance Records', Clock3],
       ['attendance-qr', 'Attendance QR Station', QrCode],

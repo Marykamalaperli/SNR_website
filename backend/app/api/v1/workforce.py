@@ -356,3 +356,19 @@ def list_store_admins(
     return StoreAdminListOut(items=[StoreAdminOut.model_validate(a) for a in items], total=total)
 
 
+@router.get("/store-admins", response_model=StoreAdminListOut)
+def list_all_store_admins(
+    current: Annotated[CurrentUser, Depends(require_current_user)],
+    db: Annotated[Session, Depends(get_db_session)],
+    store_id: UUID | None = None,
+) -> StoreAdminListOut:
+    user = require_role(current, {"system_admin"})
+    scope = user.scopes[0]
+    for s in user.scopes:
+        if s.role == "system_admin":
+            scope = s
+            break
+    items, total = StoreService(db).list_all_store_admins(store_id, scope)
+    return StoreAdminListOut(items=[StoreAdminOut.model_validate(a) for a in items], total=total)
+
+

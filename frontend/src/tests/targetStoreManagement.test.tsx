@@ -1,21 +1,18 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import TargetStoreManagement from '../features/workforce/TargetStoreManagement';
 import {
   listStores,
-  listStoreAdmins,
   createStore,
-  createStoreAdmin,
 } from '../services/targetWorkforceService';
 import { useAuth } from '../hooks/useAuth';
 
 vi.mock('../services/targetWorkforceService', () => ({
   listStores: vi.fn(),
-  listStoreAdmins: vi.fn(),
   createStore: vi.fn(),
   updateStore: vi.fn(),
-  createStoreAdmin: vi.fn(),
 }));
 
 vi.mock('../hooks/useAuth', () => ({
@@ -37,25 +34,10 @@ const mockStores = [
   },
 ];
 
-const mockAdmins = [
-  {
-    id: 'ra-1',
-    user_id: 'u-1',
-    email: 'admin@blr.example.org',
-    display_name: 'Bangalore Manager',
-    store_id: 'store-1',
-    store_name: 'Bangalore Store',
-    role: 'store_admin',
-    active: true,
-    created_at: '2026-11-23T00:00:00Z',
-  },
-];
-
 describe('TargetStoreManagement Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(listStores).mockResolvedValue({ items: mockStores, total: 1 });
-    vi.mocked(listStoreAdmins).mockResolvedValue({ items: mockAdmins, total: 1 });
     (useAuth as any).mockReturnValue({
       session: {
         user_id: 'sys-admin-id',
@@ -65,21 +47,30 @@ describe('TargetStoreManagement Component', () => {
     });
   });
 
-  it('renders store list and store administrators for Super Admin', async () => {
-    render(<TargetStoreManagement />);
+  it('renders store details and location info for Super Admin', async () => {
+    render(
+      <MemoryRouter>
+        <TargetStoreManagement />
+      </MemoryRouter>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Bangalore Store')).toBeInTheDocument();
       expect(screen.getByText('CODE: BLR-01')).toBeInTheDocument();
-      expect(screen.getByText('Bangalore Manager')).toBeInTheDocument();
-      expect(screen.getByText('admin@blr.example.org')).toBeInTheDocument();
+      expect(screen.getByText(/Asia\/Kolkata/i)).toBeInTheDocument();
+      expect(screen.getByText(/12.9716, 77.5946/i)).toBeInTheDocument();
+      expect(screen.getByText(/Manage Store Administrators/i)).toBeInTheDocument();
     });
 
     expect(screen.getByText('Add New Store')).toBeInTheDocument();
   });
 
   it('requires choosing store location on Google Maps before submitting', async () => {
-    render(<TargetStoreManagement />);
+    render(
+      <MemoryRouter>
+        <TargetStoreManagement />
+      </MemoryRouter>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Bangalore Store')).toBeInTheDocument();
@@ -117,7 +108,11 @@ describe('TargetStoreManagement Component', () => {
       created_at: '2026-11-23T00:00:00Z',
     });
 
-    render(<TargetStoreManagement />);
+    render(
+      <MemoryRouter>
+        <TargetStoreManagement />
+      </MemoryRouter>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Bangalore Store')).toBeInTheDocument();
@@ -153,48 +148,6 @@ describe('TargetStoreManagement Component', () => {
     });
   });
 
-  it('allows Super Admin to open Add Store Admin modal and submit', async () => {
-    vi.mocked(createStoreAdmin).mockResolvedValueOnce({
-      id: 'ra-2',
-      user_id: 'u-2',
-      email: 'newmgr@blr.example.org',
-      display_name: 'New Manager',
-      store_id: 'store-1',
-      store_name: 'Bangalore Store',
-      role: 'store_admin',
-      active: true,
-      created_at: '2026-11-23T00:00:00Z',
-    });
-
-    render(<TargetStoreManagement />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Bangalore Store')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /Add Admin/i }));
-
-    expect(screen.getByText(/Add Store Admin: Bangalore Store/i)).toBeInTheDocument();
-
-    const nameInput = screen.getByLabelText(/Admin Full Name/i);
-    const emailInput = screen.getByLabelText(/Admin Email Address/i);
-    const passInput = screen.getByLabelText(/Temporary Password/i);
-
-    fireEvent.change(nameInput, { target: { value: 'New Manager' } });
-    fireEvent.change(emailInput, { target: { value: 'newmgr@blr.example.org' } });
-    fireEvent.change(passInput, { target: { value: 'ManagerSecurePass123!' } });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Create Store Admin' }));
-
-    await waitFor(() => {
-      expect(createStoreAdmin).toHaveBeenCalledWith('store-1', {
-        email: 'newmgr@blr.example.org',
-        display_name: 'New Manager',
-        password: 'ManagerSecurePass123!',
-      });
-    });
-  });
-
   it('displays read-only notice for non-super admin roles', async () => {
     (useAuth as any).mockReturnValue({
       session: {
@@ -204,7 +157,11 @@ describe('TargetStoreManagement Component', () => {
       },
     });
 
-    render(<TargetStoreManagement />);
+    render(
+      <MemoryRouter>
+        <TargetStoreManagement />
+      </MemoryRouter>,
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Bangalore Store')).toBeInTheDocument();

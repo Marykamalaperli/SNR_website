@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Building2,
   CheckCircle2,
   ExternalLink,
   Globe,
-  LocateFixed,
-  Mail,
   MapPin,
   Pencil,
   Plus,
   RefreshCw,
   Shield,
   ShieldAlert,
-  UserPlus,
   Users,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
@@ -23,14 +21,10 @@ import StatusBadge from '../../components/common/StatusBadge';
 import FormField from '../../components/forms/FormField';
 import { useAuth } from '../../hooks/useAuth';
 import GoogleMapLocationPicker from './GoogleMapLocationPicker';
-import { parseStoreMapLink } from '../../services/storeMapLink';
 import {
   createStore,
-  createStoreAdmin,
-  listStoreAdmins,
   listStores,
   Store,
-  StoreAdmin,
   updateStore,
 } from '../../services/targetWorkforceService';
 
@@ -47,7 +41,6 @@ const TIMEZONE_OPTIONS = [
 export default function TargetStoreManagement() {
   const { session } = useAuth() as { session: any };
   const [stores, setStores] = useState<Store[]>([]);
-  const [adminsByStore, setAdminsByStore] = useState<Record<string, StoreAdmin[]>>({});
   const [loading, setLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,12 +48,9 @@ export default function TargetStoreManagement() {
 
   // Modals
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
-  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [showEditStoreModal, setShowEditStoreModal] = useState(false);
-  const [selectedStoreForAdmin, setSelectedStoreForAdmin] = useState<Store | null>(null);
-  const [storeToEdit, setStoreToEdit] = useState<Store | null>(null);
 
-  // Store Form State
+  // Add Store Form State
   const [storeCode, setStoreCode] = useState('');
   const [storeName, setStoreName] = useState('');
   const [storeTimezone, setStoreTimezone] = useState('Asia/Kolkata');
@@ -68,10 +58,9 @@ export default function TargetStoreManagement() {
   const [storeLatitude, setStoreLatitude] = useState('');
   const [storeLongitude, setStoreLongitude] = useState('');
   const [storeRadius, setStoreRadius] = useState('50');
-  const [locationNotice, setLocationNotice] = useState<string | null>(null);
-  const [locating, setLocating] = useState(false);
 
   // Edit Store State
+  const [storeToEdit, setStoreToEdit] = useState<Store | null>(null);
   const [editName, setEditName] = useState('');
   const [editTimezone, setEditTimezone] = useState('Asia/Kolkata');
   const [editMapLink, setEditMapLink] = useState('');
@@ -79,11 +68,6 @@ export default function TargetStoreManagement() {
   const [editLongitude, setEditLongitude] = useState('');
   const [editRadius, setEditRadius] = useState('50');
   const [editActive, setEditActive] = useState(true);
-
-  // Store Admin Form State
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminDisplayName, setAdminDisplayName] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
 
   const isSuperAdmin = Boolean(
     session?.actual_role === 'system_admin' ||
@@ -98,20 +82,6 @@ export default function TargetStoreManagement() {
     try {
       const res = await listStores({ limit: 100 });
       setStores(res.items);
-
-      // Load admins for all stores in parallel
-      const adminMap: Record<string, StoreAdmin[]> = {};
-      await Promise.all(
-        res.items.map(async (st) => {
-          try {
-            const adminRes = await listStoreAdmins(st.id);
-            adminMap[st.id] = adminRes.items;
-          } catch {
-            adminMap[st.id] = [];
-          }
-        }),
-      );
-      setAdminsByStore(adminMap);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load stores from database.');
     } finally {
@@ -122,60 +92,6 @@ export default function TargetStoreManagement() {
   useEffect(() => {
     loadStores();
   }, []);
-
-  function handleMapLinkChange(
-    url: string,
-    setLink: (v: string) => void,
-    setLat: (v: string) => void,
-    setLng: (v: string) => void,
-  ) {
-    setLink(url);
-    setLocationNotice(null);
-    if (!url.trim()) return;
-    try {
-      const point = parseStoreMapLink(url);
-      if (point) {
-        setLat(String(point.latitude));
-        setLng(String(point.longitude));
-        setLocationNotice(`Coordinates extracted from Google Maps pin: ${point.latitude}, ${point.longitude}`);
-      }
-    } catch {
-      // Continue without error while user pastes or types
-    }
-  }
-
-  function handleCaptureGps(setLat: (v: string) => void, setLng: (v: string) => void) {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.');
-      return;
-    }
-    setLocating(true);
-    setError(null);
-    setLocationNotice(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocating(false);
-        const lat = pos.coords.latitude.toFixed(7);
-        const lng = pos.coords.longitude.toFixed(7);
-        setLat(lat);
-        setLng(lng);
-        setLocationNotice(`Captured current GPS location (accuracy ±${Math.round(pos.coords.accuracy)}m)`);
-      },
-      (err) => {
-        setLocating(false);
-        setError(`GPS location failed: ${err.message}. You can open Google Maps to choose your store location instead.`);
-      },
-      { enableHighAccuracy: true, timeout: 15000 },
-    );
-  }
-
-  function openGoogleMapsPicker(lat?: string, lng?: string) {
-    const url =
-      lat && lng && !isNaN(Number(lat)) && !isNaN(Number(lng))
-        ? `https://www.google.com/maps?q=${lat},${lng}`
-        : 'https://www.google.com/maps';
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
 
   async function handleCreateStore(e: React.FormEvent) {
     e.preventDefault();
@@ -211,7 +127,7 @@ export default function TargetStoreManagement() {
         timezone: storeTimezone,
         latitude: latNum,
         longitude: lngNum,
-        map_url: storeMapLink.trim() || (latNum && lngNum ? `https://www.google.com/maps?q=${latNum},${lngNum}` : null),
+        map_url: storeMapLink.trim() || `https://www.google.com/maps?q=${latNum},${lngNum}`,
         radius_meters: radiusNum,
       });
       setSuccessMsg(`Store "${newStore.name}" (${newStore.code}) created successfully.`);
@@ -233,7 +149,6 @@ export default function TargetStoreManagement() {
     setStoreLatitude('');
     setStoreLongitude('');
     setStoreRadius('50');
-    setLocationNotice(null);
   }
 
   async function handleUpdateStore(e: React.FormEvent) {
@@ -279,106 +194,58 @@ export default function TargetStoreManagement() {
     }
   }
 
-  async function handleCreateAdmin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedStoreForAdmin) return;
-    if (!adminEmail.trim() || !adminDisplayName.trim() || !adminPassword.trim()) {
-      setError('All fields are required to create a store admin account.');
-      return;
-    }
-    if (adminPassword.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-    setActionInProgress(true);
-    setError(null);
-    try {
-      const created = await createStoreAdmin(selectedStoreForAdmin.id, {
-        email: adminEmail.trim().toLowerCase(),
-        display_name: adminDisplayName.trim(),
-        password: adminPassword,
-      });
-      setSuccessMsg(
-        `Store Admin "${created.display_name}" (${created.email}) created and assigned to ${selectedStoreForAdmin.name}.`,
-      );
-      setShowAddAdminModal(false);
-      setSelectedStoreForAdmin(null);
-      setAdminEmail('');
-      setAdminDisplayName('');
-      setAdminPassword('');
-
-      // Refresh admins for this store
-      const adminRes = await listStoreAdmins(selectedStoreForAdmin.id);
-      setAdminsByStore((prev) => ({
-        ...prev,
-        [selectedStoreForAdmin.id]: adminRes.items,
-      }));
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create store admin.');
-    } finally {
-      setActionInProgress(false);
-    }
-  }
-
-  function openEditStore(store: Store) {
-    setStoreToEdit(store);
-    setEditName(store.name);
-    setEditTimezone(store.timezone || 'Asia/Kolkata');
-    setEditLatitude(store.latitude !== undefined && store.latitude !== null ? String(store.latitude) : '');
-    setEditLongitude(store.longitude !== undefined && store.longitude !== null ? String(store.longitude) : '');
-    setEditMapLink(store.map_url || '');
-    setEditRadius(store.radius_meters ? String(store.radius_meters) : '50');
-    setEditActive(store.active);
-    setLocationNotice(null);
+  function openEditStore(st: Store) {
+    setStoreToEdit(st);
+    setEditName(st.name);
+    setEditTimezone(st.timezone || 'Asia/Kolkata');
+    setEditMapLink(st.map_url || '');
+    setEditLatitude(st.latitude !== undefined && st.latitude !== null ? String(st.latitude) : '');
+    setEditLongitude(st.longitude !== undefined && st.longitude !== null ? String(st.longitude) : '');
+    setEditRadius(st.radius_meters ? String(st.radius_meters) : '50');
+    setEditActive(st.active);
     setShowEditStoreModal(true);
-  }
-
-  function openAddAdmin(store: Store) {
-    setSelectedStoreForAdmin(store);
-    setAdminEmail('');
-    setAdminDisplayName('');
-    setAdminPassword('');
-    setShowAddAdminModal(true);
   }
 
   return (
     <div className="target-store-management" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Top Banner / Actions */}
+      {/* Header */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           flexWrap: 'wrap',
           gap: '1rem',
         }}
       >
         <div>
-          <span className="eyebrow" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)' }}>
-            SUPER ADMIN · STORES & STORE MANAGERS
+          <span
+            className="eyebrow"
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '0.05em',
+              color: '#0284c7',
+              textTransform: 'uppercase',
+            }}
+          >
+            SUPER ADMIN · STORES & WORK SITES
           </span>
-          <h2 style={{ margin: '0.25rem 0 0', fontSize: '1.5rem', fontWeight: 600 }}>
+          <h1 style={{ margin: '0.25rem 0 0.5rem 0', fontSize: '1.75rem', fontWeight: 700 }}>
             Stores & Work Sites
-          </h2>
-          <p className="muted" style={{ margin: '0.25rem 0 0', fontSize: '0.875rem' }}>
-            Authoritative stores, operational timezones, Google Maps locations, and assigned Store Administrators.
+          </h1>
+          <p className="muted" style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>
+            Authoritative physical stores, geofence boundaries, and operational timezones.
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <Button variant="secondary" onClick={loadStores} disabled={loading || actionInProgress}>
+          <Button variant="secondary" onClick={loadStores} disabled={loading}>
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             Refresh
           </Button>
           {isSuperAdmin && (
-            <Button
-              variant="primary"
-              onClick={() => {
-                setError(null);
-                resetStoreForm();
-                setShowAddStoreModal(true);
-              }}
-            >
+            <Button variant="primary" onClick={() => setShowAddStoreModal(true)}>
               <Plus size={16} />
               Add New Store
             </Button>
@@ -404,7 +271,7 @@ export default function TargetStoreManagement() {
         >
           <Shield size={16} className="text-primary" />
           <span>
-            Viewing stores in read-only mode. Only <strong>System Administrators (Super Admin)</strong> have authority to create stores and provision Store Admin accounts.
+            Viewing stores in read-only mode. Only <strong>System Administrators (Super Admin)</strong> have authority to create and update stores.
           </span>
         </div>
       )}
@@ -452,7 +319,7 @@ export default function TargetStoreManagement() {
 
       {/* Stores List */}
       {loading ? (
-        <LoadingState label="Loading stores and store administrators..." />
+        <LoadingState label="Loading store locations..." />
       ) : stores.length === 0 ? (
         <EmptyState
           title="No Stores Found"
@@ -468,8 +335,11 @@ export default function TargetStoreManagement() {
           }}
         >
           {stores.map((st) => {
-            const admins = adminsByStore[st.id] || [];
-            const hasLocation = st.latitude !== undefined && st.latitude !== null && st.longitude !== undefined && st.longitude !== null;
+            const hasLocation =
+              st.latitude !== undefined &&
+              st.latitude !== null &&
+              st.longitude !== undefined &&
+              st.longitude !== null;
             return (
               <Card key={st.id} className="store-card" style={{ padding: '1.25rem' }}>
                 <div
@@ -542,7 +412,9 @@ export default function TargetStoreManagement() {
                   }}
                 >
                   <Globe size={14} />
-                  <span>Timezone: <strong>{st.timezone}</strong></span>
+                  <span>
+                    Timezone: <strong>{st.timezone}</strong>
+                  </span>
                 </div>
 
                 {/* Location & Google Map Link */}
@@ -581,123 +453,32 @@ export default function TargetStoreManagement() {
                   )}
                 </div>
 
-                {/* Store Admins Sub-section */}
+                {/* Direct Link to Store Admins */}
                 <div
                   style={{
                     borderTop: '1px solid #f1f5f9',
                     paddingTop: '0.75rem',
-                    marginTop: '0.5rem',
+                    marginTop: '0.25rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                   }}
                 >
-                  <div
+                  <Link
+                    to="/admin/store-admins"
                     style={{
+                      fontSize: '0.8125rem',
+                      fontWeight: 500,
+                      color: '#0284c7',
                       display: 'flex',
-                      justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginBottom: '0.5rem',
+                      gap: '0.35rem',
+                      textDecoration: 'none',
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        color: '#334155',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                      }}
-                    >
-                      <Users size={14} />
-                      Store Administrators ({admins.length})
-                    </span>
-
-                    {isSuperAdmin && (
-                      <Button
-                        variant="secondary"
-                        onClick={() => openAddAdmin(st)}
-                        style={{
-                          fontSize: '0.75rem',
-                          padding: '0.25rem 0.5rem',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.25rem',
-                        }}
-                      >
-                        <UserPlus size={13} />
-                        Add Admin
-                      </Button>
-                    )}
-                  </div>
-
-                  {admins.length === 0 ? (
-                    <p
-                      className="muted"
-                      style={{
-                        fontSize: '0.75rem',
-                        fontStyle: 'italic',
-                        margin: '0.25rem 0 0',
-                        color: '#94a3b8',
-                      }}
-                    >
-                      No Store Admin assigned yet. Click "Add Admin" to provision a manager account.
-                    </p>
-                  ) : (
-                    <ul
-                      style={{
-                        listStyle: 'none',
-                        padding: 0,
-                        margin: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.5rem',
-                      }}
-                    >
-                      {admins.map((adm) => (
-                        <li
-                          key={adm.id}
-                          style={{
-                            background: '#f8fafc',
-                            padding: '0.5rem 0.75rem',
-                            borderRadius: '6px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: '0.8125rem',
-                          }}
-                        >
-                          <div>
-                            <div style={{ fontWeight: 600, color: '#1e293b' }}>
-                              {adm.display_name}
-                            </div>
-                            <div
-                              style={{
-                                color: '#64748b',
-                                fontSize: '0.75rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                              }}
-                            >
-                              <Mail size={11} />
-                              {adm.email}
-                            </div>
-                          </div>
-                          <span
-                            style={{
-                              fontSize: '0.6875rem',
-                              padding: '0.15rem 0.45rem',
-                              borderRadius: '4px',
-                              background: '#e0e7ff',
-                              color: '#4338ca',
-                              fontWeight: 600,
-                            }}
-                          >
-                            store_admin
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                    <Users size={14} />
+                    Manage Store Administrators &rarr;
+                  </Link>
                 </div>
               </Card>
             );
@@ -807,7 +588,7 @@ export default function TargetStoreManagement() {
                 Cancel
               </Button>
               <Button variant="primary" type="submit" disabled={actionInProgress}>
-                {actionInProgress ? 'Creating...' : 'Create Store'}
+                {actionInProgress ? 'Creating Store…' : 'Create Store'}
               </Button>
             </div>
           </form>
@@ -817,11 +598,22 @@ export default function TargetStoreManagement() {
       {/* Modal: Edit Store */}
       {showEditStoreModal && storeToEdit && (
         <Modal
-          title={`Edit Store: ${storeToEdit.name}`}
-          onClose={() => setShowEditStoreModal(false)}
+          title={`Edit Store: ${storeToEdit.name} (${storeToEdit.code})`}
+          onClose={() => {
+            setShowEditStoreModal(false);
+            setStoreToEdit(null);
+          }}
           busy={actionInProgress}
         >
           <form onSubmit={handleUpdateStore} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <FormField
+              label="Store Code"
+              type="text"
+              value={storeToEdit.code}
+              disabled
+              hint="Store code cannot be changed once created."
+            />
+
             <FormField
               label="Store Name"
               type="text"
@@ -888,16 +680,16 @@ export default function TargetStoreManagement() {
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
               <input
-                id="editActiveCheckbox"
+                id="editActiveStore"
                 type="checkbox"
                 checked={editActive}
                 onChange={(e) => setEditActive(e.target.checked)}
-                style={{ width: '16px', height: '16px' }}
+                style={{ width: '1rem', height: '1rem' }}
               />
-              <label htmlFor="editActiveCheckbox" style={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                Store is active for attendance and scheduling
+              <label htmlFor="editActiveStore" style={{ fontSize: '0.875rem', color: '#1e293b', cursor: 'pointer' }}>
+                Store is active for workforce scheduling and attendance
               </label>
             </div>
 
@@ -912,87 +704,16 @@ export default function TargetStoreManagement() {
               <Button
                 variant="secondary"
                 type="button"
-                onClick={() => setShowEditStoreModal(false)}
+                onClick={() => {
+                  setShowEditStoreModal(false);
+                  setStoreToEdit(null);
+                }}
                 disabled={actionInProgress}
               >
                 Cancel
               </Button>
               <Button variant="primary" type="submit" disabled={actionInProgress}>
-                {actionInProgress ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Modal: Add Store Admin */}
-      {showAddAdminModal && selectedStoreForAdmin && (
-        <Modal
-          title={`Add Store Admin: ${selectedStoreForAdmin.name}`}
-          onClose={() => setShowAddAdminModal(false)}
-          busy={actionInProgress}
-        >
-          <form onSubmit={handleCreateAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div
-              style={{
-                background: '#f8fafc',
-                padding: '0.75rem',
-                borderRadius: '6px',
-                fontSize: '0.8125rem',
-                color: '#334155',
-              }}
-            >
-              <div><strong>Target Store:</strong> {selectedStoreForAdmin.name} ({selectedStoreForAdmin.code})</div>
-              <div><strong>Assigned Role:</strong> Store Administrator (<code>store_admin</code>)</div>
-            </div>
-
-            <FormField
-              label="Admin Full Name"
-              type="text"
-              placeholder="e.g. Rajesh Kumar"
-              value={adminDisplayName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminDisplayName(e.target.value)}
-              required
-            />
-
-            <FormField
-              label="Admin Email Address"
-              type="email"
-              placeholder="e.g. rajesh.kumar@snr.com"
-              value={adminEmail}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminEmail(e.target.value)}
-              required
-              hint="Used as login identifier."
-            />
-
-            <FormField
-              label="Temporary Password"
-              type="password"
-              placeholder="At least 8 characters"
-              value={adminPassword}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminPassword(e.target.value)}
-              required
-              hint="Must be at least 8 characters long."
-            />
-
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '0.75rem',
-                marginTop: '1rem',
-              }}
-            >
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => setShowAddAdminModal(false)}
-                disabled={actionInProgress}
-              >
-                Cancel
-              </Button>
-              <Button variant="primary" type="submit" disabled={actionInProgress}>
-                {actionInProgress ? 'Creating...' : 'Create Store Admin'}
+                {actionInProgress ? 'Saving…' : 'Save Changes'}
               </Button>
             </div>
           </form>
