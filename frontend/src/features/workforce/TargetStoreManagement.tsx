@@ -158,6 +158,7 @@ export default function TargetStoreManagement() {
           const next = new URLSearchParams(searchParams);
           next.delete('storeId');
           next.delete('store');
+          next.delete('section');
           setSearchParams(next);
         }}
       />

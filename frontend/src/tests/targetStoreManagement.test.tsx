@@ -81,7 +81,7 @@ describe('TargetStoreManagement Component', () => {
     expect(screen.getByText('Add New Store')).toBeInTheDocument();
   });
 
-  it('clicking Manage Store opens the store hub with tabs', async () => {
+  it('clicking Manage Store opens the store hub with 6 option cards', async () => {
     render(
       <MemoryRouter>
         <TargetStoreManagement />
@@ -102,6 +102,73 @@ describe('TargetStoreManagement Component', () => {
       expect(screen.getByRole('heading', { name: 'Shifts & Rosters' })).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Attendance QR Station' })).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Geofence Accuracy Tester' })).toBeInTheDocument();
+    });
+  });
+
+  it('navigates to dedicated page for Shifts & Rostering and back to hub', async () => {
+    render(
+      <MemoryRouter>
+        <TargetStoreManagement />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Bangalore Store')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Manage Store/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Shifts & Rosters' })).toBeInTheDocument();
+    });
+
+    // Click to enter dedicated Shifts & Rosters page
+    fireEvent.click(screen.getByRole('button', { name: /Manage Shifts & Rosters/i }));
+
+    await waitFor(() => {
+      // 6 cards should be hidden
+      expect(screen.queryByRole('heading', { name: 'Manager Access' })).not.toBeInTheDocument();
+      // Dedicated page header & back button should be visible
+      expect(screen.getByRole('heading', { name: 'Shifts & Rostering' })).toBeInTheDocument();
+      expect(screen.getByText(/Back to Bangalore Store Hub/i)).toBeInTheDocument();
+      expect(screen.getByText(/Configured Shifts/i)).toBeInTheDocument();
+      expect(screen.getByText(/Active Employee Rosters/i)).toBeInTheDocument();
+    });
+
+    // Click back to hub
+    fireEvent.click(screen.getByText(/Back to Bangalore Store Hub/i));
+
+    await waitFor(() => {
+      // 6 cards should be visible again
+      expect(screen.getByRole('heading', { name: 'Store Details & Location' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Manager Access' })).toBeInTheDocument();
+    });
+  });
+
+  it('navigates to dedicated page for Store Details & Location and back', async () => {
+    render(
+      <MemoryRouter>
+        <TargetStoreManagement />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Bangalore Store')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Manage Store/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Store Details & Location' })).toBeInTheDocument();
+    });
+
+    // Click to enter dedicated Store Details page
+    fireEvent.click(screen.getByRole('button', { name: /Edit Store Details/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Back to Bangalore Store Hub/i)).toBeInTheDocument();
+      expect(screen.getByText(/Store Entrance Pin & Geofence Boundary/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Save Changes/i })).toBeInTheDocument();
     });
   });
 
