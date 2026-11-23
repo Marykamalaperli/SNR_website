@@ -1,0 +1,112 @@
+name: Deploy AWS Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Component to deploy
+        required: true
+        default: frontend
+        type: choice
+        options:
+          - frontend
+          - both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-staging-deployment
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run infrastructure and deployment tests
+        run: |
+          node --test scripts/aws-infra.test.mjs
+          node --test scripts/server-deploy.test.mjs
+
+      - name: Run frontend tests and build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test -- --run
+          npm run build
+
+  deploy-frontend:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && (inputs.target == 'frontend' || inputs.target == 'both')
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend distribution
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-session-name: snrnest-frontend-deploy-${{ github.run_id }}
+
+      - name: Sync static assets to private FrontendBucket
+        run: |
+          FRONTEND_BUCKET="snrnest-staging-web-${{ vars.AWS_ACCOUNT_ID }}-${{ vars.AWS_REGION }}"
+          
+          # Sync hashed assets with 1-year immutable caching
+          aws s3 sync frontend/dist/ "s3://${FRONTEND_BUCKET}/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "sw.js" \
+            --exclude "manifest.webmanifest"
+
+          # Upload entry points with must-revalidate caching
+          aws s3 cp frontend/dist/index.html "s3://${FRONTEND_BUCKET}/index.html" \
+            --cache-control "public, max-age=0, must-revalidate"
+          aws s3 cp frontend/dist/sw.js "s3://${FRONTEND_BUCKET}/sw.js" \
+            --cache-control "public, max-age=0, must-revalidate"
+          aws s3 cp frontend/dist/manifest.webmanifest "s3://${FRONTEND_BUCKET}/manifest.webmanifest" \
+            --cache-control "public, max-age=86400, must-revalidate"
+
+      - name: Targeted CloudFront cache invalidation
+        env:
+          DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          if [ -n "$DISTRIBUTION_ID" ]; then
+            # Invalidate ONLY application entry points, never blanket root wildcard
+            aws cloudfront create-invalidation \
+              --distribution-id "$DISTRIBUTION_ID" \
+              --paths "/index.html" "/sw.js" "/manifest.webmanifest"
+          else
+            echo "CLOUDFRONT_DISTRIBUTION_ID not set; skipping invalidation."
+          fi

@@ -1,0 +1,93 @@
+name: snr-nest-prod
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-snr_nest}
+      POSTGRES_USER: ${POSTGRES_USER:-snr_nest}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password must be set}
+    volumes:
+      - snr_nest_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-snr_nest} -d ${POSTGRES_DB:-snr_nest}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend-net
+    # IMPORTANT: PostgreSQL port 5432 is intentionally NOT exposed to the host or internet.
+
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    restart: "no"
+    environment:
+      APP_ENV: production
+      PYTHONPATH: /app
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-snr_nest}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-snr_nest}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend-net
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      PYTHONPATH: /app
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-snr_nest}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-snr_nest}
+      SECRET_KEY: ${SECRET_KEY:?App secret key must be set}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["https://staging.snrnest.com"]}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-["api.staging.snrnest.com","localhost","127.0.0.1","api"]}
+      SESSION_COOKIE_SECURE: "true"
+      AWS_REGION: ${AWS_REGION:-ap-south-1}
+      EVIDENCE_BUCKET_NAME: ${EVIDENCE_BUCKET_NAME:-}
+      PAYSLIP_BUCKET_NAME: ${PAYSLIP_BUCKET_NAME:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/ready')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - backend-net
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - backend-net
+
+networks:
+  backend-net:
+    driver: bridge
+    internal: false
+
+volumes:
+  snr_nest_postgres_data:
+  caddy_data:
+  caddy_config:
+
