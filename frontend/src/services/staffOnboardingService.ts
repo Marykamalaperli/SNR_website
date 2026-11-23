@@ -497,3 +497,4 @@ export function getOnboardingDossier(idOrCode: string): StaffOnboardingDossier |
   const list = getOnboardingDossiers();
   return list.find((d) => d.employeeId === idOrCode || d.employeeCode === idOrCode);
 }
+

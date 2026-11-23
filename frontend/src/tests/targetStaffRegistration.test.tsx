@@ -248,10 +248,33 @@ describe('TargetStoreOrgStructure Component', () => {
       expect(screen.getByText(/Store Manager \(SM\)/i)).toBeInTheDocument();
       expect(screen.getByText(/Assistant Store Manager \(ASM\)/i)).toBeInTheDocument();
       expect(screen.getByText(/Team Lead \(TL\)/i)).toBeInTheDocument();
-      expect(screen.getByText(/Associate \(Picker & Packer\)/i)).toBeInTheDocument();
-      expect(screen.getByText(/Security Guard & Watchman/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Associate \(Picker & Packer\)/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Security Guard & Watchman/i).length).toBeGreaterThan(0);
     });
 
     expect(screen.getByRole('button', { name: /Register Staff \(5-Step Wizard\)/i })).toBeInTheDocument();
+
+    // Verify clicking a Teams card opens the Microsoft Teams Profile & Dossier Drawer
+    const personCards = screen.getAllByTestId('teams-person-card');
+    expect(personCards.length).toBeGreaterThan(0);
+    fireEvent.click(personCards[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Overview/i)).toBeInTheDocument();
+      expect(screen.getByText(/Permissions/i)).toBeInTheDocument();
+      expect(screen.getByText(/KYC & Verification/i)).toBeInTheDocument();
+      expect(screen.getByText(/Compensation/i)).toBeInTheDocument();
+    });
+
+    // Close the profile drawer
+    fireEvent.click(screen.getByRole('button', { name: /Close/i }));
+
+    // Switch to Teams & Pods view
+    fireEvent.click(screen.getByRole('button', { name: /Teams & Pods/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Store Executive & Managerial Pod/i)).toBeInTheDocument();
+      expect(screen.getByText(/Floor Operations & Order Fulfillment Pod/i)).toBeInTheDocument();
+      expect(screen.getByText(/Facility Safety & Gate Security Pod/i)).toBeInTheDocument();
+    });
   });
 });
