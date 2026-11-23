@@ -13,6 +13,7 @@ import {
   Settings,
   ShieldCheck,
   QrCode,
+  Calculator,
 } from 'lucide-react';
 
 export const workspaces = {
@@ -53,6 +54,7 @@ export const workspaces = {
       ['employees', 'Employees', UsersRound],
       ['attendance', 'Attendance', Clock3],
       ['attendance-qr', 'Attendance QR', QrCode],
+      ['payroll', 'Payroll Drafts', Calculator],
       ['security', 'Security · QR search', ShieldCheck],
       ['security-checks', 'Security checks', ShieldCheck],
       ['approvals', 'Approvals', ClipboardCheck],

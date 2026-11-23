@@ -19,6 +19,7 @@ import Button from '../../components/common/Button';
 import StatusBadge from '../../components/common/StatusBadge';
 import CorrectionList from '../corrections/CorrectionList';
 import DocumentsPanel from '../documents/DocumentsPanel';
+import TargetPayrollRuns from '../payroll/TargetPayrollRuns';
 import { downloadSampleReport } from '../../services/exportService';
 
 export default function HrWorkspace({ section }) {
@@ -73,6 +74,17 @@ export default function HrWorkspace({ section }) {
           </div>
           <PeopleTable people={data.employees} caption="Organization attendance" />
         </Card>
+      </>
+    );
+  if (section === 'payroll')
+    return (
+      <>
+        <PageHeader
+          eyebrow="DETERMINISTIC ENGINE"
+          title="Payroll Drafts"
+          description="Deterministic calculations, rate configurations, and exception-gated runs."
+        />
+        <TargetPayrollRuns />
       </>
     );
   if (section === 'sites')
