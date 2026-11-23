@@ -15,6 +15,8 @@ import {
   UserCheck,
   QrCode,
   Calculator,
+  Network,
+  UserPlus,
 } from 'lucide-react';
 
 export const workspaces = {
@@ -71,6 +73,8 @@ export const workspaces = {
     links: [
       ['stores', 'Stores & Work Sites', Building2],
       ['store-admins', 'Store Administrators', UserCheck],
+      ['org-structure', 'Store Org Structure', Network],
+      ['staff-registration', 'Staff Registration', UserPlus],
       ['employees', 'Employees & Workforce', UsersRound],
       ['attendance', 'Attendance Records', Clock3],
       ['attendance-qr', 'Attendance QR Station', QrCode],
@@ -89,6 +93,8 @@ export const workspaces = {
     links: [
       ['stores', 'Stores & Work Sites', Building2],
       ['store-admins', 'Store Administrators', UserCheck],
+      ['org-structure', 'Store Org Structure', Network],
+      ['staff-registration', 'Staff Registration', UserPlus],
       ['employees', 'Employees & Workforce', UsersRound],
       ['attendance', 'Attendance Records', Clock3],
       ['attendance-qr', 'Attendance QR Station', QrCode],

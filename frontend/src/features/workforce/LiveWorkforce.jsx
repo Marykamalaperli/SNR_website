@@ -5,6 +5,8 @@ import EmployeeDirectory from './EmployeeDirectory';
 import OrganizationSetup from './OrganizationSetup';
 import TargetStoreManagement from './TargetStoreManagement';
 import TargetStoreAdminManagement from './TargetStoreAdminManagement';
+import TargetStoreOrgStructure from './TargetStoreOrgStructure';
+import TargetStaffRegistrationWizard from './TargetStaffRegistrationWizard';
 import EmployeeProfile from './EmployeeProfile';
 import HrSettings from './HrSettings';
 import LiveAttendance from '../attendance/LiveAttendance';
@@ -22,6 +24,10 @@ export default function LiveWorkforce({ role, base }) {
   if (['hr', 'admin', 'super_admin'].includes(role)) {
     if (section === 'store-admins' || section === 'admins')
       return <TargetStoreAdminManagement />;
+    if (section === 'org-structure')
+      return <TargetStoreOrgStructure />;
+    if (section === 'staff-registration' || section === 'onboarding')
+      return <TargetStaffRegistrationWizard />;
     if (section === 'sites' || section === 'stores' || (role === 'admin' && !section))
       return <TargetStoreManagement />;
     if (!section) return <HrDashboard />;

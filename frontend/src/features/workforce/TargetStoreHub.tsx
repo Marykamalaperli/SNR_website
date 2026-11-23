@@ -23,6 +23,7 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  Network,
   X,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
@@ -33,6 +34,8 @@ import StatusBadge from '../../components/common/StatusBadge';
 import FormField from '../../components/forms/FormField';
 import { useAuth } from '../../hooks/useAuth';
 import GoogleMapLocationPicker from './GoogleMapLocationPicker';
+import TargetStaffRegistrationWizard from './TargetStaffRegistrationWizard';
+import { getOnboardingDossiers, STORE_ROLE_DEFINITIONS } from '../../services/staffOnboardingService';
 import {
   createAssignment,
   createEmployee,
@@ -110,6 +113,7 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
   const [actionInProgress, setActionInProgress] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [showStaffWizard, setShowStaffWizard] = useState(false);
 
   // Store data collections
   const [admins, setAdmins] = useState<StoreAdmin[]>([]);
@@ -1124,7 +1128,20 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
       {/* ========================================================================= */}
       {/* 4. DEDICATED FULL PAGE: STORE EMPLOYEES & WORKFORCE DIRECTORY              */}
       {/* ========================================================================= */}
-      {activeSection === 'employees' && (
+      {activeSection === 'employees' && showStaffWizard && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <TargetStaffRegistrationWizard
+            initialStoreId={store.id}
+            onComplete={() => {
+              setShowStaffWizard(false);
+              loadStoreHubData();
+            }}
+            onCancel={() => setShowStaffWizard(false)}
+          />
+        </div>
+      )}
+
+      {activeSection === 'employees' && !showStaffWizard && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Section Breadcrumb & Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -1169,11 +1186,24 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               {isSuperAdmin && (
-                <Button variant="primary" onClick={() => setShowAddEmployeeModal(true)}>
-                  <UserPlus size={15} /> Add Employee to Store
-                </Button>
+                <>
+                  <Button variant="primary" onClick={() => setShowStaffWizard(true)}>
+                    <UserPlus size={15} /> Register Staff (5-Step Wizard)
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      window.location.href = `/admin/org-structure?storeId=${store.id}`;
+                    }}
+                  >
+                    <Network size={15} /> Store Org Hierarchy
+                  </Button>
+                  <Button variant="secondary" onClick={() => setShowAddEmployeeModal(true)}>
+                    <Plus size={14} /> Quick Add
+                  </Button>
+                </>
               )}
               <Button variant="secondary" onClick={() => goToSection('none')}>
                 <X size={15} /> Close Page
@@ -1186,7 +1216,7 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
             {employees.length === 0 ? (
               <EmptyState
                 title="No Employees in this Store"
-                description={`No employees are currently mapped to ${store.name}. Click "Add Employee to Store" to create their workforce record.`}
+                description={`No employees are currently mapped to ${store.name}. Click "Register Staff (5-Step Wizard)" to onboard store managers, team leads, pickers/packers, or security.`}
               />
             ) : (
               <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
@@ -1195,25 +1225,38 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.75rem', textTransform: 'uppercase' }}>
                       <th style={{ padding: '0.75rem 1rem' }}>Employee Code</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Full Name</th>
+                      <th style={{ padding: '0.75rem 1rem' }}>Designation / Level</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Status</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Hire Date</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {employees.map((emp) => (
-                      <tr key={emp.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#0284c7' }}>{emp.employee_code}</td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}>{emp.display_name}</td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <StatusBadge tone={emp.status === 'active' ? 'success' : 'neutral'}>
-                            {emp.status}
-                          </StatusBadge>
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8rem' }}>
-                          {emp.hire_date || '—'}
-                        </td>
-                      </tr>
-                    ))}
+                    {employees.map((emp) => {
+                      const dossiers = getOnboardingDossiers();
+                      const d = dossiers.find((x) => x.employeeId === emp.id || x.employeeCode === emp.employee_code);
+                      const roleLabel = d
+                        ? STORE_ROLE_DEFINITIONS[d.designation]?.label || d.customDesignation || d.designation
+                        : 'Associate Staff';
+                      return (
+                        <tr key={emp.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#0284c7' }}>{emp.employee_code}</td>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}>{emp.display_name}</td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <span style={{ background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>
+                              {roleLabel}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem' }}>
+                            <StatusBadge tone={emp.status === 'active' ? 'success' : 'neutral'}>
+                              {emp.status}
+                            </StatusBadge>
+                          </td>
+                          <td style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8rem' }}>
+                            {emp.hire_date || '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -12,6 +12,8 @@ import {
   Shield,
   ShieldAlert,
   Users,
+  Network,
+  UserPlus,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
@@ -198,11 +200,21 @@ export default function TargetStoreManagement() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <Button variant="secondary" onClick={loadStores} disabled={loading}>
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             Refresh
           </Button>
+          <Link to="/admin/org-structure" style={{ textDecoration: 'none' }}>
+            <Button variant="secondary">
+              <Network size={15} /> Store Org Tree
+            </Button>
+          </Link>
+          <Link to="/admin/staff-registration" style={{ textDecoration: 'none' }}>
+            <Button variant="secondary">
+              <UserPlus size={15} /> Register Staff
+            </Button>
+          </Link>
           {isSuperAdmin && (
             <Button variant="primary" onClick={() => setShowAddStoreModal(true)}>
               <Plus size={16} />
