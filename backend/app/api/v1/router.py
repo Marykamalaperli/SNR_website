@@ -2,6 +2,9 @@ from fastapi import APIRouter, Depends
 
 from app.api.v1.attendance import router as attendance_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.payroll import router as payroll_router
+from app.api.v1.payslips import router as payslips_router
+from app.api.v1.reports import router as reports_router
 from app.api.v1.workforce import router as workforce_router
 from app.core.database import ReadinessChecker, get_readiness_checker
 from app.core.errors import DomainError
@@ -28,6 +31,9 @@ def readiness(
 router.include_router(auth_router)
 router.include_router(workforce_router)
 router.include_router(attendance_router)
+router.include_router(payroll_router)
+router.include_router(payslips_router)
+router.include_router(reports_router)
 
 
 @router.get("/me", response_model=CurrentUser, tags=["auth"])

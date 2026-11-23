@@ -11,7 +11,10 @@ import AttendanceRecords from './AttendanceRecords';
 import StoreQRStation from './StoreQRStation';
 import TargetPunchCard from './TargetPunchCard';
 import TargetAttendanceHistory from './TargetAttendanceHistory';
+import TargetAttendanceDays from './TargetAttendanceDays';
 import { config } from '../../lib/config';
+
+const NOOP_LOADER = () => Promise.resolve(null);
 
 export default function LiveAttendance({ role, home = false }) {
   const { session } = useAuth();
@@ -20,9 +23,7 @@ export default function LiveAttendance({ role, home = false }) {
     config.apiBaseUrl && (!config.supabaseUrl || config.sessionSource === 'api'),
   );
 
-  const workspace = useRemoteData(
-    isTargetApi ? () => Promise.resolve(null) : loadAttendanceWorkspace,
-  );
+  const workspace = useRemoteData(isTargetApi ? NOOP_LOADER : loadAttendanceWorkspace);
   const own = role === 'employee';
 
   if (isTargetApi) {
@@ -52,11 +53,22 @@ export default function LiveAttendance({ role, home = false }) {
               storeId={storeId}
               onPunchSuccess={() => setRefreshTrigger((prev) => prev + 1)}
             />
+            <TargetAttendanceDays role="employee" storeId={storeId} />
             <TargetAttendanceHistory refreshTrigger={refreshTrigger} />
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <StoreQRStation storeId={storeId} />
+            <TargetAttendanceDays
+              role={
+                role === 'supervisor'
+                  ? 'store_admin'
+                  : role === 'hr'
+                    ? 'hr_payroll'
+                    : role || 'store_admin'
+              }
+              storeId={storeId}
+            />
             <TargetAttendanceHistory storeId={storeId} refreshTrigger={refreshTrigger} />
           </div>
         )}

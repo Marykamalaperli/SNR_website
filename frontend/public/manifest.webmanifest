@@ -1,0 +1,20 @@
+{
+  "name": "SNR NEST Workforce Workspace",
+  "short_name": "SNR NEST",
+  "description": "Deterministic attendance, workforce management, and private payslips workspace.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#FFF8F0",
+  "background_color": "#FFF8F0",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

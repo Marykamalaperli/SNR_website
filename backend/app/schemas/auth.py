@@ -7,7 +7,7 @@ RoleName = Literal["employee", "store_admin", "hr_payroll", "system_admin", "aud
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=320)
     password: str = Field(min_length=8, max_length=128)
 
 

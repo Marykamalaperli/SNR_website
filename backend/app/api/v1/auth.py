@@ -17,7 +17,7 @@ def set_session_cookies(response: Response, issued: IssuedSession, settings: Set
         "httponly": True,
         "secure": settings.session_cookie_secure,
         "samesite": "lax",
-        "path": "/api/v1",
+        "path": "/",
     }
     response.set_cookie(
         settings.access_cookie_name,
@@ -35,6 +35,7 @@ def set_session_cookies(response: Response, issued: IssuedSession, settings: Set
 
 def clear_session_cookies(response: Response, settings: Settings) -> None:
     for name in (settings.access_cookie_name, settings.refresh_cookie_name):
+        response.delete_cookie(name, path="/", secure=settings.session_cookie_secure)
         response.delete_cookie(name, path="/api/v1", secure=settings.session_cookie_secure)
 
 

@@ -1,4 +1,26 @@
--r requirements-runtime.txt
-httpx==0.28.1
-pytest==9.0.2
-ruff==0.15.7
+# SNR NEST Backend Requirements
+# Core API & Web Framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+watchfiles>=1.0.0
+
+# Validation & Settings
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
+email-validator>=2.2.0
+
+# Database & ORM
+SQLAlchemy>=2.0.36
+alembic>=1.14.0
+psycopg[binary]>=3.2.0
+
+# Security & Password Hashing
+argon2-cffi>=23.1.0
+
+# Environment Management
+python-dotenv>=1.0.1
+
+# Testing & Development
+pytest>=8.3.0
+httpx>=0.28.0
+ruff>=0.8.0

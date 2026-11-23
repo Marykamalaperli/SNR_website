@@ -211,7 +211,10 @@ export default function TargetPunchCard({
       await uploadPhotoBlob(intent.upload_url, photoBlob);
 
       // 3. Submit attendance event with an idempotency key
-      const idempotencyKey = crypto.randomUUID();
+      const idempotencyKey =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : 'punch-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now();
       const recorded = await recordAttendanceEvent(
         {
           challenge_token: challengeToken.trim(),

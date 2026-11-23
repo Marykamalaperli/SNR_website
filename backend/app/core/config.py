@@ -1,23 +1,38 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+_BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+_ENV_FILES = (_BACKEND_DIR / ".env", Path(".env"))
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
+    model_config = SettingsConfigDict(
+        env_file=_ENV_FILES, extra="ignore", hide_input_in_errors=True
+    )
 
     app_env: Literal["development", "test", "production"] = "development"
-    cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5175",
+        "http://localhost:5176",
+        "http://127.0.0.1:5176",
+    ]
     allowed_hosts: list[str] = ["localhost", "127.0.0.1", "testserver"]
     database_url: str = ""
     access_cookie_name: str = "snr_access"
     refresh_cookie_name: str = "snr_refresh"
     access_session_minutes: int = 15
     refresh_session_days: int = 30
-    session_cookie_secure: bool = True
+    session_cookie_secure: bool = False
     qr_signing_secret: str = "snr-nest-dev-qr-signing-secret-key-32-chars-min"
     qr_challenge_lifetime_seconds: int = 60
     evidence_bucket_name: str = "snr-nest-evidence"

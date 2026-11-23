@@ -30,18 +30,19 @@ export default function LoginPage() {
         : '/attendance'
       : null;
   const [visible, setVisible] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const email = String(data.get('email') || '').trim();
-    const password = String(data.get('password') || '');
+    const emailVal = email.trim();
+    const passwordVal = password;
     const next = {};
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'Enter a valid email address.';
-    if (!password) next.password = 'Enter your password.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) next.email = 'Enter a valid email address.';
+    if (!passwordVal) next.password = 'Enter your password.';
     setErrors(next);
     setMessage('');
     if (Object.keys(next).length) {
@@ -50,7 +51,7 @@ export default function LoginPage() {
     }
     setSubmitting(true);
     try {
-      const confirmed = await signIn(email, password);
+      const confirmed = await signIn(emailVal, passwordVal);
       navigate(
         cardReturn ||
           (confirmed.role === 'employee' && attendanceReturn
@@ -109,6 +110,8 @@ export default function LoginPage() {
           type="email"
           autoComplete="username"
           placeholder="you@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           error={errors.email}
           required
         />
@@ -121,6 +124,8 @@ export default function LoginPage() {
                 type={visible ? 'text' : 'password'}
                 autoComplete="current-password"
                 placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
               <button
@@ -146,6 +151,53 @@ export default function LoginPage() {
         </Button>
       </form>
       <p className="login-help">Need access? Contact your HR administrator.</p>
+      {import.meta.env.DEV && (
+        <div style={{ marginTop: '1.25rem', padding: '1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.85rem' }}>
+          <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: '#334155' }}>Demo / Dev Quick-Fill Accounts:</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <button
+              type="button"
+              className="button button-sm button-secondary"
+              onClick={() => {
+                setEmail('system_admin@dev.example.org');
+                setPassword('test-seed-password-123!');
+              }}
+            >
+              System Admin
+            </button>
+            <button
+              type="button"
+              className="button button-sm button-secondary"
+              onClick={() => {
+                setEmail('store_admin@dev.example.org');
+                setPassword('test-seed-password-123!');
+              }}
+            >
+              Store Admin
+            </button>
+            <button
+              type="button"
+              className="button button-sm button-secondary"
+              onClick={() => {
+                setEmail('employee@dev.example.org');
+                setPassword('test-seed-password-123!');
+              }}
+            >
+              Employee
+            </button>
+            <button
+              type="button"
+              className="button button-sm button-secondary"
+              onClick={() => {
+                setEmail('hr_payroll@dev.example.org');
+                setPassword('test-seed-password-123!');
+              }}
+            >
+              HR / Payroll
+            </button>
+          </div>
+        </div>
+      )}
       {import.meta.env.DEV && (
         <aside className="preview-links" aria-label="Development previews">
           <span className="eyebrow">DESIGN PREVIEW · SAMPLE DATA ONLY</span>
