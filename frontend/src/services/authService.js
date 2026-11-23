@@ -28,7 +28,7 @@ export async function getAuthClient() {
   return clientPromise;
 }
 
-const workspaceByRole = { employee: '/me', supervisor: '/team', hr: '/hr' };
+const workspaceByRole = { employee: '/me', supervisor: '/team', hr: '/hr', admin: '/admin/stores' };
 
 export async function confirmSession(token, client = null) {
   client ||= await getAuthClient();
@@ -84,14 +84,21 @@ export async function clearAuthSession(client) {
 export function mapUserToSession(me) {
   const scope = me.scopes?.[0] || {};
   let uiRole = 'employee';
-  if (me.scopes?.some((s) => ['store_admin', 'supervisor'].includes(s.role))) {
+  if (me.scopes?.some((s) => s.role === 'system_admin')) {
+    uiRole = 'admin';
+  } else if (me.scopes?.some((s) => ['store_admin', 'supervisor'].includes(s.role))) {
     uiRole = 'supervisor';
   } else if (
-    me.scopes?.some((s) => ['hr_payroll', 'system_admin', 'auditor', 'hr'].includes(s.role))
+    me.scopes?.some((s) => ['hr_payroll', 'auditor', 'hr'].includes(s.role))
   ) {
     uiRole = 'hr';
   }
-  const workspaceMapping = { employee: '/me', supervisor: '/team', hr: '/hr' };
+  const workspaceMapping = {
+    employee: '/me',
+    supervisor: '/team',
+    hr: '/hr',
+    admin: '/admin/stores',
+  };
   return {
     user_id: me.user_id,
     email: me.email,

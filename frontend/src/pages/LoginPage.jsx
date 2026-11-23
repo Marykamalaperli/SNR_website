@@ -159,11 +159,11 @@ export default function LoginPage() {
               type="button"
               className="button button-sm button-secondary"
               onClick={() => {
-                setEmail('system_admin@dev.example.org');
+                setEmail('super_admin@dev.example.org');
                 setPassword('test-seed-password-123!');
               }}
             >
-              System Admin
+              Super Admin
             </button>
             <button
               type="button"

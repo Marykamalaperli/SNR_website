@@ -12,17 +12,33 @@ import { ErrorState, LoadingState } from '../../components/common/States';
 export default function HrDashboard() {
   const { session } = useAuth();
   const { data, loading, error, reload } = useRemoteData(loadOrganization);
+  const isSuperAdmin = Boolean(
+    session?.actual_role === 'system_admin' ||
+      session?.role === 'system_admin' ||
+      session?.scopes?.some((s) => s.role === 'system_admin'),
+  );
   return (
     <>
       <PageHeader
-        eyebrow="PEOPLE WORKSPACE"
-        title={`Welcome, ${session.display_name}.`}
-        description={`A home for your people at ${session.organization_name || 'your organization'}.`}
+        eyebrow={isSuperAdmin ? 'SUPER ADMIN WORKSPACE' : 'PEOPLE WORKSPACE'}
+        title={`Welcome, ${session.display_name || (isSuperAdmin ? 'Super Admin' : 'Admin')}.`}
+        description={
+          isSuperAdmin
+            ? 'Organization-wide management: stores, store managers, and workforce operations.'
+            : `A home for your people at ${session.organization_name || 'your organization'}.`
+        }
         action={
-          <Button to="/hr/employees">
-            Open directory
-            <ArrowRight size={17} aria-hidden="true" />
-          </Button>
+          isSuperAdmin ? (
+            <Button to="/admin/stores">
+              Manage Stores & Sites
+              <ArrowRight size={17} aria-hidden="true" />
+            </Button>
+          ) : (
+            <Button to="/hr/employees">
+              Open directory
+              <ArrowRight size={17} aria-hidden="true" />
+            </Button>
+          )
         }
       />
       {loading ? (

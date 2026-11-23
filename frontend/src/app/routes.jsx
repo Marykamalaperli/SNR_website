@@ -38,10 +38,13 @@ export default function AppRoutes() {
         <Route element={<AuthLayout />}>
           <Route path="login" element={<LoginPage />} />
         </Route>
+        <Route path="hr/sites" element={<Navigate to="/admin/stores" replace />} />
+        <Route path="admin" element={<Navigate to="/admin/stores" replace />} />
         {[
           ['employee', 'me'],
           ['supervisor', 'team'],
           ['hr', 'hr'],
+          ['admin', 'admin'],
         ].map(([role, path]) => (
           <Route key={role} element={<ProtectedRoute role={role} />}>
             <Route path={`${path}/*`} element={<ProductionWorkspace role={role} />} />

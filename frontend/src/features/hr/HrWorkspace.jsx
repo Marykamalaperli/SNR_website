@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import {
   ArrowRight,
   Building2,
@@ -20,6 +20,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import CorrectionList from '../corrections/CorrectionList';
 import DocumentsPanel from '../documents/DocumentsPanel';
 import TargetPayrollRuns from '../payroll/TargetPayrollRuns';
+import TargetStoreManagement from '../workforce/TargetStoreManagement';
 import { downloadSampleReport } from '../../services/exportService';
 
 export default function HrWorkspace({ section }) {
@@ -87,48 +88,7 @@ export default function HrWorkspace({ section }) {
         <TargetPayrollRuns />
       </>
     );
-  if (section === 'sites')
-    return (
-      <>
-        <PageHeader
-          eyebrow="PLACES & PLANS"
-          title="Sites & shifts"
-          description="Where your people work, and when their day begins."
-        />
-        <div className="document-grid">
-          {sites.map((site) => (
-            <Card className="site-card" key={site}>
-              <span className="feature-icon tone-orange">
-                <Building2 />
-              </span>
-              <h2>{site}</h2>
-              <p className="muted">
-                {data.employees.filter((p) => p.site === site).length} assigned sample employees
-              </p>
-              <div className="site-shift">
-                <CalendarDays size={18} />
-                <span>
-                  General · 09:00–18:00
-                  <br />
-                  <small>Monday–Friday · Asia/Kolkata</small>
-                </span>
-              </div>
-              {site === 'Bengaluru' && (
-                <div className="site-shift">
-                  <CalendarDays size={18} />
-                  <span>
-                    Late start · 10:00–19:00
-                    <br />
-                    <small>Engineering · Asia/Kolkata</small>
-                  </span>
-                </div>
-              )}
-              <StatusBadge tone="positive">Active</StatusBadge>
-            </Card>
-          ))}
-        </div>
-      </>
-    );
+  if (section === 'sites') return <Navigate to="/admin/stores" replace />;
   if (section === 'documents')
     return (
       <>

@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.errors import DomainError
-from app.models.identity import Employee, Store
+from app.models.identity import Employee, RoleAssignment, Store, User
 from app.models.workforce import Shift, ShiftAssignment
 from app.schemas.auth import Scope
 from app.schemas.workforce import (
@@ -14,6 +14,9 @@ from app.schemas.workforce import (
     EmployeeUpdate,
     ShiftCreate,
     ShiftUpdate,
+    StoreAdminCreate,
+    StoreCreate,
+    StoreUpdate,
 )
 
 
@@ -325,3 +328,205 @@ class AssignmentService:
         self.db.commit()
         self.db.refresh(assignment)
         return assignment
+
+
+# --- Store Service ---
+
+
+class StoreService:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list_stores(
+        self,
+        scope: Scope,
+        organization_id: UUID | None = None,
+        active_only: bool = False,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> tuple[list[Store], int]:
+        query = select(Store)
+        if scope.role == "system_admin":
+            if organization_id is not None:
+                query = query.where(Store.organization_id == organization_id)
+        else:
+            query = query.where(Store.organization_id == scope.organization_id)
+            if scope.store_id is not None:
+                query = query.where(Store.id == scope.store_id)
+
+        if active_only:
+            query = query.where(Store.active.is_(True))
+
+        total = self.db.scalar(select(func.count()).select_from(query.subquery())) or 0
+        items = list(
+            self.db.scalars(
+                query.order_by(Store.code.asc()).offset(offset).limit(limit)
+            ).all()
+        )
+        return items, total
+
+    def get_store(self, store_id: UUID, scope: Scope) -> Store:
+        return _store_in_scope(self.db, store_id, scope)
+
+    def create_store(self, payload: StoreCreate, organization_id: UUID, scope: Scope) -> Store:
+        if scope.role != "system_admin":
+            raise DomainError("forbidden", "Only system administrators can create stores.", 403)
+
+        existing = self.db.scalar(
+            select(Store).where(
+                Store.organization_id == organization_id,
+                Store.code == payload.code.strip().upper(),
+            )
+        )
+        if existing:
+            raise DomainError(
+                "duplicate_store_code",
+                f"A store with code '{payload.code.strip().upper()}' already exists.",
+                409,
+            )
+
+        now = datetime.now(UTC)
+        store = Store(
+            organization_id=organization_id,
+            code=payload.code.strip().upper(),
+            name=payload.name.strip(),
+            timezone=payload.timezone.strip(),
+            latitude=payload.latitude,
+            longitude=payload.longitude,
+            map_url=payload.map_url.strip() if payload.map_url else None,
+            radius_meters=payload.radius_meters or 50,
+            active=True,
+            created_at=now,
+        )
+        self.db.add(store)
+        self.db.commit()
+        self.db.refresh(store)
+        return store
+
+    def create_store_admin(self, payload: StoreAdminCreate, scope: Scope) -> dict:
+        if scope.role != "system_admin":
+            raise DomainError(
+                "forbidden", "Only system administrators can create store admin users.", 403
+            )
+
+        store = self.db.get(Store, payload.store_id)
+        if not store:
+            raise DomainError("not_found", "Store not found.", 404)
+
+        email_clean = payload.email.strip().lower()
+        now = datetime.now(UTC)
+
+        user = self.db.scalar(select(User).where(User.email == email_clean))
+        if user:
+            existing_ra = self.db.scalar(
+                select(RoleAssignment).where(
+                    RoleAssignment.user_id == user.id,
+                    RoleAssignment.role == "store_admin",
+                    RoleAssignment.store_id == store.id,
+                )
+            )
+            if existing_ra:
+                raise DomainError(
+                    "duplicate_assignment",
+                    f"User {email_clean} is already a store admin for {store.name}.",
+                    409,
+                )
+        else:
+            from app.services.auth import hash_password
+
+            user = User(
+                email=email_clean,
+                display_name=payload.display_name.strip(),
+                password_hash=hash_password(payload.password),
+                status="active",
+                token_version=1,
+                created_at=now,
+                updated_at=now,
+            )
+            self.db.add(user)
+            self.db.flush()
+
+        role_assignment = RoleAssignment(
+            user_id=user.id,
+            role="store_admin",
+            organization_id=store.organization_id,
+            store_id=store.id,
+            active=True,
+            created_at=now,
+        )
+        self.db.add(role_assignment)
+        self.db.commit()
+        self.db.refresh(role_assignment)
+
+        return {
+            "id": role_assignment.id,
+            "user_id": user.id,
+            "email": user.email,
+            "display_name": user.display_name,
+            "store_id": store.id,
+            "store_name": store.name,
+            "role": "store_admin",
+            "active": role_assignment.active,
+            "created_at": role_assignment.created_at,
+        }
+
+    def list_store_admins(self, store_id: UUID, scope: Scope) -> tuple[list[dict], int]:
+        store = _store_in_scope(self.db, store_id, scope)
+        query = (
+            select(RoleAssignment, User)
+            .join(User, RoleAssignment.user_id == User.id)
+            .where(
+                RoleAssignment.store_id == store_id,
+                RoleAssignment.role == "store_admin",
+            )
+        )
+        results = self.db.execute(query).all()
+        items = [
+            {
+                "id": ra.id,
+                "user_id": u.id,
+                "email": u.email,
+                "display_name": u.display_name,
+                "store_id": store.id,
+                "store_name": store.name,
+                "role": ra.role,
+                "active": ra.active,
+                "created_at": ra.created_at,
+            }
+            for ra, u in results
+        ]
+        return items, len(items)
+
+
+
+
+
+    def update_store(self, store_id: UUID, payload: StoreUpdate, scope: Scope) -> Store:
+        if scope.role != "system_admin":
+            raise DomainError("forbidden", "Only system administrators can update stores.", 403)
+
+        store = _store_in_scope(self.db, store_id, scope)
+
+        if payload.name is not None:
+            store.name = payload.name.strip()
+        if payload.timezone is not None:
+            store.timezone = payload.timezone.strip()
+        if payload.latitude is not None:
+            store.latitude = payload.latitude
+        if payload.longitude is not None:
+            store.longitude = payload.longitude
+        if payload.map_url is not None:
+            store.map_url = payload.map_url.strip() if payload.map_url else None
+        if payload.radius_meters is not None:
+            store.radius_meters = payload.radius_meters
+        if payload.active is not None:
+            store.active = payload.active
+
+        self.db.commit()
+        self.db.refresh(store)
+        return store
+
+
+
+
+

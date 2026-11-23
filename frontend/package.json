@@ -28,6 +28,8 @@
     "@simplewebauthn/browser": "13.2.2",
     "@simplewebauthn/server": "13.3.3",
     "@supabase/supabase-js": "2.119.0",
+    "@types/leaflet": "^1.9.22",
+    "leaflet": "^1.9.4",
     "lucide-react": "1.69.0",
     "qrcode": "1.5.4",
     "react": "19.3.1",

@@ -34,6 +34,7 @@ source pack or grant permission to deploy, provision, migrate data or change DNS
 | Reports engine & PWA polish (Day 8) | Implemented and locally validated | Branch `agy/attendance-backend`; CWE-1236 CSV injection sanitization, streaming attendance & payroll CSV exports, `manifest.webmanifest` and service worker caching rules strictly excluding private API/evidence paths, and full integration/unit test suites |
 | AWS staging deployment & server operations (Day 9) | Implemented and locally validated | Branch `agy/attendance-backend`; `compose.prod.yaml` with private network PostgreSQL isolation (no host port 5432 exposure), Caddy reverse proxy with baseline security headers (HSTS, nosniff, DENY), AES-256 encrypted database backup script to S3 BackupBucket, host UFW hardening script, GitHub Actions OIDC staging deployment workflow (`deploy-aws.yml`), and automated infrastructure test suite (`scripts/server-deploy.test.mjs`) |
 | Hardening, UAT and pilot release (Day 10) | Implemented and locally validated | Branch `agy/attendance-backend`; Scope frozen, complete 5-role negative/positive authorization matrix & multi-store UAT test suite (`test_day10_hardening_uat.py`), backup-restore integrity drill (`test_day10_backup_restore.py`), operational documentation (`docs/PILOT_RUNBOOK.md`, `docs/ROLLBACK_PLAN.md`, `docs/DATA_RETENTION_CHECKLIST.md`, `docs/KNOWN_LIMITATIONS.md`, `docs/PILOT_SIGNOFF.md`), and full automated test suite pass across all tiers |
+| Super Admin Store & Store Admin Management | Implemented and locally validated | Branch `agy/attendance-backend`; Super Admin (`system_admin`) organization-wide store CRUD API (`/api/v1/stores`), store-scoped Store Admin provisioning (`/api/v1/stores/{id}/admins`), duplicate code prevention (409), non-admin 403 authorization enforcement, `TargetStoreManagement.tsx` component replacing mock `/hr/sites` cards, and comprehensive integration & Vitest suites |
 
 ## AWS staging boundary
 
@@ -118,3 +119,20 @@ At the end of every work package, update this file in the same pull request with
 
 Never record planned behavior as operational, and never include credentials,
 tokens, signed URLs, personal data or private request content.
+
+## Super Admin Store Management & Google Maps Location Picker (November 2026)
+
+- **Dedicated Admin Workspace Routing & URL Migration:**
+  - Migrated store management routes from legacy `/hr/sites` to canonical `/admin/stores`.
+  - Added redirect from `/hr/sites` and `/admin` directly to `/admin/stores`.
+  - Super Admin (`system_admin` / `admin`) is isolated with dedicated workspace headers (`SUPER ADMIN WORKSPACE`), breadcrumb (`Workspace / Super Admin`), and `SA` avatar initials.
+  - Removed `sites` link from HR navigation so store provisioning is exclusively governed by Super Admin.
+
+- **Interactive Google Maps Store Location Chooser:**
+  - Integrated `GoogleMapLocationPicker.tsx` component into store creation and edit modals.
+  - Interactive click-anywhere pin-drop and drag-to-position on map.
+  - Real-time Nominatim place/address search to fly directly to landmarks or cities.
+  - Direct Google Maps URL and share link parsing (`parseStoreMapLink`) for desktop and mobile links.
+  - Geofence radius circle overlay visually demonstrating allowed attendance radius (e.g. ±50m).
+  - Validation requires store location to be chosen before creation.
+

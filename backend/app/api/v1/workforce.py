@@ -2,9 +2,11 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db_session
+from app.core.errors import DomainError
 from app.core.security import require_current_user, require_role, require_scope
 from app.schemas.auth import CurrentUser
 from app.schemas.workforce import (
@@ -19,11 +21,25 @@ from app.schemas.workforce import (
     ShiftListOut,
     ShiftOut,
     ShiftUpdate,
+    StoreAdminCreate,
+    StoreAdminListOut,
+    StoreAdminOut,
+    StoreCreate,
+    StoreListOut,
+    StoreOut,
+    StoreUpdate,
 )
-from app.services.workforce import AssignmentService, EmployeeService, ShiftService
+from app.services.workforce import (
+    AssignmentService,
+    EmployeeService,
+    ShiftService,
+    StoreService,
+)
 
 router = APIRouter(tags=["workforce"])
 
+STORE_WRITERS = {"system_admin"}
+STORE_READERS = {"system_admin", "hr_payroll", "store_admin", "auditor"}
 EMPLOYEE_WRITERS = {"store_admin", "hr_payroll", "system_admin"}
 EMPLOYEE_READERS = {"store_admin", "hr_payroll", "system_admin", "auditor"}
 SHIFT_WRITERS = {"store_admin", "system_admin"}
@@ -226,3 +242,117 @@ def create_assignment(
         payload, organization_id, scope, created_by=user.user_id
     )
     return AssignmentOut.model_validate(assignment)
+
+
+# --- Store endpoints ---
+
+
+@router.get("/stores", response_model=StoreListOut)
+def list_stores(
+    current: Annotated[CurrentUser, Depends(require_current_user)],
+    db: Annotated[Session, Depends(get_db_session)],
+    organization_id: UUID | None = None,
+    active_only: bool = False,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+) -> StoreListOut:
+    user = require_role(current, STORE_READERS)
+    scope = user.scopes[0]
+    for s in user.scopes:
+        if s.role in STORE_READERS:
+            scope = s
+            break
+    items, total = StoreService(db).list_stores(
+        scope, organization_id=organization_id, active_only=active_only, offset=offset, limit=limit
+    )
+    return StoreListOut(items=[StoreOut.model_validate(s) for s in items], total=total)
+
+
+@router.get("/stores/{store_id}", response_model=StoreOut)
+def get_store(
+    store_id: UUID,
+    current: Annotated[CurrentUser, Depends(require_current_user)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> StoreOut:
+    user = require_role(current, STORE_READERS)
+    scope = user.scopes[0]
+    for s in user.scopes:
+        if s.role in STORE_READERS:
+            scope = s
+            break
+    store = StoreService(db).get_store(store_id, scope)
+    return StoreOut.model_validate(store)
+
+
+@router.post("/stores", response_model=StoreOut, status_code=201)
+def create_store(
+    payload: StoreCreate,
+    current: Annotated[CurrentUser, Depends(require_current_user)],
+    db: Annotated[Session, Depends(get_db_session)],
+    organization_id: UUID | None = Query(None),
+) -> StoreOut:
+    user = require_role(current, STORE_WRITERS)
+    target_org_id = organization_id
+    if target_org_id is None:
+        for s in user.scopes:
+            if s.organization_id is not None:
+                target_org_id = s.organization_id
+                break
+    if target_org_id is None:
+        from app.models.identity import Organization
+
+        first_org = db.scalar(select(Organization.id).limit(1))
+        if not first_org:
+            raise DomainError(
+                "missing_organization", "An organization must exist before creating a store.", 400
+            )
+        target_org_id = first_org
+
+    scope = user.scopes[0]
+    store = StoreService(db).create_store(payload, target_org_id, scope)
+    return StoreOut.model_validate(store)
+
+
+@router.patch("/stores/{store_id}", response_model=StoreOut)
+def update_store(
+    store_id: UUID,
+    payload: StoreUpdate,
+    current: Annotated[CurrentUser, Depends(require_current_user)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> StoreOut:
+    user = require_role(current, STORE_WRITERS)
+    scope = user.scopes[0]
+    store = StoreService(db).update_store(store_id, payload, scope)
+    return StoreOut.model_validate(store)
+
+
+@router.post("/stores/{store_id}/admins", response_model=StoreAdminOut, status_code=201)
+def create_store_admin(
+    store_id: UUID,
+    payload: StoreAdminCreate,
+    current: Annotated[CurrentUser, Depends(require_current_user)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> StoreAdminOut:
+    user = require_role(current, STORE_WRITERS)
+    scope = user.scopes[0]
+    payload.store_id = store_id
+    admin_dict = StoreService(db).create_store_admin(payload, scope)
+    return StoreAdminOut.model_validate(admin_dict)
+
+
+@router.get("/stores/{store_id}/admins", response_model=StoreAdminListOut)
+def list_store_admins(
+    store_id: UUID,
+    current: Annotated[CurrentUser, Depends(require_current_user)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> StoreAdminListOut:
+    user = require_role(current, STORE_READERS)
+    scope = user.scopes[0]
+    for s in user.scopes:
+        if s.role in STORE_READERS:
+            scope = s
+            break
+    items, total = StoreService(db).list_store_admins(store_id, scope)
+    return StoreAdminListOut(items=[StoreAdminOut.model_validate(a) for a in items], total=total)
+
+

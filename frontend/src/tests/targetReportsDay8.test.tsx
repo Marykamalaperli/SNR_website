@@ -58,7 +58,7 @@ describe('Day 8 Reports Engine & PWA Polish UI', () => {
           is_overtime: false,
           status: 'present',
           version: 1,
-        },
+        } as any,
       ],
       total: 1,
     });
@@ -92,7 +92,7 @@ describe('Day 8 Reports Engine & PWA Polish UI', () => {
           is_overtime: false,
           status: 'present',
           version: 1,
-        },
+        } as any,
       ],
       total: 1,
     });
@@ -105,7 +105,7 @@ describe('Day 8 Reports Engine & PWA Polish UI', () => {
   });
 
   it('renders Export CSV button on selected locked payroll run with watermark notice', async () => {
-    const mockRun: targetPayrollService.PayrollRun = {
+    const mockRun: any = {
       id: 'run-1234',
       organization_id: 'org-1',
       pay_period_id: 'period-1',

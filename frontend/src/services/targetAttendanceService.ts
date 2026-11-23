@@ -248,7 +248,6 @@ export function getAttendanceReportCsvUrl(params: {
 }
 
 export async function uploadPhotoBlob(uploadUrl: string, blob: Blob): Promise<void> {
-
   const baseUrl = getApiBaseUrl();
   const fullUrl = uploadUrl.startsWith('http') ? uploadUrl : `${baseUrl}${uploadUrl}`;
   try {
@@ -269,7 +268,16 @@ export async function uploadPhotoBlob(uploadUrl: string, blob: Blob): Promise<vo
       throw new Error(message);
     }
   } catch (err: unknown) {
-    if (err instanceof Error) throw err;
-    throw new Error('Failed to upload attendance photo. Please try again.');
+    if (err instanceof Error) {
+      if (err.message === 'Failed to fetch') {
+        throw new Error(
+          `Network error connecting to API server (${fullUrl}). Please verify backend server connectivity.`,
+        );
+      }
+      throw err;
+    }
+    const rawMsg =
+      typeof err === 'object' && err && 'message' in err ? String((err as { message: unknown }).message) : '';
+    throw new Error(rawMsg || 'Failed to upload attendance photo. Please try again.');
   }
 }

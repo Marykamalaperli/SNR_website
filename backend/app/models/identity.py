@@ -6,9 +6,11 @@ from sqlalchemy import (
     CheckConstraint,
     Date,
     DateTime,
+    Float,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     String,
     UniqueConstraint,
 )
@@ -48,6 +50,10 @@ class Store(Base):
     code: Mapped[str] = mapped_column(String(32))
     name: Mapped[str] = mapped_column(String(160))
     timezone: Mapped[str] = mapped_column(String(64))
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    map_url: Mapped[str | None] = mapped_column(String(4096), nullable=True)
+    radius_meters: Mapped[int | None] = mapped_column(Integer, nullable=True, default=50)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 

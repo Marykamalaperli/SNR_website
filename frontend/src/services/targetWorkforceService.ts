@@ -75,6 +75,118 @@ export interface CreateAssignmentPayload {
   effective_until: string;
 }
 
+export interface Store {
+  id: string;
+  organization_id: string;
+  code: string;
+  name: string;
+  timezone: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  map_url?: string | null;
+  radius_meters?: number | null;
+  active: boolean;
+  created_at: string;
+}
+
+export interface StoreListResponse {
+  items: Store[];
+  total: number;
+}
+
+export interface StoreAdmin {
+  id: string;
+  user_id: string;
+  email: string;
+  display_name: string;
+  store_id: string;
+  store_name: string;
+  role: string;
+  active: boolean;
+  created_at: string;
+}
+
+export interface StoreAdminListResponse {
+  items: StoreAdmin[];
+  total: number;
+}
+
+export interface CreateStorePayload {
+  code: string;
+  name: string;
+  timezone?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  map_url?: string | null;
+  radius_meters?: number | null;
+}
+
+export interface CreateStoreAdminPayload {
+  email: string;
+  display_name: string;
+  password: string;
+}
+
+export async function listStores(
+  params: {
+    organization_id?: string;
+    active_only?: boolean;
+    offset?: number;
+    limit?: number;
+  } = {},
+): Promise<StoreListResponse> {
+  const query = new URLSearchParams();
+  if (params.organization_id) query.set('organization_id', params.organization_id);
+  if (params.active_only !== undefined) query.set('active_only', String(params.active_only));
+  if (params.offset !== undefined) query.set('offset', String(params.offset));
+  if (params.limit !== undefined) query.set('limit', String(params.limit));
+
+  const qs = query.toString();
+  return apiRequest(`/api/v1/stores${qs ? `?${qs}` : ''}`, { method: 'GET' });
+}
+
+export async function getStore(storeId: string): Promise<Store> {
+  return apiRequest(`/api/v1/stores/${storeId}`, { method: 'GET' });
+}
+
+export async function createStore(
+  payload: CreateStorePayload,
+  organizationId?: string,
+): Promise<Store> {
+  const query = organizationId ? `?organization_id=${encodeURIComponent(organizationId)}` : '';
+  return apiRequest(`/api/v1/stores${query}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateStore(
+  storeId: string,
+  payload: Partial<CreateStorePayload> & { active?: boolean },
+): Promise<Store> {
+  return apiRequest(`/api/v1/stores/${storeId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listStoreAdmins(storeId: string): Promise<StoreAdminListResponse> {
+  return apiRequest(`/api/v1/stores/${storeId}/admins`, { method: 'GET' });
+}
+
+export async function createStoreAdmin(
+  storeId: string,
+  payload: CreateStoreAdminPayload,
+): Promise<StoreAdmin> {
+  return apiRequest(`/api/v1/stores/${storeId}/admins`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function listEmployees(
   params: {
     store_id?: string;

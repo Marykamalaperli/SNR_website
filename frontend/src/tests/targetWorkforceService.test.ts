@@ -10,6 +10,12 @@ import {
   createShift,
   listAssignments,
   createAssignment,
+  listStores,
+  getStore,
+  createStore,
+  updateStore,
+  listStoreAdmins,
+  createStoreAdmin,
 } from '../services/targetWorkforceService';
 
 vi.mock('../lib/apiClient', () => ({
@@ -110,6 +116,46 @@ describe('targetWorkforceService', () => {
     await createAssignment(payload, 'org-1');
 
     expect(apiRequest).toHaveBeenCalledWith('/api/v1/assignments?organization_id=org-1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  });
+
+  it('calls listStores with parameters', async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce({ items: [], total: 0 });
+
+    await listStores({ active_only: true, limit: 20 });
+    expect(apiRequest).toHaveBeenCalledWith('/api/v1/stores?active_only=true&limit=20', {
+      method: 'GET',
+    });
+  });
+
+  it('calls createStore with payload', async () => {
+    const payload = { code: 'HYD-01', name: 'Hyderabad Central', timezone: 'Asia/Kolkata' };
+    vi.mocked(apiRequest).mockResolvedValueOnce({ id: 's-1', ...payload, active: true });
+
+    await createStore(payload);
+    expect(apiRequest).toHaveBeenCalledWith('/api/v1/stores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  });
+
+  it('calls listStoreAdmins for a store', async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce({ items: [], total: 0 });
+
+    await listStoreAdmins('s-1');
+    expect(apiRequest).toHaveBeenCalledWith('/api/v1/stores/s-1/admins', { method: 'GET' });
+  });
+
+  it('calls createStoreAdmin with payload', async () => {
+    const payload = { email: 'mgr@example.org', display_name: 'Store Mgr', password: 'Password123!' };
+    vi.mocked(apiRequest).mockResolvedValueOnce({ id: 'ra-1', ...payload });
+
+    await createStoreAdmin('s-1', payload);
+    expect(apiRequest).toHaveBeenCalledWith('/api/v1/stores/s-1/admins', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

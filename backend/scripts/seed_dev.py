@@ -113,6 +113,45 @@ def main() -> None:
                             created_at=now,
                         )
                     )
+        # Also provision super_admin alias for developer convenience
+        super_admin_id = UUID("30000000-0000-4000-8000-000000000009")
+        super_admin_user = db.get(User, super_admin_id)
+        if super_admin_user:
+            super_admin_user.email = "super_admin@dev.example.org"
+            super_admin_user.password_hash = hash_password(password)
+            super_admin_user.status = "active"
+            super_admin_user.display_name = "Super Admin"
+            super_admin_user.updated_at = now
+        else:
+            db.add(
+                User(
+                    id=super_admin_id,
+                    email="super_admin@dev.example.org",
+                    display_name="Super Admin",
+                    password_hash=hash_password(password),
+                    status="active",
+                    token_version=1,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+            db.flush()
+
+        super_ra_id = UUID("40000000-0000-4000-8000-000000000009")
+        super_ra = db.get(RoleAssignment, super_ra_id)
+        if not super_ra:
+            db.add(
+                RoleAssignment(
+                    id=super_ra_id,
+                    user_id=super_admin_id,
+                    role="system_admin",
+                    organization_id=None,
+                    store_id=None,
+                    active=True,
+                    created_at=now,
+                )
+            )
+
         db.commit()
     print("Created synthetic development identities. Never use them in staging or production.")
 

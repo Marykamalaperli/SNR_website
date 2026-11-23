@@ -1,8 +1,8 @@
-from datetime import date, time
+from datetime import date, datetime, time
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 # --- Employee schemas ---
 
@@ -108,3 +108,73 @@ class AssignmentOut(BaseModel):
 class AssignmentListOut(BaseModel):
     items: list[AssignmentOut]
     total: int
+
+
+# --- Store schemas ---
+
+
+class StoreCreate(BaseModel):
+    code: str = Field(min_length=1, max_length=32, pattern=r"^[A-Za-z0-9_-]+$")
+    name: str = Field(min_length=1, max_length=160)
+    timezone: str = Field(default="Asia/Kolkata", min_length=1, max_length=64)
+    latitude: float | None = Field(default=None, ge=-90.0, le=90.0)
+    longitude: float | None = Field(default=None, ge=-180.0, le=180.0)
+    map_url: str | None = Field(default=None, max_length=4096)
+    radius_meters: int | None = Field(default=50, ge=10, le=5000)
+
+
+class StoreUpdate(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=160)
+    timezone: str | None = Field(None, min_length=1, max_length=64)
+    latitude: float | None = Field(default=None, ge=-90.0, le=90.0)
+    longitude: float | None = Field(default=None, ge=-180.0, le=180.0)
+    map_url: str | None = Field(default=None, max_length=4096)
+    radius_meters: int | None = Field(default=None, ge=10, le=5000)
+    active: bool | None = None
+
+
+class StoreOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    organization_id: UUID
+    code: str
+    name: str
+    timezone: str
+    latitude: float | None = None
+    longitude: float | None = None
+    map_url: str | None = None
+    radius_meters: int | None = 50
+    active: bool
+    created_at: datetime
+
+
+class StoreListOut(BaseModel):
+    items: list[StoreOut]
+    total: int
+
+
+class StoreAdminCreate(BaseModel):
+    store_id: UUID | None = None
+    email: EmailStr
+    display_name: str = Field(min_length=1, max_length=160)
+    password: str = Field(min_length=8, max_length=128)
+
+
+class StoreAdminOut(BaseModel):
+    id: UUID
+    user_id: UUID
+    email: str
+    display_name: str
+    store_id: UUID
+    store_name: str
+    role: str
+    active: bool
+    created_at: datetime
+
+
+class StoreAdminListOut(BaseModel):
+    items: list[StoreAdminOut]
+    total: int
+
+
