@@ -1,6 +1,22 @@
 # SNR NEST - Local Development Setup Guide
 
-This guide explains how to run SNR NEST locally using **Docker only for PostgreSQL**, while running the **FastAPI backend** and **React Vite frontend** natively on your host machine.
+This guide explains how to run SNR NEST locally using **Docker only for PostgreSQL**, while running the **FastAPI backend** and **React Vite frontend** natively on your host machine so you can easily see the console outputs and logs in real time.
+
+---
+
+## ⚡ Quick Start (Windows One-Click)
+
+If Docker Desktop is running, you can launch everything in separate visible console windows immediately:
+
+- **Double-click `start_dev.bat`** (in project root):
+  - Starts PostgreSQL in Docker on port `5432`.
+  - Opens a console window running FastAPI (`http://127.0.0.1:8000`).
+  - Opens a console window running Vite Frontend (`http://localhost:5173`).
+
+Or run individual launchers:
+- **`run_backend.bat`**: Runs FastAPI with live reload in its own console.
+- **`run_frontend.bat`**: Runs Vite dev server in its own console.
+- **`start_db.bat`**: Starts the PostgreSQL Docker container.
 
 ---
 
@@ -204,3 +220,4 @@ npm run build
   ```bash
   docker compose up -d db
   ```
+

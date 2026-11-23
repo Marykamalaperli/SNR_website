@@ -28,6 +28,12 @@ source pack or grant permission to deploy, provision, migrate data or change DNS
 | Shifts and employee administration | Merged | Branch `agy/shifts-employees`, PR [#6](https://github.com/elite-horizon/SNR_website/pull/6), commit `a6450d1`; Alembic migration 202611220003, Employee CRUD & deactivation, Shift CRUD with overnight flag, non-overlapping effective-dated assignments, composite tenancy constraints, target TypeScript service & Vitest suite |
 | Attendance backend and store QR challenge | Implemented and locally validated | Branch `agy/attendance-backend`; Alembic migration 202611220004, HMAC-SHA256 store QR challenge tokens & single-use anti-replay validation, photo upload intent generation, transactional in/out punch state validation, idempotency key enforcement, server/store timestamping, append-only audit logging, FastAPI auth linking, and target TypeScript service & tests |
 | Attendance frontend and capture flow | Implemented and locally validated | Branch `agy/attendance-backend`; Store QR dynamic station (`StoreQRStation.tsx`) with 60s countdown, employee photo capture flow (`TargetPunchCard.tsx`), live attendance history table (`TargetAttendanceHistory.tsx`), dev upload receiver (`PUT /evidence`), and Vitest component suite |
+| Attendance daily summaries, exceptions, and corrections | Implemented and locally validated | Branch `agy/attendance-backend`; Alembic migration 202611220005 (`attendance_days`, `attendance_adjustments`), automated shift exception evaluation (missing punch, late, early departure, overtime), optimistic concurrency version locking (HTTP 409), append-only immutable correction history, approval workflow, `TargetAttendanceDays.tsx` component, and Vitest suite |
+| Payroll configuration & deterministic draft engine (Day 6) | Implemented and locally validated | Branch `agy/attendance-backend`; Alembic migration 202611220006 (`pay_periods`, `payroll_configurations`, `payroll_runs`, `payroll_items`), deterministic Decimal calculations with `ROUND_HALF_UP`, canonical SHA-256 input hashing, mandatory `Draft - Not for payment` compliance watermark, attendance exception blocker, gross/net reconciliation assertions, `TargetPayrollRuns.tsx` component, and full integration/unit test suites |
+| Payslips, approval lock and private downloads (Day 7) | Implemented and locally validated | Branch `agy/attendance-backend`; Alembic migration 202611220007 (`payslips`, `payroll_audit_logs`), transactional approval lock, reversal/re-versioning workflow, private S3/local PDF payslip artifact generation with mandatory compliance watermark, opaque UUID download intents, and negative role authorization tests |
+| Reports engine & PWA polish (Day 8) | Implemented and locally validated | Branch `agy/attendance-backend`; CWE-1236 CSV injection sanitization, streaming attendance & payroll CSV exports, `manifest.webmanifest` and service worker caching rules strictly excluding private API/evidence paths, and full integration/unit test suites |
+| AWS staging deployment & server operations (Day 9) | Implemented and locally validated | Branch `agy/attendance-backend`; `compose.prod.yaml` with private network PostgreSQL isolation (no host port 5432 exposure), Caddy reverse proxy with baseline security headers (HSTS, nosniff, DENY), AES-256 encrypted database backup script to S3 BackupBucket, host UFW hardening script, GitHub Actions OIDC staging deployment workflow (`deploy-aws.yml`), and automated infrastructure test suite (`scripts/server-deploy.test.mjs`) |
+| Hardening, UAT and pilot release (Day 10) | Implemented and locally validated | Branch `agy/attendance-backend`; Scope frozen, complete 5-role negative/positive authorization matrix & multi-store UAT test suite (`test_day10_hardening_uat.py`), backup-restore integrity drill (`test_day10_backup_restore.py`), operational documentation (`docs/PILOT_RUNBOOK.md`, `docs/ROLLBACK_PLAN.md`, `docs/DATA_RETENTION_CHECKLIST.md`, `docs/KNOWN_LIMITATIONS.md`, `docs/PILOT_SIGNOFF.md`), and full automated test suite pass across all tiers |
 
 ## AWS staging boundary
 
@@ -51,37 +57,39 @@ plan and remain out of scope. Do not describe them as the target staging stack.
 
 ## Current work and next package
 
-Work Package 4 & 5 (**Attendance backend, store QR challenge, and capture flow**) are implemented and validated on branch
-`agy/attendance-backend`:
-- **Data model & migration:** `backend/alembic/versions/202611220004_attendance_and_challenges.py`
-  adds `attendance_challenges`, `attendance_events`, and `attendance_audit_logs` with
-  composite tenancy constraints, indexes, and single-use challenge consumption.
-  Full Alembic `upgrade head` -> `downgrade 202611220003` -> `upgrade head` cycle validated on PostgreSQL.
-- **Backend services & API:**
-  - `POST /api/v1/attendance/challenges/issue`: issues 60s HMAC-SHA256 signed store QR challenges.
-  - `POST /api/v1/attendance/upload-intent`: issues private signed S3 photo upload intents.
-  - `PUT /api/v1/attendance/evidence/{photo_key:path}`: local/dev evidence receiver for presigned PUTs.
-  - `POST /api/v1/attendance/events`: transactional punch in/out state validation, idempotency key
-    enforcement, single-use challenge verification, and append-only event & audit persistence.
-  - `GET /api/v1/attendance/events`: scoped attendance event history retrieval.
-  - Frontend-to-backend auth linking: FastAPI cookie session management (`/api/v1/auth/login`, `/me`,
-    `/refresh`, `/logout`), CORS and seed script updates with `@dev.example.org`.
-- **Target frontend components & services:**
-  - `targetAttendanceService.ts`: API client with uploadBlob, issueStoreQRChallenge, recordAttendanceEvent, and listAttendanceEvents.
-  - `StoreQRStation.tsx`: dynamic store QR display rotating every 60 seconds with countdown and manual refresh.
-  - `TargetPunchCard.tsx`: interactive punch flow supporting QR challenge verification, live webcam selfie capture, photo upload to presigned PUT endpoint, and transactional in/out state submission.
-  - `TargetAttendanceHistory.tsx`: real-time attendance history table.
-  - Component Vitest suite (`targetAttendanceComponents.test.tsx`).
+Days 7, 8, and 9 (**Approval & Payslips**, **PWA Polish & Reports Engine**, and **AWS Deployment & Operations**) are implemented and validated on branch `agy/attendance-backend`:
+- **Day 7 (Approval, payslips and private downloads):**
+  - Migration `202611220007_payslips_and_approval.py` adds `payslips` (unique run/employee, storage key, SHA-256 hash, status, release timestamp) and `payroll_audit_logs` (immutable audit trail).
+  - Transactional approval lock `POST /api/v1/payroll/runs/{id}/approve` locks payroll run from draft to approved status.
+  - Reversal and re-versioning `POST /api/v1/payroll/runs/{id}/reverse` transitions run to reversed status and unlocks pay period for corrections.
+  - Release payslips `POST /api/v1/payroll/runs/{id}/release-payslips` generates PDF payslip artifacts (with mandatory `# WATERMARK: Draft - Not for payment` banner) into private storage.
+  - Authorized employee download intents `POST /api/v1/payslips/{id}/download-intent` and `GET /download/payslips/{token}` with negative role authorization.
+- **Day 8 (PWA Polish & Reports Engine):**
+  - Robust reports service with CWE-1236 CSV injection sanitization prefixing untrusted formula triggers (`=`, `+`, `-`, `@`, `\t`, `\r`) with single quotes `'`.
+  - `GET /api/v1/reports/attendance.csv` and `GET /api/v1/reports/payroll.csv` streaming CSV endpoints with organization tenancy and role isolation.
+  - Frontend PWA manifest (`public/manifest.webmanifest`), theme styling, and service worker (`public/sw.js`) implementing static asset caching while strictly bypassing API and private document paths.
+- **Day 9 (AWS Deployment and Operations):**
+  - Server Docker Compose configuration (`compose.prod.yaml`): PostgreSQL port 5432 is strictly unexposed to the host and restricted to the internal bridge network (`backend-net`), healthchecks configured for database and API.
+  - Caddy reverse proxy (`infra/caddy/Caddyfile`) with automatic TLS support, HSTS (`max-age=31536000`), `nosniff`, `DENY` frame options, API timeouts, and structured JSON request logging.
+  - Database backup automation (`scripts/backup-db.sh`): encrypted `pg_dump`, SHA-256 checksum generation, S3 SSE-S3 AES-256 encrypted upload to private AWS BackupBucket, and local retention pruning.
+  - Server provisioning and firewall script (`scripts/server-setup.sh`): UFW configuration explicitly blocking port 5432 externally while permitting ports 80, 443, and rate-limited SSH, plus systemd unit configuration.
+  - GitHub Actions deployment workflow (`.github/workflows/deploy-aws.yml`): OIDC temporary credential exchange (least privilege, zero committed long-lived AWS keys), S3 sync with 1-year immutable caching for hashed assets, zero-cache for entry points, and targeted CloudFront cache invalidation (no blanket root wildcards).
+  - Automated tests: `scripts/aws-infra.test.mjs` (6/6 passing) and `scripts/server-deploy.test.mjs` (6/6 passing).
+- **Day 10 (Hardening, UAT and Pilot Release):**
+  - Scope freeze and complete 5-role authorization matrix verification (`backend/tests/test_day10_hardening_uat.py`): negative permission enforcement across Employee, Store Admin, and Auditor roles; positive transactional lifecycle validation.
+  - Backup-restore integrity drill (`backend/tests/test_day10_backup_restore.py`): dump compression, SHA-256 checksumming, and recovery verification.
+  - Operational runbooks and release sign-off:
+    - [PILOT_RUNBOOK.md](file:///e:/Projects/SNR_website/docs/PILOT_RUNBOOK.md): Pre-flight checklist, host hardening, Caddy reverse proxy, operational healthchecks, and AWS Budgets thresholds (50%, 80%, 100%).
+    - [ROLLBACK_PLAN.md](file:///e:/Projects/SNR_website/docs/ROLLBACK_PLAN.md): CloudFront/S3 entry point reversion and database point-in-time restore procedures.
+    - [DATA_RETENTION_CHECKLIST.md](file:///e:/Projects/SNR_website/docs/DATA_RETENTION_CHECKLIST.md): Data lifecycle, append-only audit trail rules, and privacy controls (zero biometric templates).
+    - [KNOWN_LIMITATIONS.md](file:///e:/Projects/SNR_website/docs/KNOWN_LIMITATIONS.md): Statutory qualification boundary for SRS P-01 through P-10 (`# WATERMARK: Draft - Not for payment`).
+    - [PILOT_SIGNOFF.md](file:///e:/Projects/SNR_website/docs/PILOT_SIGNOFF.md): Formal acceptance criteria sign-off checklist.
 - **Validation results:**
-  - Backend: `ruff check .` clean, `ruff format --check .` clean, all 37 pytest tests
-    passed against PostgreSQL (including `test_attendance_integration.py`).
-  - Frontend: `prettier --check` clean, ESLint clean (0 errors, 1 existing hook warning),
-    TypeScript `tsc --noEmit` clean, 21 Vitest test suites (174 tests) passed, and
-    production build succeeded.
-  - Live Docker verification: API session authentication and `/api/v1/me` profile resolution verified.
+  - Backend: 44 pytest integration tests passing against live PostgreSQL in `.venv`; Ruff check and format 100% clean.
+  - Frontend: 25 Vitest test suites (187 tests) passing cleanly; Vite production build succeeded.
+  - Infrastructure: 12 Node test runner assertions passing cleanly across AWS foundation and deployment scripts.
 
-After Work Packages 4 & 5 are merged, the next product package is Work Package 6 (**Attendance daily summaries, exceptions, and corrections**):
-derived daily attendance records (`attendance_days`), missing punch / late / early / overtime exception calculation without financial deductions, and immutable correction/approval workflow with optimistic concurrency. Payroll remains out of scope.
+All 10 days of the Codex Implementation Plan are now complete and validated on branch `agy/attendance-backend`. Ready for pilot release `v0.1.0`.
 
 ## Open decisions and gates
 
