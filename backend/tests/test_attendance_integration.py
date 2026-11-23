@@ -9,9 +9,23 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.main import create_app
-from app.models.attendance import AttendanceAuditLog, AttendanceChallenge, AttendanceEvent
+from app.models.attendance import (
+    AttendanceAdjustment,
+    AttendanceAuditLog,
+    AttendanceChallenge,
+    AttendanceDay,
+    AttendanceEvent,
+)
 from app.models.identity import Employee, Organization, RoleAssignment, Store, User
 from app.models.identity import Session as AuthSession
+from app.models.payroll import (
+    PayPeriod,
+    PayrollAuditLog,
+    PayrollConfiguration,
+    PayrollItem,
+    PayrollRun,
+    Payslip,
+)
 from app.models.workforce import Shift, ShiftAssignment
 from app.services.auth import hash_password
 
@@ -93,6 +107,14 @@ def seeded_attendance():
 
     with Session(engine, expire_on_commit=False) as db:
         for model in (
+            Payslip,
+            PayrollAuditLog,
+            PayrollItem,
+            PayrollRun,
+            PayrollConfiguration,
+            PayPeriod,
+            AttendanceAdjustment,
+            AttendanceDay,
             AttendanceAuditLog,
             AttendanceEvent,
             AttendanceChallenge,
@@ -119,6 +141,14 @@ def seeded_attendance():
 
     with Session(engine) as db:
         for model in (
+            Payslip,
+            PayrollAuditLog,
+            PayrollItem,
+            PayrollRun,
+            PayrollConfiguration,
+            PayPeriod,
+            AttendanceAdjustment,
+            AttendanceDay,
             AttendanceAuditLog,
             AttendanceEvent,
             AttendanceChallenge,
