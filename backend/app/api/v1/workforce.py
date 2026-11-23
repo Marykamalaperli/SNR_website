@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db_session
 from app.core.errors import DomainError
 from app.core.security import require_current_user, require_role, require_scope
+from app.models.identity import Employee, Organization, Store
+from app.models.workforce import Shift
 from app.schemas.auth import CurrentUser
 from app.schemas.workforce import (
     AssignmentCreate,
@@ -94,10 +96,10 @@ def create_employee(
     payload: EmployeeCreate,
     current: Annotated[CurrentUser, Depends(require_current_user)],
     db: Annotated[Session, Depends(get_db_session)],
-    organization_id: UUID | None = Query(None),
+    organization_id: Annotated[UUID | None, Query()] = None,
 ) -> EmployeeOut:
     user = require_role(current, EMPLOYEE_WRITERS)
-    target_org_id = organization_id
+    target_org_id = organization_id if isinstance(organization_id, UUID) else None
     if target_org_id is None:
         store = db.get(Store, payload.home_store_id)
         if store:
@@ -108,13 +110,12 @@ def create_employee(
                 target_org_id = s.organization_id
                 break
     if target_org_id is None:
-        from app.models.identity import Organization
         first_org = db.scalar(select(Organization.id).limit(1))
         if not first_org:
             raise DomainError("missing_organization", "An organization must exist.", 400)
         target_org_id = first_org
 
-    scope = require_scope(user, target_org_id, permitted=EMPLOYEE_WRITERS)
+    scope = require_scope(user, target_org_id, store_id=payload.home_store_id, permitted=EMPLOYEE_WRITERS)
     employee = EmployeeService(db).create_employee(payload, target_org_id, scope)
     return EmployeeOut.model_validate(employee)
 
@@ -197,10 +198,10 @@ def create_shift(
     payload: ShiftCreate,
     current: Annotated[CurrentUser, Depends(require_current_user)],
     db: Annotated[Session, Depends(get_db_session)],
-    organization_id: UUID | None = Query(None),
+    organization_id: Annotated[UUID | None, Query()] = None,
 ) -> ShiftOut:
     user = require_role(current, SHIFT_WRITERS)
-    target_org_id = organization_id
+    target_org_id = organization_id if isinstance(organization_id, UUID) else None
     if target_org_id is None:
         store = db.get(Store, payload.store_id)
         if store:
@@ -211,7 +212,6 @@ def create_shift(
                 target_org_id = s.organization_id
                 break
     if target_org_id is None:
-        from app.models.identity import Organization
         first_org = db.scalar(select(Organization.id).limit(1))
         if not first_org:
             raise DomainError("missing_organization", "An organization must exist.", 400)
@@ -268,12 +268,11 @@ def create_assignment(
     payload: AssignmentCreate,
     current: Annotated[CurrentUser, Depends(require_current_user)],
     db: Annotated[Session, Depends(get_db_session)],
-    organization_id: UUID | None = Query(None),
+    organization_id: Annotated[UUID | None, Query()] = None,
 ) -> AssignmentOut:
     user = require_role(current, ASSIGNMENT_WRITERS)
-    target_org_id = organization_id
+    target_org_id = organization_id if isinstance(organization_id, UUID) else None
     if target_org_id is None:
-        from app.models.identity import Shift
         shift = db.get(Shift, payload.shift_id)
         if shift:
             target_org_id = shift.organization_id
@@ -283,7 +282,6 @@ def create_assignment(
                 target_org_id = s.organization_id
                 break
     if target_org_id is None:
-        from app.models.identity import Organization
         first_org = db.scalar(select(Organization.id).limit(1))
         if not first_org:
             raise DomainError("missing_organization", "An organization must exist.", 400)
@@ -341,10 +339,10 @@ def create_store(
     payload: StoreCreate,
     current: Annotated[CurrentUser, Depends(require_current_user)],
     db: Annotated[Session, Depends(get_db_session)],
-    organization_id: UUID | None = Query(None),
+    organization_id: Annotated[UUID | None, Query()] = None,
 ) -> StoreOut:
     user = require_role(current, STORE_WRITERS)
-    target_org_id = organization_id
+    target_org_id = organization_id if isinstance(organization_id, UUID) else None
     if target_org_id is None:
         for s in user.scopes:
             if s.organization_id is not None:

@@ -10,7 +10,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api.v1.router import router
 from app.core.config import Settings, get_settings
-from app.core.errors import error_response, register_error_handlers
+from app.core.errors import DomainError, error_response, register_error_handlers
 
 logger = logging.getLogger("snr_nest.requests")
 logger.setLevel(logging.INFO)
@@ -43,6 +43,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             # TrustedHost emits a plain 400; normalize it to the public error contract.
             if response.status_code == 400 and request.url.hostname not in settings.allowed_hosts:
                 response = error_response(request, 400, "invalid_host", "This host is not allowed.")
+        except DomainError as exc:
+            response = error_response(request, exc.status_code, exc.code, exc.message)
         except Exception:
             # Intentionally omit exception text: upstream messages can contain secrets/PII.
             logger.error(json.dumps({"event": "request_failed", "request_id": request_id}))
