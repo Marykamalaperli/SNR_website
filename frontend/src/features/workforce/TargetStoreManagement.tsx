@@ -57,7 +57,6 @@ export default function TargetStoreManagement() {
 
   // Modals
   const [showAddStoreModal, setShowAddStoreModal] = useState(false);
-  const [showEditStoreModal, setShowEditStoreModal] = useState(false);
 
   // Add Store Form State
   const [storeCode, setStoreCode] = useState('');
@@ -67,16 +66,6 @@ export default function TargetStoreManagement() {
   const [storeLatitude, setStoreLatitude] = useState('');
   const [storeLongitude, setStoreLongitude] = useState('');
   const [storeRadius, setStoreRadius] = useState('50');
-
-  // Edit Store State
-  const [storeToEdit, setStoreToEdit] = useState<Store | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editTimezone, setEditTimezone] = useState('Asia/Kolkata');
-  const [editMapLink, setEditMapLink] = useState('');
-  const [editLatitude, setEditLatitude] = useState('');
-  const [editLongitude, setEditLongitude] = useState('');
-  const [editRadius, setEditRadius] = useState('50');
-  const [editActive, setEditActive] = useState(true);
 
   const isSuperAdmin = Boolean(
     session?.actual_role === 'system_admin' ||
@@ -158,61 +147,6 @@ export default function TargetStoreManagement() {
     setStoreLatitude('');
     setStoreLongitude('');
     setStoreRadius('50');
-  }
-
-  async function handleUpdateStore(e: React.FormEvent) {
-    e.preventDefault();
-    if (!storeToEdit || !editName.trim()) {
-      setError('Store name cannot be empty.');
-      return;
-    }
-
-    const latNum = editLatitude.trim() ? parseFloat(editLatitude.trim()) : null;
-    const lngNum = editLongitude.trim() ? parseFloat(editLongitude.trim()) : null;
-    const radiusNum = editRadius.trim() ? parseInt(editRadius.trim(), 10) : 50;
-
-    if (latNum !== null && (isNaN(latNum) || latNum < -90 || latNum > 90)) {
-      setError('Latitude must be a valid number between -90 and 90.');
-      return;
-    }
-    if (lngNum !== null && (isNaN(lngNum) || lngNum < -180 || lngNum > 180)) {
-      setError('Longitude must be a valid number between -180 and 180.');
-      return;
-    }
-
-    setActionInProgress(true);
-    setError(null);
-    try {
-      const updated = await updateStore(storeToEdit.id, {
-        name: editName.trim(),
-        timezone: editTimezone,
-        latitude: latNum,
-        longitude: lngNum,
-        map_url: editMapLink.trim() || (latNum && lngNum ? `https://www.google.com/maps?q=${latNum},${lngNum}` : null),
-        radius_meters: radiusNum,
-        active: editActive,
-      });
-      setSuccessMsg(`Store "${updated.name}" updated successfully.`);
-      setShowEditStoreModal(false);
-      setStoreToEdit(null);
-      await loadStores();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to update store.');
-    } finally {
-      setActionInProgress(false);
-    }
-  }
-
-  function openEditStore(st: Store) {
-    setStoreToEdit(st);
-    setEditName(st.name);
-    setEditTimezone(st.timezone || 'Asia/Kolkata');
-    setEditMapLink(st.map_url || '');
-    setEditLatitude(st.latitude !== undefined && st.latitude !== null ? String(st.latitude) : '');
-    setEditLongitude(st.longitude !== undefined && st.longitude !== null ? String(st.longitude) : '');
-    setEditRadius(st.radius_meters ? String(st.radius_meters) : '50');
-    setEditActive(st.active);
-    setShowEditStoreModal(true);
   }
 
   if (selectedStoreId) {
@@ -405,23 +339,6 @@ export default function TargetStoreManagement() {
                     <StatusBadge tone={st.active ? 'success' : 'neutral'}>
                       {st.active ? 'Active' : 'Inactive'}
                     </StatusBadge>
-                    {isSuperAdmin && (
-                      <button
-                        type="button"
-                        className="icon-button"
-                        aria-label={`Edit ${st.name}`}
-                        onClick={() => openEditStore(st)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: '0.25rem',
-                          color: '#64748b',
-                        }}
-                      >
-                        <Pencil size={15} />
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -608,131 +525,6 @@ export default function TargetStoreManagement() {
               </Button>
               <Button variant="primary" type="submit" disabled={actionInProgress}>
                 {actionInProgress ? 'Creating Store…' : 'Create Store'}
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Modal: Edit Store */}
-      {showEditStoreModal && storeToEdit && (
-        <Modal
-          title={`Edit Store: ${storeToEdit.name} (${storeToEdit.code})`}
-          onClose={() => {
-            setShowEditStoreModal(false);
-            setStoreToEdit(null);
-          }}
-          busy={actionInProgress}
-        >
-          <form onSubmit={handleUpdateStore} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <FormField
-              label="Store Code"
-              type="text"
-              value={storeToEdit.code}
-              disabled
-              hint="Store code cannot be changed once created."
-            />
-
-            <FormField
-              label="Store Name"
-              type="text"
-              value={editName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
-              required
-            />
-
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  marginBottom: '0.25rem',
-                }}
-              >
-                Operational Timezone
-              </label>
-              <select
-                value={editTimezone}
-                onChange={(e) => setEditTimezone(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 0.75rem',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  background: '#fff',
-                  fontSize: '0.875rem',
-                }}
-              >
-                {TIMEZONE_OPTIONS.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {tz}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Google Map Location Picker Section in Edit */}
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  marginBottom: '0.35rem',
-                  color: '#1e293b',
-                }}
-              >
-                Store Location on Google Maps
-              </label>
-              <GoogleMapLocationPicker
-                latitude={editLatitude}
-                longitude={editLongitude}
-                radiusMeters={editRadius}
-                mapUrl={editMapLink}
-                onChange={({ latitude, longitude, radiusMeters, mapUrl }) => {
-                  setEditLatitude(latitude);
-                  setEditLongitude(longitude);
-                  setEditRadius(radiusMeters);
-                  if (mapUrl !== undefined) setEditMapLink(mapUrl);
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-              <input
-                id="editActiveStore"
-                type="checkbox"
-                checked={editActive}
-                onChange={(e) => setEditActive(e.target.checked)}
-                style={{ width: '1rem', height: '1rem' }}
-              />
-              <label htmlFor="editActiveStore" style={{ fontSize: '0.875rem', color: '#1e293b', cursor: 'pointer' }}>
-                Store is active for workforce scheduling and attendance
-              </label>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '0.75rem',
-                marginTop: '1rem',
-              }}
-            >
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => {
-                  setShowEditStoreModal(false);
-                  setStoreToEdit(null);
-                }}
-                disabled={actionInProgress}
-              >
-                Cancel
-              </Button>
-              <Button variant="primary" type="submit" disabled={actionInProgress}>
-                {actionInProgress ? 'Saving…' : 'Save Changes'}
               </Button>
             </div>
           </form>

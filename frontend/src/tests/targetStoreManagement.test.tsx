@@ -96,11 +96,12 @@ describe('TargetStoreManagement Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Back to All Stores/i)).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: 'Store Information' })).toBeInTheDocument();
-      expect(screen.getByText(/Manager Access/i)).toBeInTheDocument();
-      expect(screen.getByText(/Store Employees/i)).toBeInTheDocument();
-      expect(screen.getByText(/Shifts & Rosters/i)).toBeInTheDocument();
-      expect(screen.getByText(/Attendance & QR Station/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Store Details & Location' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Manager Access' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Store Employees' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Shifts & Rosters' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Attendance QR Station' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Geofence Accuracy Tester' })).toBeInTheDocument();
     });
   });
 
