@@ -248,24 +248,38 @@ export default function TargetStaffRegistrationWizard({
   // Camera handling for Live Photo
   async function startCamera() {
     setCameraError(null);
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError(
+        'Camera API is not supported in this browser environment. Please upload a selfie or face photo file directly.',
+      );
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
         audio: false,
       });
       streamRef.current = stream;
+      setCameraActive(true);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.play().catch(() => {});
       }
-      setCameraActive(true);
     } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       setCameraError(
-        'Unable to access webcam. Please check browser permissions or upload a selfie directly.',
+        `Unable to access webcam (${msg}). Please check browser camera permissions or upload a photo directly.`,
       );
       setCameraActive(false);
     }
   }
+
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraActive]);
 
   function stopCamera() {
     if (streamRef.current) {
@@ -883,11 +897,11 @@ export default function TargetStaffRegistrationWizard({
                 {/* Photo Preview / Webcam Box */}
                 <div
                   style={{
-                    width: '260px',
+                    width: '280px',
                     height: '240px',
                     borderRadius: '8px',
-                    border: '2px dashed #cbd5e1',
-                    background: '#f8fafc',
+                    border: cameraActive ? '2px solid #0284c7' : '2px dashed #cbd5e1',
+                    background: cameraActive ? '#0f172a' : '#f8fafc',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -896,24 +910,91 @@ export default function TargetStaffRegistrationWizard({
                     position: 'relative',
                   }}
                 >
-                  {cameraActive ? (
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : photoDataUrl ? (
-                    <img
-                      src={photoDataUrl}
-                      alt="Candidate live capture"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
+                  {/* Video Element: permanently mounted so ref is never null when getUserMedia resolves */}
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: cameraActive ? 'block' : 'none',
+                    }}
+                  />
+
+                  {/* Live Recording Badge */}
+                  {cameraActive && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '10px',
+                        left: '10px',
+                        background: 'rgba(239, 68, 68, 0.9)',
+                        color: '#fff',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        zIndex: 10,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '7px',
+                          height: '7px',
+                          borderRadius: '50%',
+                          background: '#fff',
+                          display: 'inline-block',
+                        }}
+                      />
+                      LIVE WEBCAM
+                    </div>
+                  )}
+
+                  {/* Captured Photo Preview */}
+                  {!cameraActive && photoDataUrl && (
+                    <>
+                      <img
+                        src={photoDataUrl}
+                        alt="Candidate live capture"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '10px',
+                          left: '10px',
+                          background: 'rgba(16, 185, 129, 0.9)',
+                          color: '#fff',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          zIndex: 10,
+                        }}
+                      >
+                        <Check size={12} />
+                        PHOTO CAPTURED
+                      </div>
+                    </>
+                  )}
+
+                  {/* Empty state placeholder */}
+                  {!cameraActive && !photoDataUrl && (
                     <div style={{ textAlign: 'center', padding: '1rem', color: '#94a3b8' }}>
                       <Camera size={44} style={{ margin: '0 auto 0.5rem auto', strokeWidth: 1.5 }} />
-                      <span style={{ fontSize: '0.8rem', display: 'block' }}>No live photo captured yet</span>
+                      <span style={{ fontSize: '0.8rem', display: 'block', color: '#64748b' }}>
+                        No live photo captured yet
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1800,3 +1881,4 @@ export default function TargetStaffRegistrationWizard({
     </div>
   );
 }
+
