@@ -134,8 +134,8 @@ tokens, signed URLs, personal data or private request content.
   backend Ruff lint/format, dependency check and 46 Pytest tests; 21 deployment,
   AWS and server assertions; and 11 active Playwright browser tests.
 - No cloud resources, deployments, live migrations, DNS, credentials or private
-  data were changed. The branch is not pushed and no pull request exists because
-  repository policy requires explicit push authorization.
+  data were changed. The branch was pushed with explicit authorization; no pull
+  request exists yet.
 - Next bounded package: replace the retained legacy browser projects with target
   FastAPI/store-QR end-to-end coverage before removing any historical fixtures.
 
