@@ -186,11 +186,10 @@ tokens, signed URLs, personal data or private request content.
 
 ## Automated AWS production delivery (24 November 2026)
 
-- **Implemented and locally/AWS-validated, not yet authorized in AWS:** branch
-  `agy/production-cd` adds a production deployment workflow that runs only after
-  `Application checks` succeeds for `main`, detects frontend/API changes and uses
-  the protected GitHub `production` Environment before assuming AWS identity
-  through OIDC.
+- **Implemented, merged and activated:** PR #15, merge commit `6d38b55`, adds a
+  production deployment workflow that runs only after `Application checks`
+  succeeds for `main`, detects frontend/API changes and uses the GitHub
+  `production` Environment before assuming AWS identity through OIDC.
 - Frontend delivery builds with the production API origin, synchronizes only the
   named private S3 frontend bucket and invalidates only the three mutable
   CloudFront entry points. API delivery creates an immutable commit-labelled
@@ -201,13 +200,19 @@ tokens, signed URLs, personal data or private request content.
   Elastic Beanstalk release prefix, application/environment and CloudFront
   distribution operations. IAM Access Analyzer returned no findings. No static AWS
   key, administrator secret or application credential is stored in GitHub.
-- Validation passed: JSON parsing, 23/23 infrastructure/deployment assertions and
-  IAM Access Analyzer identity-policy validation. No AWS policy, OIDC trust,
-  GitHub Environment, application version, S3 object, database migration or live
-  environment was changed during this implementation review.
-- Next bounded gate: review and explicitly authorize the OIDC trust and inline IAM
-  policy update, configure the protected GitHub `production` Environment, merge
-  the workflow, and observe its first approved deployment from `main`.
+- Validation passed: JSON parsing, 23/23 infrastructure/deployment assertions, IAM
+  Access Analyzer identity-policy validation and all four GitHub Actions jobs on
+  `main`. The first production workflow run selected no application components for
+  the workflow-only merge and correctly skipped the deployment job; it created no
+  application version, S3 object, database migration or live environment update.
+- The reviewed OIDC trust subject and inline deployment policy are active, and the
+  CloudFront distribution identifier is stored as a non-secret environment
+  variable. The current private-repository GitHub plan does not support required
+  reviewers or branch-protection rules; the owner explicitly approved automatic
+  deployment after successful `main` CI instead.
+- Next bounded package: observe the first frontend or API change delivered from
+  `main`, verify the immutable release/version evidence and exercise the documented
+  rollback path before broad pilot use.
 
 ## Super Admin Store Management & Google Maps Location Picker (November 2026)
 
