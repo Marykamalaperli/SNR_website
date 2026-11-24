@@ -142,6 +142,27 @@ tokens, signed URLs, personal data or private request content.
   role, create and inspect a no-execute change set, and obtain explicit resource
   and cost approval before execution.
 
+## Production release hardening (24 November 2026)
+
+- **Implemented, not merged or deployed:** branch `agy/production-release`
+  replaces predictable `SNR@<employee-code>` credentials with cryptographically
+  random one-time passwords and adds a production-only, idempotent System Admin
+  bootstrap that accepts credentials only from runtime environment variables.
+- The Elastic Beanstalk Docker Compose bundle runs Alembic migrations and the
+  administrator bootstrap successfully before starting FastAPI, then serves the
+  API through Caddy for `api.snrnest.in`. The existing Hostinger root site remains
+  out of scope; `app.snrnest.in` and `api.snrnest.in` require later DNS records.
+- The CloudFormation definition now generates retained QR-signing and initial
+  administrator secrets, supplies production-only origins/hosts, disables the
+  Beanstalk platform proxy so Caddy owns ports 80/443, and keeps administrator and
+  alert email parameters as `NoEcho` inputs.
+- Validation passed: AWS CloudFormation template validation, Ruff lint/format,
+  Docker Compose configuration rendering with non-secret review values, and 19/19
+  infrastructure/deployment assertions. The focused PostgreSQL workforce test was
+  stopped after it produced no result within the review window and remains a gate.
+- No AWS resources, DNS, certificates, application versions, database migrations,
+  production identities or private data were changed.
+
 ## CI formatting and browser-suite alignment (24 November 2026)
 
 - **Implemented and validated:** branch `agy/fix-ci-formatting`, PR

@@ -385,14 +385,18 @@ def test_employee_registration_auto_provisions_user_account(seeded_workforce):
         data = create_res.json()
         assert data["employee_code"] == "EMP-AUTO-777"
         assert data["login_email"] == "karthik.raja@example.org"
-        assert data["temporary_password"] == "SNR@EMP-AUTO-777"
+        temporary_password = data["temporary_password"]
+        assert isinstance(temporary_password, str)
+        assert len(temporary_password) >= 24
+        assert temporary_password != "SNR@EMP-AUTO-777"
+        assert "EMP-AUTO-777" not in temporary_password
         assert data["user_id"] is not None
 
         # Verify that the newly registered employee can log in immediately
         # with the temporary password.
         emp_login = client.post(
             "/api/v1/auth/login",
-            json={"email": "karthik.raja@example.org", "password": "SNR@EMP-AUTO-777"},
+            json={"email": "karthik.raja@example.org", "password": temporary_password},
             headers={"Origin": ORIGIN},
         )
         assert emp_login.status_code == 200
