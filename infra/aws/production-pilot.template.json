@@ -203,7 +203,7 @@
         "DBSubnetGroupName": { "Ref": "DatabaseSubnetGroup" },
         "DeletionProtection": true,
         "Engine": "postgres",
-        "EngineVersion": "16.4",
+        "EngineVersion": "16.15",
         "MasterUsername": {
           "Fn::Sub": "{{resolve:secretsmanager:${DatabaseCredentials}:SecretString:username}}"
         },

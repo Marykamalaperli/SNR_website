@@ -93,6 +93,7 @@ test("production pilot keeps PostgreSQL private and protected", () => {
   const database = pilot.Resources.Database;
   assert.equal(database.Type, "AWS::RDS::DBInstance");
   assert.equal(database.Properties.PubliclyAccessible, false);
+  assert.equal(database.Properties.EngineVersion, "16.15");
   assert.equal(database.Properties.StorageEncrypted, true);
   assert.equal(database.Properties.DeletionProtection, true);
   assert.equal(database.Properties.MultiAZ, false);
