@@ -1,3 +1,4 @@
+import secrets
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -108,8 +109,7 @@ class EmployeeService:
 
             email_clean = str(payload.email).strip().lower()
             login_email = email_clean
-            clean_code = payload.employee_code.strip().upper()
-            temporary_password = f"SNR@{clean_code}"
+            temporary_password = secrets.token_urlsafe(24)
 
             user = self.db.scalar(select(User).where(User.email == email_clean))
             assigned_role = (

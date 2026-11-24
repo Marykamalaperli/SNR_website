@@ -132,4 +132,9 @@ test("production pilot sets three monthly budget thresholds", () => {
     [50, 80, 100],
   );
   assert.equal(pilot.Parameters.AlertEmail.NoEcho, true);
+  assert.equal(pilot.Parameters.AdminEmail.NoEcho, true);
+  assert.equal(
+    JSON.stringify(pilot).includes("taruntejaofficial@gmail.com"),
+    false,
+  );
 });

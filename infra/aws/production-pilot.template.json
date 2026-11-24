@@ -7,6 +7,11 @@
       "NoEcho": true,
       "AllowedPattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
     },
+    "AdminEmail": {
+      "Type": "String",
+      "NoEcho": true,
+      "AllowedPattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+    },
     "MonthlyBudgetUsd": { "Type": "Number", "Default": 45, "MinValue": 1 },
     "DatabaseName": {
       "Type": "String",
@@ -155,7 +160,31 @@
             "Fn::Sub": "{\"username\":\"${DatabaseUsername}\"}"
           },
           "GenerateStringKey": "password",
-          "ExcludeCharacters": "@/\\\"'",
+          "ExcludeCharacters": ":/?#[]@!$&'()*+,;=%\\\" ",
+          "PasswordLength": 32
+        }
+      }
+    },
+    "QrSigningSecret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "Description": "SNR NEST QR signing secret",
+        "GenerateSecretString": {
+          "ExcludePunctuation": true,
+          "PasswordLength": 48
+        }
+      }
+    },
+    "BootstrapAdminPassword": {
+      "Type": "AWS::SecretsManager::Secret",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "Description": "Initial SNR NEST system administrator password",
+        "GenerateSecretString": {
+          "ExcludePunctuation": false,
           "PasswordLength": 32
         }
       }
@@ -227,7 +256,11 @@
                 {
                   "Effect": "Allow",
                   "Action": "secretsmanager:GetSecretValue",
-                  "Resource": { "Ref": "DatabaseCredentials" }
+                  "Resource": [
+                    { "Ref": "DatabaseCredentials" },
+                    { "Ref": "QrSigningSecret" },
+                    { "Ref": "BootstrapAdminPassword" }
+                  ]
                 }
               ]
             }
@@ -333,6 +366,81 @@
             "Namespace": "aws:elasticbeanstalk:managedactions:platformupdate",
             "OptionName": "InstanceRefreshEnabled",
             "Value": "true"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:environment:proxy",
+            "OptionName": "ProxyServer",
+            "Value": "none"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "APP_ENV",
+            "Value": "production"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "DATABASE_URL",
+            "Value": {
+              "Fn::Sub": "postgresql+psycopg://${DatabaseUsername}:{{resolve:secretsmanager:${DatabaseCredentials}:SecretString:password}}@${Database.Endpoint.Address}:5432/${DatabaseName}"
+            }
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "CORS_ORIGINS",
+            "Value": "[\"https://app.snrnest.in\"]"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "ALLOWED_HOSTS",
+            "Value": "[\"api.snrnest.in\"]"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "SESSION_COOKIE_SECURE",
+            "Value": "true"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "QR_SIGNING_SECRET",
+            "Value": {
+              "Fn::Sub": "{{resolve:secretsmanager:${QrSigningSecret}}}"
+            }
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "AWS_REGION",
+            "Value": { "Ref": "AWS::Region" }
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "EVIDENCE_BUCKET_NAME",
+            "Value": {
+              "Fn::Sub": "snrnest-staging-evidence-${AWS::AccountId}-${AWS::Region}"
+            }
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "PAYSLIP_BUCKET_NAME",
+            "Value": {
+              "Fn::Sub": "snrnest-staging-payslips-${AWS::AccountId}-${AWS::Region}"
+            }
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "SNR_BOOTSTRAP_ADMIN_EMAIL",
+            "Value": { "Ref": "AdminEmail" }
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "SNR_BOOTSTRAP_ADMIN_PASSWORD",
+            "Value": {
+              "Fn::Sub": "{{resolve:secretsmanager:${BootstrapAdminPassword}}}"
+            }
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:application:environment",
+            "OptionName": "API_DOMAIN",
+            "Value": "api.snrnest.in"
           }
         ]
       }

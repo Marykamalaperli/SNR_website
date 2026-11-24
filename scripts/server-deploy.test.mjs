@@ -9,7 +9,11 @@ test("compose.prod.yaml binds PostgreSQL strictly to internal network without ho
   const composeText = await loadText("compose.prod.yaml");
   assert.ok(composeText.includes("image: postgres:17-alpine"));
   // Ensure host port 5432 is NOT exposed
-  assert.equal(composeText.includes("5432:5432"), false, "Port 5432 must not be exposed to host");
+  assert.equal(
+    composeText.includes("5432:5432"),
+    false,
+    "Port 5432 must not be exposed to host",
+  );
   assert.ok(composeText.includes("backend-net"));
 });
 
@@ -22,8 +26,8 @@ test("compose.prod.yaml includes container healthchecks for db and api services"
 test("infra/caddy/Caddyfile configures baseline browser security headers and API reverse proxy", async () => {
   const caddyfile = await loadText("infra/caddy/Caddyfile");
   assert.ok(caddyfile.includes("Strict-Transport-Security"));
-  assert.ok(caddyfile.includes("X-Content-Type-Options \"nosniff\""));
-  assert.ok(caddyfile.includes("X-Frame-Options \"DENY\""));
+  assert.ok(caddyfile.includes('X-Content-Type-Options "nosniff"'));
+  assert.ok(caddyfile.includes('X-Frame-Options "DENY"'));
   assert.ok(caddyfile.includes("reverse_proxy api:8000"));
 });
 
@@ -46,8 +50,45 @@ test(".github/workflows/deploy-aws.yml uses OIDC and targeted CloudFront invalid
   const workflowText = await loadText(".github/workflows/deploy-aws.yml");
   assert.ok(workflowText.includes("aws-actions/configure-aws-credentials"));
   assert.ok(workflowText.includes("role-to-assume: ${{ vars.AWS_ROLE_ARN }}"));
-  assert.equal(workflowText.includes("/*"), false, "Blanket invalidation /* is strictly prohibited");
-  assert.ok(workflowText.includes('"/index.html" "/sw.js" "/manifest.webmanifest"'));
-  assert.equal(workflowText.includes("AWS_SECRET_ACCESS_KEY"), false, "Static AWS keys are strictly prohibited");
+  assert.equal(
+    workflowText.includes("/*"),
+    false,
+    "Blanket invalidation /* is strictly prohibited",
+  );
+  assert.ok(
+    workflowText.includes('"/index.html" "/sw.js" "/manifest.webmanifest"'),
+  );
+  assert.equal(
+    workflowText.includes("AWS_SECRET_ACCESS_KEY"),
+    false,
+    "Static AWS keys are strictly prohibited",
+  );
 });
 
+test("Elastic Beanstalk bundle migrates and bootstraps before starting the API", async () => {
+  const composeText = await loadText(
+    "infra/aws/elasticbeanstalk/docker-compose.yml",
+  );
+  assert.ok(composeText.includes('command: ["alembic", "upgrade", "head"]'));
+  assert.ok(composeText.includes("bootstrap-admin:"));
+  assert.ok(composeText.includes("scripts/bootstrap_production_admin.py"));
+  assert.ok(composeText.includes("condition: service_completed_successfully"));
+  assert.ok(composeText.includes('SESSION_COOKIE_SECURE: "true"'));
+  assert.equal(composeText.includes("POSTGRES_PASSWORD"), false);
+});
+
+test("production administrator bootstrap does not contain a default password", async () => {
+  const bootstrap = await loadText(
+    "backend/scripts/bootstrap_production_admin.py",
+  );
+  assert.ok(bootstrap.includes("SNR_BOOTSTRAP_ADMIN_PASSWORD"));
+  assert.ok(bootstrap.includes("len(password) < 20"));
+  assert.equal(bootstrap.includes("test-seed-password"), false);
+  assert.equal(bootstrap.includes("print(password"), false);
+});
+
+test("employee provisioning uses a cryptographically random temporary password", async () => {
+  const workforce = await loadText("backend/app/services/workforce.py");
+  assert.ok(workforce.includes("secrets.token_urlsafe(24)"));
+  assert.equal(workforce.includes('f"SNR@{clean_code}"'), false);
+});
