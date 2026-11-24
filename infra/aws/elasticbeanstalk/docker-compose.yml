@@ -48,7 +48,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/ready')",
+          "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://localhost:8000/api/v1/ready', headers={'Host': 'api.snrnest.in'}))",
         ]
       interval: 15s
       timeout: 5s

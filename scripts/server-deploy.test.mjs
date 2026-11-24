@@ -74,6 +74,7 @@ test("Elastic Beanstalk bundle migrates and bootstraps before starting the API",
   assert.ok(composeText.includes("scripts/bootstrap_production_admin.py"));
   assert.ok(composeText.includes("condition: service_completed_successfully"));
   assert.ok(composeText.includes('SESSION_COOKIE_SECURE: "true"'));
+  assert.ok(composeText.includes("headers={'Host': 'api.snrnest.in'}"));
   assert.equal(composeText.includes("POSTGRES_PASSWORD"), false);
 });
 
