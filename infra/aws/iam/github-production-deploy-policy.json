@@ -1,0 +1,53 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListProductionFrontendBucket",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::snrnest-staging-web-376793939540-ap-south-1"
+    },
+    {
+      "Sid": "DeployProductionFrontendObjects",
+      "Effect": "Allow",
+      "Action": ["s3:DeleteObject", "s3:GetObject", "s3:PutObject"],
+      "Resource": "arn:aws:s3:::snrnest-staging-web-376793939540-ap-south-1/*"
+    },
+    {
+      "Sid": "UploadElasticBeanstalkRelease",
+      "Effect": "Allow",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::elasticbeanstalk-ap-south-1-376793939540/snrnest/releases/*"
+    },
+    {
+      "Sid": "ReadElasticBeanstalkState",
+      "Effect": "Allow",
+      "Action": [
+        "elasticbeanstalk:DescribeApplicationVersions",
+        "elasticbeanstalk:DescribeEnvironments"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CreateNamedElasticBeanstalkVersions",
+      "Effect": "Allow",
+      "Action": "elasticbeanstalk:CreateApplicationVersion",
+      "Resource": [
+        "arn:aws:elasticbeanstalk:ap-south-1:376793939540:application/snrnest-production-pilot",
+        "arn:aws:elasticbeanstalk:ap-south-1:376793939540:applicationversion/snrnest-production-pilot/main-*"
+      ]
+    },
+    {
+      "Sid": "UpdateOnlyProductionPilotEnvironment",
+      "Effect": "Allow",
+      "Action": "elasticbeanstalk:UpdateEnvironment",
+      "Resource": "arn:aws:elasticbeanstalk:ap-south-1:376793939540:environment/snrnest-production-pilot/snrnest-production-pilot"
+    },
+    {
+      "Sid": "InvalidateOnlyProductionFrontend",
+      "Effect": "Allow",
+      "Action": "cloudfront:CreateInvalidation",
+      "Resource": "arn:aws:cloudfront::376793939540:distribution/E3M8PS2Q089C7Y"
+    }
+  ]
+}

@@ -13,7 +13,8 @@
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
           "token.actions.githubusercontent.com:sub": [
             "repo:elite-horizon@221283005/SNR_website@1467427113:ref:refs/heads/main",
-            "repo:elite-horizon@221283005/SNR_website@1467427113:environment:staging"
+            "repo:elite-horizon@221283005/SNR_website@1467427113:environment:staging",
+            "repo:elite-horizon@221283005/SNR_website@1467427113:environment:production"
           ]
         }
       }

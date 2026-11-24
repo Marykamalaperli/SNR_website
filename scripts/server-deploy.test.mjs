@@ -65,6 +65,27 @@ test(".github/workflows/deploy-aws.yml uses OIDC and targeted CloudFront invalid
   );
 });
 
+test("production deployment waits for successful main CI and deploys through OIDC", async () => {
+  const workflowText = await loadText(
+    ".github/workflows/deploy-production-aws.yml",
+  );
+  assert.ok(workflowText.includes("workflow_run:"));
+  assert.ok(
+    workflowText.includes("github.event.workflow_run.conclusion == 'success'"),
+  );
+  assert.ok(
+    workflowText.includes("github.event.workflow_run.head_branch == 'main'"),
+  );
+  assert.ok(workflowText.includes("environment: production"));
+  assert.ok(workflowText.includes("aws-actions/configure-aws-credentials"));
+  assert.ok(workflowText.includes("create-application-version"));
+  assert.ok(workflowText.includes("update-environment"));
+  assert.ok(workflowText.includes("environment-updated"));
+  assert.ok(workflowText.includes("https://api.snrnest.in/api/v1/ready"));
+  assert.equal(workflowText.includes("AWS_SECRET_ACCESS_KEY"), false);
+  assert.equal(workflowText.includes('"/*"'), false);
+});
+
 test("Elastic Beanstalk bundle migrates and bootstraps before starting the API", async () => {
   const composeText = await loadText(
     "infra/aws/elasticbeanstalk/docker-compose.yml",

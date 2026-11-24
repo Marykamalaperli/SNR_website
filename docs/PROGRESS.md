@@ -184,6 +184,31 @@ tokens, signed URLs, personal data or private request content.
 - Next bounded package: replace the retained legacy browser projects with target
   FastAPI/store-QR end-to-end coverage before removing any historical fixtures.
 
+## Automated AWS production delivery (24 November 2026)
+
+- **Implemented and locally/AWS-validated, not yet authorized in AWS:** branch
+  `agy/production-cd` adds a production deployment workflow that runs only after
+  `Application checks` succeeds for `main`, detects frontend/API changes and uses
+  the protected GitHub `production` Environment before assuming AWS identity
+  through OIDC.
+- Frontend delivery builds with the production API origin, synchronizes only the
+  named private S3 frontend bucket and invalidates only the three mutable
+  CloudFront entry points. API delivery creates an immutable commit-labelled
+  Elastic Beanstalk application version, updates only
+  `snrnest-production-pilot`, waits for `Ready / Green / Ok` and verifies public
+  readiness and health endpoints.
+- A separate least-privilege identity policy grants only the named frontend bucket,
+  Elastic Beanstalk release prefix, application/environment and CloudFront
+  distribution operations. IAM Access Analyzer returned no findings. No static AWS
+  key, administrator secret or application credential is stored in GitHub.
+- Validation passed: JSON parsing, 23/23 infrastructure/deployment assertions and
+  IAM Access Analyzer identity-policy validation. No AWS policy, OIDC trust,
+  GitHub Environment, application version, S3 object, database migration or live
+  environment was changed during this implementation review.
+- Next bounded gate: review and explicitly authorize the OIDC trust and inline IAM
+  policy update, configure the protected GitHub `production` Environment, merge
+  the workflow, and observe its first approved deployment from `main`.
+
 ## Super Admin Store Management & Google Maps Location Picker (November 2026)
 
 - **Dedicated Admin Workspace Routing & URL Migration:**

@@ -9,6 +9,10 @@ const loadJson = async (path) =>
 const template = await loadJson("infra/aws/foundation.template.json");
 const pilot = await loadJson("infra/aws/production-pilot.template.json");
 const deployPolicy = await loadJson("infra/aws/iam/github-deploy-policy.json");
+const productionDeployPolicy = await loadJson(
+  "infra/aws/iam/github-production-deploy-policy.json",
+);
+const githubTrust = await loadJson("infra/aws/github-oidc-trust.json");
 const servicePolicy = await loadJson(
   "infra/aws/iam/cloudformation-service-policy.json",
 );
@@ -91,6 +95,31 @@ test("GitHub role is limited to one stack and one service role", () => {
   assert.match(text, /stack\/snrnest-staging-foundation\/\*/);
   assert.match(text, /role\/snrnest-staging-cloudformation-service/);
   assert.doesNotMatch(text, /AdministratorAccess|PowerUserAccess/);
+});
+
+test("production delivery role is limited to named application resources", () => {
+  const text = JSON.stringify(productionDeployPolicy);
+  assert.match(text, /snrnest-staging-web-376793939540-ap-south-1/);
+  assert.match(text, /distribution\/E3M8PS2Q089C7Y/);
+  assert.match(text, /snrnest-production-pilot/);
+  assert.match(
+    text,
+    /elasticbeanstalk-ap-south-1-376793939540\/snrnest\/releases/,
+  );
+  assert.doesNotMatch(text, /AdministratorAccess|PowerUserAccess/);
+  assert.doesNotMatch(text, /"Action":"\*"|"Resource":"arn:aws:s3:::\*"/);
+});
+
+test("GitHub OIDC trust includes the protected production environment", () => {
+  const subjects =
+    githubTrust.Statement[0].Condition.StringEquals[
+      "token.actions.githubusercontent.com:sub"
+    ];
+  assert.ok(
+    subjects.includes(
+      "repo:elite-horizon@221283005/SNR_website@1467427113:environment:production",
+    ),
+  );
 });
 
 test("CloudFormation service policy cannot manage compute, databases, DNS, or IAM", () => {
