@@ -388,7 +388,8 @@ def test_employee_registration_auto_provisions_user_account(seeded_workforce):
         assert data["temporary_password"] == "SNR@EMP-AUTO-777"
         assert data["user_id"] is not None
 
-        # Verify that the newly registered employee can log in immediately with the temporary password
+        # Verify that the newly registered employee can log in immediately
+        # with the temporary password.
         emp_login = client.post(
             "/api/v1/auth/login",
             json={"email": "karthik.raja@example.org", "password": "SNR@EMP-AUTO-777"},

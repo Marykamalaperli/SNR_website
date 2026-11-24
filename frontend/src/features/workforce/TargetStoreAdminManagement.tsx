@@ -49,9 +49,9 @@ export default function TargetStoreAdminManagement() {
 
   const isSuperAdmin = Boolean(
     session?.actual_role === 'system_admin' ||
-      session?.role === 'system_admin' ||
-      session?.role === 'admin' ||
-      session?.scopes?.some((s: { role: string }) => s.role === 'system_admin'),
+    session?.role === 'system_admin' ||
+    session?.role === 'admin' ||
+    session?.scopes?.some((s: { role: string }) => s.role === 'system_admin'),
   );
 
   async function loadData() {
@@ -163,7 +163,8 @@ export default function TargetStoreAdminManagement() {
             Store Administrators
           </h1>
           <p className="muted" style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>
-            Provision and manage Store Administrator accounts with store-scoped operational authority.
+            Provision and manage Store Administrator accounts with store-scoped operational
+            authority.
           </p>
         </div>
 
@@ -173,7 +174,11 @@ export default function TargetStoreAdminManagement() {
             Refresh
           </Button>
           {isSuperAdmin && (
-            <Button variant="primary" onClick={() => setShowAddModal(true)} disabled={stores.length === 0}>
+            <Button
+              variant="primary"
+              onClick={() => setShowAddModal(true)}
+              disabled={stores.length === 0}
+            >
               <UserPlus size={16} />
               Add Store Admin
             </Button>
@@ -199,7 +204,9 @@ export default function TargetStoreAdminManagement() {
         >
           <Shield size={16} className="text-primary" />
           <span>
-            Viewing store administrators in read-only mode. Only <strong>System Administrators (Super Admin)</strong> have authority to provision Store Admin accounts.
+            Viewing store administrators in read-only mode. Only{' '}
+            <strong>System Administrators (Super Admin)</strong> have authority to provision Store
+            Admin accounts.
           </span>
         </div>
       )}
@@ -322,10 +329,33 @@ export default function TargetStoreAdminManagement() {
           }
         />
       ) : (
-        <div style={{ overflowX: 'auto', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+        <div
+          style={{
+            overflowX: 'auto',
+            background: '#fff',
+            borderRadius: '8px',
+            border: '1px solid #e2e8f0',
+          }}
+        >
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              textAlign: 'left',
+              fontSize: '0.875rem',
+            }}
+          >
             <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <tr
+                style={{
+                  background: '#f8fafc',
+                  borderBottom: '1px solid #e2e8f0',
+                  color: '#475569',
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
                 <th style={{ padding: '0.75rem 1rem' }}>Administrator</th>
                 <th style={{ padding: '0.75rem 1rem' }}>Assigned Store</th>
                 <th style={{ padding: '0.75rem 1rem' }}>Role Authority</th>
@@ -362,8 +392,18 @@ export default function TargetStoreAdminManagement() {
                           {initials}
                         </span>
                         <div>
-                          <div style={{ fontWeight: 600, color: '#0f172a' }}>{adm.display_name}</div>
-                          <div style={{ color: '#64748b', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <div style={{ fontWeight: 600, color: '#0f172a' }}>
+                            {adm.display_name}
+                          </div>
+                          <div
+                            style={{
+                              color: '#64748b',
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                            }}
+                          >
                             <Mail size={12} />
                             {adm.email}
                           </div>
@@ -372,7 +412,15 @@ export default function TargetStoreAdminManagement() {
                     </td>
 
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#334155', fontWeight: 500 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          color: '#334155',
+                          fontWeight: 500,
+                        }}
+                      >
                         <Building2 size={15} style={{ color: '#0284c7' }} />
                         <span>{adm.store_name}</span>
                       </div>
@@ -399,7 +447,9 @@ export default function TargetStoreAdminManagement() {
                       </StatusBadge>
                     </td>
 
-                    <td style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8125rem' }}>
+                    <td
+                      style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8125rem' }}
+                    >
                       {adm.created_at ? new Date(adm.created_at).toLocaleDateString() : '—'}
                     </td>
                   </tr>
@@ -420,7 +470,10 @@ export default function TargetStoreAdminManagement() {
           }}
           busy={actionInProgress}
         >
-          <form onSubmit={handleCreateAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form
+            onSubmit={handleCreateAdmin}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
             <div>
               <label
                 style={{
@@ -458,7 +511,9 @@ export default function TargetStoreAdminManagement() {
               type="text"
               placeholder="e.g. Rajesh Kumar"
               value={adminDisplayName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminDisplayName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setAdminDisplayName(e.target.value)
+              }
               required
             />
 
@@ -477,7 +532,9 @@ export default function TargetStoreAdminManagement() {
               type="password"
               placeholder="At least 8 characters"
               value={adminPassword}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setAdminPassword(e.target.value)
+              }
               required
               hint="Must be at least 8 characters long."
             />
@@ -511,4 +568,3 @@ export default function TargetStoreAdminManagement() {
     </div>
   );
 }
-

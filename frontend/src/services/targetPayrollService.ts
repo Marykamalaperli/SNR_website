@@ -113,7 +113,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     let errorDetail = 'Payroll request failed';
     try {
       const data = await res.json();
-      errorDetail = data.detail || (data.error && data.error.message) || data.message || errorDetail;
+      errorDetail =
+        data.detail || (data.error && data.error.message) || data.message || errorDetail;
     } catch {
       errorDetail = `HTTP ${res.status} ${res.statusText}`;
     }
@@ -216,7 +217,9 @@ export async function fetchMyPayslips(): Promise<Payslip[]> {
   return request<Payslip[]>('/api/v1/payslips/me');
 }
 
-export async function createPayslipDownloadIntent(payslipId: string): Promise<PayslipDownloadIntent> {
+export async function createPayslipDownloadIntent(
+  payslipId: string,
+): Promise<PayslipDownloadIntent> {
   return request<PayslipDownloadIntent>(`/api/v1/payslips/${payslipId}/download-intent`, {
     method: 'POST',
   });

@@ -425,9 +425,7 @@ class StoreService:
 
         total = self.db.scalar(select(func.count()).select_from(query.subquery())) or 0
         items = list(
-            self.db.scalars(
-                query.order_by(Store.code.asc()).offset(offset).limit(limit)
-            ).all()
+            self.db.scalars(query.order_by(Store.code.asc()).offset(offset).limit(limit)).all()
         )
         return items, total
 
@@ -593,10 +591,6 @@ class StoreService:
         ]
         return items, len(items)
 
-
-
-
-
     def update_store(self, store_id: UUID, payload: StoreUpdate, scope: Scope) -> Store:
         if scope.role != "system_admin":
             raise DomainError("forbidden", "Only system administrators can update stores.", 403)
@@ -621,8 +615,3 @@ class StoreService:
         self.db.commit()
         self.db.refresh(store)
         return store
-
-
-
-
-

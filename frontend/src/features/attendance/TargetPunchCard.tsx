@@ -323,7 +323,15 @@ export default function TargetPunchCard({
       stopQrCamera();
       stopSelfieCamera();
     };
-  }, [modalOpen, step, isQrScanned, startQrCamera, stopQrCamera, startSelfieCamera, stopSelfieCamera]);
+  }, [
+    modalOpen,
+    step,
+    isQrScanned,
+    startQrCamera,
+    stopQrCamera,
+    startSelfieCamera,
+    stopSelfieCamera,
+  ]);
 
   const handleOpenModal = () => {
     setError('');
@@ -575,7 +583,8 @@ export default function TargetPunchCard({
                 </h3>
               </div>
               <p className="muted" style={{ fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
-                Point your camera at the rotating QR code displayed on the physical store entrance tablet station.
+                Point your camera at the rotating QR code displayed on the physical store entrance
+                tablet station.
               </p>
 
               {/* Scanned Success Confirmation Card */}
@@ -602,7 +611,14 @@ export default function TargetPunchCard({
                   >
                     <CheckCircle2 size={32} />
                   </div>
-                  <h4 style={{ margin: '0 0 0.25rem 0', color: '#166534', fontSize: '1.1rem', fontWeight: 700 }}>
+                  <h4
+                    style={{
+                      margin: '0 0 0.25rem 0',
+                      color: '#166534',
+                      fontSize: '1.1rem',
+                      fontWeight: 700,
+                    }}
+                  >
                     Store QR Challenge Verified!
                   </h4>
                   <p style={{ margin: 0, fontSize: '0.825rem', color: '#15803d' }}>
@@ -642,7 +658,14 @@ export default function TargetPunchCard({
                 </div>
               ) : (
                 /* Active Live Camera Viewfinder with Target Reticle */
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    marginBottom: '1rem',
+                  }}
+                >
                   <div
                     style={{
                       position: 'relative',
@@ -737,7 +760,15 @@ export default function TargetPunchCard({
                   )}
 
                   {/* Alternative Scanner Controls (Upload QR / Test helper) */}
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      marginTop: '0.75rem',
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                    }}
+                  >
                     <Button
                       variant="secondary"
                       onClick={() => qrFileInputRef.current?.click()}
@@ -846,7 +877,8 @@ export default function TargetPunchCard({
                 </h3>
               </div>
               <p className="muted" style={{ fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
-                Position your face in the front camera to verify identity and prevent buddy punching.
+                Position your face in the front camera to verify identity and prevent buddy
+                punching.
               </p>
 
               {selfieCameraError ? (
@@ -970,7 +1002,8 @@ export default function TargetPunchCard({
                 </h3>
               </div>
               <p className="muted" style={{ fontSize: '0.85rem' }}>
-                Store QR challenge verified and presence photo captured. Confirm to record this punch.
+                Store QR challenge verified and presence photo captured. Confirm to record this
+                punch.
               </p>
 
               <div
@@ -1102,7 +1135,8 @@ export default function TargetPunchCard({
                     'Recording Punch…'
                   ) : (
                     <>
-                      <CheckCircle2 size={16} /> Confirm {targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}
+                      <CheckCircle2 size={16} /> Confirm{' '}
+                      {targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}
                     </>
                   )}
                 </Button>

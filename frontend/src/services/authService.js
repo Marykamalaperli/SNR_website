@@ -88,9 +88,7 @@ export function mapUserToSession(me) {
     uiRole = 'admin';
   } else if (me.scopes?.some((s) => ['store_admin', 'supervisor'].includes(s.role))) {
     uiRole = 'supervisor';
-  } else if (
-    me.scopes?.some((s) => ['hr_payroll', 'auditor', 'hr'].includes(s.role))
-  ) {
+  } else if (me.scopes?.some((s) => ['hr_payroll', 'auditor', 'hr'].includes(s.role))) {
     uiRole = 'hr';
   }
   const workspaceMapping = {

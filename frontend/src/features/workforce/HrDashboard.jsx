@@ -14,8 +14,8 @@ export default function HrDashboard() {
   const { data, loading, error, reload } = useRemoteData(loadOrganization);
   const isSuperAdmin = Boolean(
     session?.actual_role === 'system_admin' ||
-      session?.role === 'system_admin' ||
-      session?.scopes?.some((s) => s.role === 'system_admin'),
+    session?.role === 'system_admin' ||
+    session?.scopes?.some((s) => s.role === 'system_admin'),
   );
   return (
     <>

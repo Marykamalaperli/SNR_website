@@ -40,11 +40,7 @@ import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import StatusBadge from '../../components/common/StatusBadge';
 import FormField from '../../components/forms/FormField';
-import {
-  createEmployee,
-  listStores,
-  Store,
-} from '../../services/targetWorkforceService';
+import { createEmployee, listStores, Store } from '../../services/targetWorkforceService';
 import {
   getOnboardingDossier,
   SALARY_TEMPLATES,
@@ -102,7 +98,9 @@ export default function TargetStaffRegistrationWizard({
   const [lastName, setLastName] = useState('');
   const [dob, setDob] = useState('1998-01-01');
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | 'Prefer not to say'>('Male');
-  const [maritalStatus, setMaritalStatus] = useState<'Single' | 'Married' | 'Divorced' | 'Widowed'>('Single');
+  const [maritalStatus, setMaritalStatus] = useState<'Single' | 'Married' | 'Divorced' | 'Widowed'>(
+    'Single',
+  );
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
 
@@ -157,7 +155,8 @@ export default function TargetStaffRegistrationWizard({
   // =========================================================================
   // STEP 5: SALARY STRUCTURE
   // =========================================================================
-  const [selectedSalaryTemplateKey, setSelectedSalaryTemplateKey] = useState<string>('picker_packer');
+  const [selectedSalaryTemplateKey, setSelectedSalaryTemplateKey] =
+    useState<string>('picker_packer');
   const [salaryBasic, setSalaryBasic] = useState('11000');
   const [salaryHra, setSalaryHra] = useState('4000');
   const [salarySpecial, setSalarySpecial] = useState('3000');
@@ -419,13 +418,13 @@ export default function TargetStaffRegistrationWizard({
 
   function handleNext() {
     if (validateCurrentStep()) {
-      setCurrentStep((prev) => (Math.min(prev + 1, 6) as WizardStep));
+      setCurrentStep((prev) => Math.min(prev + 1, 6) as WizardStep);
     }
   }
 
   function handleBack() {
     setError(null);
-    setCurrentStep((prev) => (Math.max(prev - 1, 1) as WizardStep));
+    setCurrentStep((prev) => Math.max(prev - 1, 1) as WizardStep);
   }
 
   async function handleFinalSubmit() {
@@ -434,7 +433,8 @@ export default function TargetStaffRegistrationWizard({
     setSubmitting(true);
     setError(null);
 
-    const fullName = `${firstName.trim()} ${middleName.trim() ? middleName.trim() + ' ' : ''}${lastName.trim()}`.trim();
+    const fullName =
+      `${firstName.trim()} ${middleName.trim() ? middleName.trim() + ' ' : ''}${lastName.trim()}`.trim();
     const storeObj = stores.find((s) => s.id === selectedStoreId);
     const storeName = storeObj ? storeObj.name : 'Store';
 
@@ -506,7 +506,8 @@ export default function TargetStaffRegistrationWizard({
           passbookFileName: passbookDocName || undefined,
         },
         salary: {
-          templateName: SALARY_TEMPLATES[selectedSalaryTemplateKey]?.templateName || 'Custom Salary',
+          templateName:
+            SALARY_TEMPLATES[selectedSalaryTemplateKey]?.templateName || 'Custom Salary',
           basic: parseFloat(salaryBasic) || 0,
           hra: parseFloat(salaryHra) || 0,
           specialAllowance: parseFloat(salarySpecial) || 0,
@@ -545,15 +546,27 @@ export default function TargetStaffRegistrationWizard({
   // =========================================================================
   if (successDossier) {
     return (
-      <Card style={{ padding: '2.5rem', textAlign: 'center', maxWidth: '680px', margin: '1rem auto' }}>
-        <div style={{ display: 'inline-flex', padding: '1rem', background: '#ecfdf5', borderRadius: '50%', color: '#10b981', marginBottom: '1rem' }}>
+      <Card
+        style={{ padding: '2.5rem', textAlign: 'center', maxWidth: '680px', margin: '1rem auto' }}
+      >
+        <div
+          style={{
+            display: 'inline-flex',
+            padding: '1rem',
+            background: '#ecfdf5',
+            borderRadius: '50%',
+            color: '#10b981',
+            marginBottom: '1rem',
+          }}
+        >
           <CheckCircle2 size={48} />
         </div>
         <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>
           Staff Registration Successful!
         </h2>
         <p style={{ color: '#64748b', fontSize: '0.95rem', margin: '0 0 1.5rem 0' }}>
-          Employee record, photo dossier, KYC credentials, and salary structure have been securely provisioned.
+          Employee record, photo dossier, KYC credentials, and salary structure have been securely
+          provisioned.
         </p>
 
         {/* Official Credentials Handover Card */}
@@ -567,29 +580,99 @@ export default function TargetStaffRegistrationWizard({
             marginBottom: '1.5rem',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.75rem',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ display: 'inline-flex', padding: '0.4rem', borderRadius: '6px', background: '#bae6fd', color: '#0369a1' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  padding: '0.4rem',
+                  borderRadius: '6px',
+                  background: '#bae6fd',
+                  color: '#0369a1',
+                }}
+              >
                 <Key size={18} />
               </span>
               <div>
-                <strong style={{ fontSize: '0.95rem', color: '#0c4a6e' }}>Portal Login Credentials Generated</strong>
-                <span style={{ display: 'block', fontSize: '0.75rem', color: '#0284c7' }}>Auto-provisioned login account for employee portal & mobile access</span>
+                <strong style={{ fontSize: '0.95rem', color: '#0c4a6e' }}>
+                  Portal Login Credentials Generated
+                </strong>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: '#0284c7' }}>
+                  Auto-provisioned login account for employee portal & mobile access
+                </span>
               </div>
             </div>
             <StatusBadge tone="success">Ready for Handover</StatusBadge>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid #bae6fd' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '1rem',
+              background: '#ffffff',
+              padding: '1rem',
+              borderRadius: '8px',
+              border: '1px solid #bae6fd',
+            }}
+          >
             <div>
-              <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Login Username / Email</span>
-              <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{successDossier.loginEmail}</strong>
+              <span
+                style={{
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  display: 'block',
+                }}
+              >
+                Login Username / Email
+              </span>
+              <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>
+                {successDossier.loginEmail}
+              </strong>
             </div>
 
             <div>
-              <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Initial Temporary Password</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
-                <code style={{ background: '#f1f5f9', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.95rem', fontWeight: 700, color: '#0369a1', border: '1px solid #cbd5e1' }}>
+              <span
+                style={{
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  display: 'block',
+                }}
+              >
+                Initial Temporary Password
+              </span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginTop: '0.15rem',
+                }}
+              >
+                <code
+                  style={{
+                    background: '#f1f5f9',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
+                    color: '#0369a1',
+                    border: '1px solid #cbd5e1',
+                  }}
+                >
                   {successDossier.temporaryPassword}
                 </code>
                 <button
@@ -599,7 +682,19 @@ export default function TargetStaffRegistrationWizard({
                     setCopiedKey(true);
                     setTimeout(() => setCopiedKey(false), 2000);
                   }}
-                  style={{ background: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', padding: '0.25rem 0.5rem', color: '#0369a1', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                  style={{
+                    background: '#e0f2fe',
+                    border: '1px solid #bae6fd',
+                    borderRadius: '4px',
+                    padding: '0.25rem 0.5rem',
+                    color: '#0369a1',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
                 >
                   {copiedKey ? <Check size={12} /> : <Copy size={12} />}
                   {copiedKey ? 'Copied' : 'Copy'}
@@ -608,19 +703,51 @@ export default function TargetStaffRegistrationWizard({
             </div>
 
             <div>
-              <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Employee Identification Code</span>
-              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0284c7' }}>{successDossier.code}</span>
+              <span
+                style={{
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  display: 'block',
+                }}
+              >
+                Employee Identification Code
+              </span>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0284c7' }}>
+                {successDossier.code}
+              </span>
             </div>
 
             <div>
-              <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Assigned Store</span>
+              <span
+                style={{
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  display: 'block',
+                }}
+              >
+                Assigned Store
+              </span>
               <strong>{successDossier.storeName}</strong>
             </div>
           </div>
 
-          <div style={{ marginTop: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div
+            style={{
+              marginTop: '0.85rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+            }}
+          >
             <span style={{ fontSize: '0.775rem', color: '#475569' }}>
-              💡 Please share these credentials with the employee. They will be prompted to reset their password on first sign-in.
+              💡 Please share these credentials with the employee. They will be prompted to reset
+              their password on first sign-in.
             </span>
 
             <Button
@@ -669,9 +796,26 @@ export default function TargetStaffRegistrationWizard({
   const roleDef = STORE_ROLE_DEFINITIONS[designation];
 
   return (
-    <div className="target-staff-wizard" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1000px', margin: '0 auto' }}>
+    <div
+      className="target-staff-wizard"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        maxWidth: '1000px',
+        margin: '0 auto',
+      }}
+    >
       {/* Header & Back navigation */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem',
+        }}
+      >
         <div>
           {onCancel && (
             <button
@@ -710,7 +854,8 @@ export default function TargetStaffRegistrationWizard({
             Store Staff Registration Wizard
           </h1>
           <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
-            Multi-step onboarding for Store Managers, Team Leads, Pickers/Packers, Security, and Associates.
+            Multi-step onboarding for Store Managers, Team Leads, Pickers/Packers, Security, and
+            Associates.
           </p>
         </div>
 
@@ -802,7 +947,13 @@ export default function TargetStaffRegistrationWizard({
           <button
             type="button"
             onClick={() => setError(null)}
-            style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
+            style={{
+              marginLeft: 'auto',
+              background: 'none',
+              border: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}
           >
             <X size={16} />
           </button>
@@ -821,12 +972,19 @@ export default function TargetStaffRegistrationWizard({
                 Step 1: Personal Details & Live Photo
               </h2>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
-                Enter the candidate&apos;s identity details and capture their mandatory live identification photo.
+                Enter the candidate&apos;s identity details and capture their mandatory live
+                identification photo.
               </p>
             </div>
 
             {/* Names row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '1rem',
+              }}
+            >
               <FormField
                 label="First Name *"
                 type="text"
@@ -853,7 +1011,13 @@ export default function TargetStaffRegistrationWizard({
             </div>
 
             {/* Demographics row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem',
+              }}
+            >
               <FormField
                 label="Date of Birth *"
                 type="date"
@@ -862,13 +1026,25 @@ export default function TargetStaffRegistrationWizard({
                 required
               />
               <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    marginBottom: '0.35rem',
+                  }}
+                >
                   Gender *
                 </label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value as any)}
-                  style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                  }}
                 >
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -878,13 +1054,25 @@ export default function TargetStaffRegistrationWizard({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    marginBottom: '0.35rem',
+                  }}
+                >
                   Marital Status *
                 </label>
                 <select
                   value={maritalStatus}
                   onChange={(e) => setMaritalStatus(e.target.value as any)}
-                  style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                  }}
                 >
                   <option value="Single">Single</option>
                   <option value="Married">Married</option>
@@ -895,7 +1083,13 @@ export default function TargetStaffRegistrationWizard({
             </div>
 
             {/* Contact Details row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '1rem',
+              }}
+            >
               <FormField
                 label="Primary Phone Number *"
                 type="tel"
@@ -917,27 +1111,61 @@ export default function TargetStaffRegistrationWizard({
             </div>
 
             {/* Emergency Contact */}
-            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a' }}>
+            <div
+              style={{
+                background: '#f8fafc',
+                padding: '1rem',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              <h4
+                style={{
+                  margin: '0 0 0.5rem 0',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                }}
+              >
                 Emergency Contact Details
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '0.75rem',
+                }}
+              >
                 <FormField
                   label="Contact Person Name *"
                   type="text"
                   placeholder="e.g. Priya Kumar"
                   value={emergencyName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmergencyName(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEmergencyName(e.target.value)
+                  }
                   required
                 />
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.35rem' }}>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      marginBottom: '0.35rem',
+                    }}
+                  >
                     Relationship *
                   </label>
                   <select
                     value={emergencyRelation}
                     onChange={(e) => setEmergencyRelation(e.target.value)}
-                    style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    style={{
+                      width: '100%',
+                      padding: '0.6rem 0.75rem',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                    }}
                   >
                     <option value="Spouse">Spouse</option>
                     <option value="Father">Father</option>
@@ -953,7 +1181,9 @@ export default function TargetStaffRegistrationWizard({
                   type="tel"
                   placeholder="Emergency phone number"
                   value={emergencyPhone}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmergencyPhone(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEmergencyPhone(e.target.value)
+                  }
                   required
                 />
               </div>
@@ -961,14 +1191,29 @@ export default function TargetStaffRegistrationWizard({
 
             {/* Live Photo Capture Section */}
             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem' }}>
-              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  marginBottom: '0.25rem',
+                }}
+              >
                 Mandatory Live Candidate Photo *
               </label>
               <p style={{ margin: '0 0 1rem 0', fontSize: '0.825rem', color: '#64748b' }}>
-                Snap a live webcam selfie or upload a direct face photo for identity verification and kiosk attendance check.
+                Snap a live webcam selfie or upload a direct face photo for identity verification
+                and kiosk attendance check.
               </p>
 
-              <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '1.5rem',
+                  flexWrap: 'wrap',
+                  alignItems: 'flex-start',
+                }}
+              >
                 {/* Photo Preview / Webcam Box */}
                 <div
                   style={{
@@ -1066,7 +1311,10 @@ export default function TargetStaffRegistrationWizard({
                   {/* Empty state placeholder */}
                   {!cameraActive && !photoDataUrl && (
                     <div style={{ textAlign: 'center', padding: '1rem', color: '#94a3b8' }}>
-                      <Camera size={44} style={{ margin: '0 auto 0.5rem auto', strokeWidth: 1.5 }} />
+                      <Camera
+                        size={44}
+                        style={{ margin: '0 auto 0.5rem auto', strokeWidth: 1.5 }}
+                      />
                       <span style={{ fontSize: '0.8rem', display: 'block', color: '#64748b' }}>
                         No live photo captured yet
                       </span>
@@ -1075,7 +1323,15 @@ export default function TargetStaffRegistrationWizard({
                 </div>
 
                 {/* Camera / Upload Controls */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, minWidth: '260px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    flex: 1,
+                    minWidth: '260px',
+                  }}
+                >
                   {cameraActive ? (
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <Button variant="primary" onClick={snapPhoto}>
@@ -1129,14 +1385,35 @@ export default function TargetStaffRegistrationWizard({
                   )}
 
                   {cameraError && (
-                    <div style={{ fontSize: '0.8rem', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <div
+                      style={{
+                        fontSize: '0.8rem',
+                        color: '#b91c1c',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                      }}
+                    >
                       <AlertCircle size={14} /> {cameraError}
                     </div>
                   )}
 
-                  <div style={{ fontSize: '0.8rem', color: '#64748b', background: '#f1f5f9', padding: '0.75rem', borderRadius: '6px' }}>
-                    <ShieldCheck size={14} style={{ display: 'inline', color: '#16a34a', marginRight: '0.35rem' }} />
-                    <strong>Privacy Notice:</strong> Per SNR NEST architecture, photos are stored in private S3 buckets accessed only via short-lived signed URLs. No raw biometric templates or automated face scan points are stored.
+                  <div
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#64748b',
+                      background: '#f1f5f9',
+                      padding: '0.75rem',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    <ShieldCheck
+                      size={14}
+                      style={{ display: 'inline', color: '#16a34a', marginRight: '0.35rem' }}
+                    />
+                    <strong>Privacy Notice:</strong> Per SNR NEST architecture, photos are stored in
+                    private S3 buckets accessed only via short-lived signed URLs. No raw biometric
+                    templates or automated face scan points are stored.
                   </div>
                 </div>
               </div>
@@ -1154,20 +1431,39 @@ export default function TargetStaffRegistrationWizard({
                 Step 2: Designation, Store & Role Assignment
               </h2>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
-                Select the target work site and designation within the store organizational hierarchy.
+                Select the target work site and designation within the store organizational
+                hierarchy.
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '1rem',
+              }}
+            >
               {/* Store Selection */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    marginBottom: '0.35rem',
+                  }}
+                >
                   Select Home Store *
                 </label>
                 <select
                   value={selectedStoreId}
                   onChange={(e) => setSelectedStoreId(e.target.value)}
-                  style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                  }}
                   required
                 >
                   {stores.map((s) => (
@@ -1176,7 +1472,14 @@ export default function TargetStaffRegistrationWizard({
                     </option>
                   ))}
                 </select>
-                <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    color: '#64748b',
+                    marginTop: '0.25rem',
+                    display: 'block',
+                  }}
+                >
                   The employee will be anchored to this store&apos;s physical geofence and roster.
                 </span>
               </div>
@@ -1186,7 +1489,9 @@ export default function TargetStaffRegistrationWizard({
                 label="Date of Joining *"
                 type="date"
                 value={dateOfJoining}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateOfJoining(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setDateOfJoining(e.target.value)
+                }
                 required
                 hint="Effective starting date for attendance and payroll."
               />
@@ -1194,7 +1499,14 @@ export default function TargetStaffRegistrationWizard({
 
             {/* Designation Selection */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  marginBottom: '0.5rem',
+                }}
+              >
                 Designation / Position in Store Hierarchy *
               </label>
 
@@ -1231,7 +1543,9 @@ export default function TargetStaffRegistrationWizard({
                 type="text"
                 placeholder="e.g. Inventory Auditor, Dispatch Coordinator"
                 value={customDesignation}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomDesignation(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setCustomDesignation(e.target.value)
+                }
                 required
                 hint="Will be registered as their official title."
               />
@@ -1242,7 +1556,9 @@ export default function TargetStaffRegistrationWizard({
               label="Authoritative Employee Code"
               type="text"
               value={employeeCode}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmployeeCode(e.target.value.toUpperCase())}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setEmployeeCode(e.target.value.toUpperCase())
+              }
               required
               hint="Unique system identifier generated automatically; can be customized if your organization uses external codes."
             />
@@ -1256,7 +1572,14 @@ export default function TargetStaffRegistrationWizard({
                 padding: '1.25rem',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.5rem',
+                }}
+              >
                 <ShieldCheck size={20} style={{ color: '#16a34a' }} />
                 <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#14532d' }}>
                   {roleDef.label} — Authorizations & Scope
@@ -1264,10 +1587,21 @@ export default function TargetStaffRegistrationWizard({
               </div>
 
               <div style={{ fontSize: '0.85rem', color: '#166534', marginBottom: '0.75rem' }}>
-                <strong>Reporting Line:</strong> Reports directly to <strong>{roleDef.reportingTo}</strong>
+                <strong>Reporting Line:</strong> Reports directly to{' '}
+                <strong>{roleDef.reportingTo}</strong>
               </div>
 
-              <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.825rem', color: '#15803d', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: '1.25rem',
+                  fontSize: '0.825rem',
+                  color: '#15803d',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.35rem',
+                }}
+              >
                 {roleDef.authorizations.map((auth, idx) => (
                   <li key={idx}>{auth}</li>
                 ))}
@@ -1302,20 +1636,36 @@ export default function TargetStaffRegistrationWizard({
                   padding: '1.25rem',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   <Briefcase size={18} style={{ color: '#0284c7' }} />
                   <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
                     Previous Employment Verification ({roleDef.label})
                   </h4>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '1rem',
+                    marginBottom: '1.25rem',
+                  }}
+                >
                   <FormField
                     label="Previous Employer / Company Name *"
                     type="text"
                     placeholder="e.g. Zepto Retail Ltd, Blinkit, D-Mart"
                     value={prevCompany}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrevCompany(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setPrevCompany(e.target.value)
+                    }
                     required
                   />
                   <FormField
@@ -1323,14 +1673,30 @@ export default function TargetStaffRegistrationWizard({
                     type="text"
                     placeholder="e.g. Shift Lead / Supervisor"
                     value={prevDesignation}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrevDesignation(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setPrevDesignation(e.target.value)
+                    }
                   />
                 </div>
 
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   Last Three Months Pay Slips (Upload) *
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '0.75rem',
+                    marginBottom: '1rem',
+                  }}
+                >
                   {[
                     { label: 'Month 1 Payslip', state: payslip1Name, setter: setPayslip1Name },
                     { label: 'Month 2 Payslip', state: payslip2Name, setter: setPayslip2Name },
@@ -1354,7 +1720,10 @@ export default function TargetStaffRegistrationWizard({
                     >
                       {item.state ? (
                         <>
-                          <CheckCircle2 size={20} style={{ color: '#10b981', marginBottom: '0.25rem' }} />
+                          <CheckCircle2
+                            size={20}
+                            style={{ color: '#10b981', marginBottom: '0.25rem' }}
+                          />
                           <strong style={{ color: '#065f46' }}>{item.state}</strong>
                           <span style={{ fontSize: '0.7rem', color: '#047857' }}>Uploaded</span>
                         </>
@@ -1379,7 +1748,14 @@ export default function TargetStaffRegistrationWizard({
                 </div>
 
                 {/* Offer Letter Upload */}
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   Previous Company Offer Letter / Relieving Certificate
                 </label>
                 <label
@@ -1418,19 +1794,41 @@ export default function TargetStaffRegistrationWizard({
 
             {/* Statutory KYC: Aadhar & PAN */}
             <div>
-              <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
+              <h4
+                style={{
+                  margin: '0 0 0.75rem 0',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                }}
+              >
                 Statutory KYC Identity Verification
               </h4>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '1.25rem',
+                }}
+              >
                 {/* Aadhar Card Card */}
-                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', background: '#f8fafc' }}>
+                <div
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    background: '#f8fafc',
+                  }}
+                >
                   <FormField
                     label="Aadhar Card Number *"
                     type="text"
                     placeholder="12-digit number (XXXX XXXX XXXX)"
                     value={aadharNumber}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAadharNumber(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setAadharNumber(e.target.value)
+                    }
                     required
                   />
 
@@ -1450,7 +1848,11 @@ export default function TargetStaffRegistrationWizard({
                     }}
                   >
                     <Upload size={14} />
-                    <span>{aadharDocName ? `Uploaded: ${aadharDocName}` : 'Upload Aadhar Card (PDF / Image)'}</span>
+                    <span>
+                      {aadharDocName
+                        ? `Uploaded: ${aadharDocName}`
+                        : 'Upload Aadhar Card (PDF / Image)'}
+                    </span>
                     <input
                       type="file"
                       accept=".pdf,image/*"
@@ -1464,13 +1866,22 @@ export default function TargetStaffRegistrationWizard({
                 </div>
 
                 {/* PAN Card Card */}
-                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', background: '#f8fafc' }}>
+                <div
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    background: '#f8fafc',
+                  }}
+                >
                   <FormField
                     label="PAN Card Number *"
                     type="text"
                     placeholder="10-character PAN (e.g. ABCDE1234F)"
                     value={panNumber}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPanNumber(e.target.value.toUpperCase())}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setPanNumber(e.target.value.toUpperCase())
+                    }
                     required
                   />
 
@@ -1490,7 +1901,9 @@ export default function TargetStaffRegistrationWizard({
                     }}
                   >
                     <Upload size={14} />
-                    <span>{panDocName ? `Uploaded: ${panDocName}` : 'Upload PAN Card (PDF / Image)'}</span>
+                    <span>
+                      {panDocName ? `Uploaded: ${panDocName}` : 'Upload PAN Card (PDF / Image)'}
+                    </span>
                     <input
                       type="file"
                       accept=".pdf,image/*"
@@ -1517,29 +1930,50 @@ export default function TargetStaffRegistrationWizard({
                 Step 4: Bank Account & Payment Details
               </h2>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
-                Enter verified banking credentials for salary disbursement and direct NEFT/RTGS payroll.
+                Enter verified banking credentials for salary disbursement and direct NEFT/RTGS
+                payroll.
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '1rem',
+              }}
+            >
               <FormField
                 label="Account Holder Name (as per Bank Passbook) *"
                 type="text"
                 placeholder="Full name on bank account"
                 value={bankAccountHolder}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBankAccountHolder(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setBankAccountHolder(e.target.value)
+                }
                 required
                 hint="Must match passbook or cancelled cheque exactly."
               />
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    marginBottom: '0.35rem',
+                  }}
+                >
                   Bank Name *
                 </label>
                 <select
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                  }}
                 >
                   <option value="State Bank of India">State Bank of India (SBI)</option>
                   <option value="HDFC Bank">HDFC Bank</option>
@@ -1554,13 +1988,21 @@ export default function TargetStaffRegistrationWizard({
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '1rem',
+              }}
+            >
               <FormField
                 label="Bank Account Number *"
                 type="password"
                 placeholder="Enter account number"
                 value={accountNumber}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAccountNumber(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setAccountNumber(e.target.value)
+                }
                 required
               />
               <FormField
@@ -1568,18 +2010,28 @@ export default function TargetStaffRegistrationWizard({
                 type="text"
                 placeholder="Re-enter to verify match"
                 value={confirmAccountNumber}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmAccountNumber(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setConfirmAccountNumber(e.target.value)
+                }
                 required
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '1rem',
+              }}
+            >
               <FormField
                 label="IFSC Code *"
                 type="text"
                 placeholder="e.g. SBIN0001234"
                 value={ifscCode}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIfscCode(e.target.value.toUpperCase())}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setIfscCode(e.target.value.toUpperCase())
+                }
                 required
                 hint="11-character alphanumeric code printed on cheque or passbook."
               />
@@ -1594,7 +2046,14 @@ export default function TargetStaffRegistrationWizard({
 
             {/* Passbook / Cheque Upload */}
             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem' }}>
-              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  marginBottom: '0.35rem',
+                }}
+              >
                 Bank Passbook / Cancelled Cheque (PDF or Image) *
               </label>
               <label
@@ -1615,8 +2074,12 @@ export default function TargetStaffRegistrationWizard({
                   <>
                     <CheckCircle2 size={24} style={{ color: '#10b981' }} />
                     <div>
-                      <strong style={{ color: '#065f46', display: 'block' }}>Passbook Document Uploaded</strong>
-                      <span style={{ fontSize: '0.8rem', color: '#047857' }}>{passbookDocName}</span>
+                      <strong style={{ color: '#065f46', display: 'block' }}>
+                        Passbook Document Uploaded
+                      </strong>
+                      <span style={{ fontSize: '0.8rem', color: '#047857' }}>
+                        {passbookDocName}
+                      </span>
                     </div>
                   </>
                 ) : (
@@ -1656,13 +2119,29 @@ export default function TargetStaffRegistrationWizard({
                 Step 5: Salary Structure & Compensation Template
               </h2>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
-                Store Admin salary templates for this role, with full breakdown customization for individual employees.
+                Store Admin salary templates for this role, with full breakdown customization for
+                individual employees.
               </p>
             </div>
 
             {/* Template Selector Dropdown */}
-            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.4rem', color: '#0f172a' }}>
+            <div
+              style={{
+                background: '#f8fafc',
+                padding: '1rem',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+              }}
+            >
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  marginBottom: '0.4rem',
+                  color: '#0f172a',
+                }}
+              >
                 Select Store Admin Salary Template
               </label>
               <select
@@ -1687,27 +2166,55 @@ export default function TargetStaffRegistrationWizard({
                   </option>
                 ))}
               </select>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.35rem', display: 'block' }}>
-                Pre-configures statutory Basic, HRA, and allowances. You can edit any individual field below.
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#64748b',
+                  marginTop: '0.35rem',
+                  display: 'block',
+                }}
+              >
+                Pre-configures statutory Basic, HRA, and allowances. You can edit any individual
+                field below.
               </span>
             </div>
 
             {/* Editable Line-Item Breakdown Grid */}
             <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem',
+                }}
+              >
                 <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
                   Monthly Compensation Line-Item Breakdown
                 </h4>
                 <StatusBadge tone="neutral">Customizable</StatusBadge>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '1rem',
+                  marginBottom: '1.25rem',
+                }}
+              >
                 <FormField
                   label="Basic Pay (₹) *"
                   type="number"
                   value={salaryBasic}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleSalaryComponentChange(e.target.value, salaryHra, salarySpecial, salaryPf, salaryEsi)
+                    handleSalaryComponentChange(
+                      e.target.value,
+                      salaryHra,
+                      salarySpecial,
+                      salaryPf,
+                      salaryEsi,
+                    )
                   }
                   required
                 />
@@ -1716,7 +2223,13 @@ export default function TargetStaffRegistrationWizard({
                   type="number"
                   value={salaryHra}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleSalaryComponentChange(salaryBasic, e.target.value, salarySpecial, salaryPf, salaryEsi)
+                    handleSalaryComponentChange(
+                      salaryBasic,
+                      e.target.value,
+                      salarySpecial,
+                      salaryPf,
+                      salaryEsi,
+                    )
                   }
                   required
                 />
@@ -1725,20 +2238,41 @@ export default function TargetStaffRegistrationWizard({
                   type="number"
                   value={salarySpecial}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleSalaryComponentChange(salaryBasic, salaryHra, e.target.value, salaryPf, salaryEsi)
+                    handleSalaryComponentChange(
+                      salaryBasic,
+                      salaryHra,
+                      e.target.value,
+                      salaryPf,
+                      salaryEsi,
+                    )
                   }
                   required
                 />
               </div>
 
               {/* Deductions Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem', paddingTop: '1rem', borderTop: '1px dashed #e2e8f0' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: '1rem',
+                  marginBottom: '1.25rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px dashed #e2e8f0',
+                }}
+              >
                 <FormField
                   label="Statutory PF Contribution (₹)"
                   type="number"
                   value={salaryPf}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleSalaryComponentChange(salaryBasic, salaryHra, salarySpecial, e.target.value, salaryEsi)
+                    handleSalaryComponentChange(
+                      salaryBasic,
+                      salaryHra,
+                      salarySpecial,
+                      e.target.value,
+                      salaryEsi,
+                    )
                   }
                   hint="Standard 12% cap (₹1,800/mo) or wage percentage."
                 />
@@ -1747,7 +2281,13 @@ export default function TargetStaffRegistrationWizard({
                   type="number"
                   value={salaryEsi}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleSalaryComponentChange(salaryBasic, salaryHra, salarySpecial, salaryPf, e.target.value)
+                    handleSalaryComponentChange(
+                      salaryBasic,
+                      salaryHra,
+                      salarySpecial,
+                      salaryPf,
+                      e.target.value,
+                    )
                   }
                   hint="Applicable for gross wages under ₹21,000/mo."
                 />
@@ -1765,7 +2305,14 @@ export default function TargetStaffRegistrationWizard({
                 }}
               >
                 <div>
-                  <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#64748b',
+                      textTransform: 'uppercase',
+                      fontWeight: 600,
+                    }}
+                  >
                     Gross Monthly CTC / Wage
                   </span>
                   <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>
@@ -1774,7 +2321,14 @@ export default function TargetStaffRegistrationWizard({
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '0.8rem', color: '#059669', textTransform: 'uppercase', fontWeight: 600 }}>
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#059669',
+                      textTransform: 'uppercase',
+                      fontWeight: 600,
+                    }}
+                  >
                     Estimated Net In-Hand Take-Home
                   </span>
                   <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#059669' }}>
@@ -1800,7 +2354,9 @@ export default function TargetStaffRegistrationWizard({
             >
               <AlertCircle size={16} />
               <span>
-                <strong>SRS Rule:</strong> Until P-01 through P-10 payroll policies are officially sealed, all newly provisioned payroll calculation runs remain clearly tagged as <em>Draft - Not for payment</em>.
+                <strong>SRS Rule:</strong> Until P-01 through P-10 payroll policies are officially
+                sealed, all newly provisioned payroll calculation runs remain clearly tagged as{' '}
+                <em>Draft - Not for payment</em>.
               </span>
             </div>
           </div>
@@ -1816,20 +2372,47 @@ export default function TargetStaffRegistrationWizard({
                 Step 6: Review Candidate Dossier & Confirm Registration
               </h2>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
-                Please review all information before provisioning this employee into the store workforce.
+                Please review all information before provisioning this employee into the store
+                workforce.
               </p>
             </div>
 
             {/* Summary Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '1.25rem',
+              }}
+            >
               {/* Box 1: Personal & Photo */}
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', background: '#f8fafc' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  background: '#f8fafc',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   {photoDataUrl ? (
                     <img
                       src={photoDataUrl}
                       alt="Candidate"
-                      style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #0284c7' }}
+                      style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '2px solid #0284c7',
+                      }}
                     />
                   ) : (
                     <User size={36} style={{ color: '#94a3b8' }} />
@@ -1844,20 +2427,48 @@ export default function TargetStaffRegistrationWizard({
                   </div>
                 </div>
 
-                <div style={{ fontSize: '0.825rem', color: '#475569', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <div
+                  style={{
+                    fontSize: '0.825rem',
+                    color: '#475569',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.25rem',
+                  }}
+                >
                   <div>📞 {phone}</div>
                   <div>✉️ {email}</div>
-                  <div>🚨 Emergency: {emergencyName} ({emergencyRelation}) - {emergencyPhone}</div>
+                  <div>
+                    🚨 Emergency: {emergencyName} ({emergencyRelation}) - {emergencyPhone}
+                  </div>
                 </div>
               </div>
 
               {/* Box 2: Store & Role */}
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', background: '#f8fafc' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 700 }}>Store & Role Assignment</h4>
-                <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  background: '#f8fafc',
+                }}
+              >
+                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 700 }}>
+                  Store & Role Assignment
+                </h4>
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.4rem',
+                  }}
+                >
                   <div>
                     <span style={{ color: '#64748b' }}>Target Store:</span>{' '}
-                    <strong>{stores.find((s) => s.id === selectedStoreId)?.name || 'Selected Store'}</strong>
+                    <strong>
+                      {stores.find((s) => s.id === selectedStoreId)?.name || 'Selected Store'}
+                    </strong>
                   </div>
                   <div>
                     <span style={{ color: '#64748b' }}>Designation:</span>{' '}
@@ -1877,16 +2488,33 @@ export default function TargetStaffRegistrationWizard({
               </div>
 
               {/* Box 3: Verification & KYC */}
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', background: '#f8fafc' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 700 }}>Identity & KYC</h4>
-                <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  background: '#f8fafc',
+                }}
+              >
+                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 700 }}>
+                  Identity & KYC
+                </h4>
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.4rem',
+                  }}
+                >
                   <div>
                     <span style={{ color: '#64748b' }}>Aadhar Card:</span>{' '}
-                    <strong>{aadharNumber}</strong> ({aadharDocName ? 'Document Attached' : 'Number Verified'})
+                    <strong>{aadharNumber}</strong> (
+                    {aadharDocName ? 'Document Attached' : 'Number Verified'})
                   </div>
                   <div>
-                    <span style={{ color: '#64748b' }}>PAN Card:</span>{' '}
-                    <strong>{panNumber}</strong> ({panDocName ? 'Document Attached' : 'Number Verified'})
+                    <span style={{ color: '#64748b' }}>PAN Card:</span> <strong>{panNumber}</strong>{' '}
+                    ({panDocName ? 'Document Attached' : 'Number Verified'})
                   </div>
                   {isManagementRole && (
                     <div>
@@ -1898,11 +2526,28 @@ export default function TargetStaffRegistrationWizard({
               </div>
 
               {/* Box 4: Bank & Salary */}
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', background: '#f8fafc' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 700 }}>Bank & Salary Structure</h4>
-                <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  background: '#f8fafc',
+                }}
+              >
+                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 700 }}>
+                  Bank & Salary Structure
+                </h4>
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.4rem',
+                  }}
+                >
                   <div>
-                    <span style={{ color: '#64748b' }}>Bank:</span> <strong>{bankName}</strong> ({ifscCode})
+                    <span style={{ color: '#64748b' }}>Bank:</span> <strong>{bankName}</strong> (
+                    {ifscCode})
                   </div>
                   <div>
                     <span style={{ color: '#64748b' }}>Account:</span>{' '}
@@ -1914,7 +2559,9 @@ export default function TargetStaffRegistrationWizard({
                   </div>
                   <div>
                     <span style={{ color: '#059669' }}>Net Take-Home:</span>{' '}
-                    <strong style={{ color: '#059669' }}>₹{Number(salaryNet).toLocaleString('en-IN')}</strong>
+                    <strong style={{ color: '#059669' }}>
+                      ₹{Number(salaryNet).toLocaleString('en-IN')}
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -1956,4 +2603,3 @@ export default function TargetStaffRegistrationWizard({
     </div>
   );
 }
-

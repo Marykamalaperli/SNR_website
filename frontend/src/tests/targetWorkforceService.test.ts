@@ -151,7 +151,11 @@ describe('targetWorkforceService', () => {
   });
 
   it('calls createStoreAdmin with payload', async () => {
-    const payload = { email: 'mgr@example.org', display_name: 'Store Mgr', password: 'Password123!' };
+    const payload = {
+      email: 'mgr@example.org',
+      display_name: 'Store Mgr',
+      password: 'Password123!',
+    };
     vi.mocked(apiRequest).mockResolvedValueOnce({ id: 'ra-1', ...payload });
 
     await createStoreAdmin('s-1', payload);

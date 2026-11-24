@@ -52,9 +52,7 @@ interface StoredDocument {
 
 export default function TargetEmployeeDocuments() {
   const { session } = useAuth();
-  const [dossier] = useState<StaffOnboardingDossier>(() =>
-    getCurrentEmployeeDossier(session),
-  );
+  const [dossier] = useState<StaffOnboardingDossier>(() => getCurrentEmployeeDossier(session));
   const [activeCategory, setActiveCategory] = useState<DocumentCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -65,7 +63,9 @@ export default function TargetEmployeeDocuments() {
   // Upload modal state
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadDocTitle, setUploadDocTitle] = useState('');
-  const [uploadCategory, setUploadCategory] = useState<'payslips' | 'letters' | 'kyc' | 'bank' | 'previous'>('payslips');
+  const [uploadCategory, setUploadCategory] = useState<
+    'payslips' | 'letters' | 'kyc' | 'bank' | 'previous'
+  >('payslips');
   const [uploadFileName, setUploadFileName] = useState('');
   const [uploadPeriodName, setUploadPeriodName] = useState('');
   const [uploadAmount, setUploadAmount] = useState('');
@@ -310,7 +310,12 @@ export default function TargetEmployeeDocuments() {
   };
 
   const handleDownload = async (doc: StoredDocument) => {
-    if (doc.isSnrPayslip && doc.id && !doc.id.startsWith('snr-ps') && !doc.id.startsWith('upload-')) {
+    if (
+      doc.isSnrPayslip &&
+      doc.id &&
+      !doc.id.startsWith('snr-ps') &&
+      !doc.id.startsWith('upload-')
+    ) {
       try {
         const intent = await createPayslipDownloadIntent(doc.id);
         if (intent.download_url) {
@@ -350,7 +355,14 @@ export default function TargetEmployeeDocuments() {
           }}
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                marginBottom: '0.35rem',
+              }}
+            >
               <span
                 style={{
                   background: '#f4a261',
@@ -364,13 +376,16 @@ export default function TargetEmployeeDocuments() {
               >
                 EMPLOYEE DOSSIER
               </span>
-              <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>• {dossier.fullName} ({dossier.employeeCode})</span>
+              <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                • {dossier.fullName} ({dossier.employeeCode})
+              </span>
             </div>
             <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#ffffff' }}>
               My Documents & Pay Slips
             </h1>
             <p style={{ margin: '0.35rem 0 0', color: '#cbd5e1', fontSize: '0.9rem' }}>
-              Access verified employment records, letters, KYC proofs, and released monthly pay slips.
+              Access verified employment records, letters, KYC proofs, and released monthly pay
+              slips.
             </p>
           </div>
 
@@ -550,7 +565,9 @@ export default function TargetEmployeeDocuments() {
                   justifyContent: 'space-between',
                   borderRadius: '12px',
                   border: isPaySlip ? '2px solid #bbf7d0' : '1px solid #e2e8f0',
-                  background: isPaySlip ? 'linear-gradient(180deg, #f0fdf4 0%, #ffffff 40%)' : '#ffffff',
+                  background: isPaySlip
+                    ? 'linear-gradient(180deg, #f0fdf4 0%, #ffffff 40%)'
+                    : '#ffffff',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                   padding: '1.25rem',
                 }}
@@ -643,7 +660,15 @@ export default function TargetEmployeeDocuments() {
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.775rem', color: '#64748b' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      fontSize: '0.775rem',
+                      color: '#64748b',
+                    }}
+                  >
                     <Calendar size={13} />
                     <span>Date: {doc.date}</span>
                   </div>
@@ -704,7 +729,8 @@ export default function TargetEmployeeDocuments() {
           title="Upload Pay Slip or Employment Document"
         >
           <p className="muted" style={{ margin: '0 0 1rem 0', fontSize: '0.85rem' }}>
-            Upload your monthly pay slips, company letters, or verified certificates. Files are stored securely with encrypted access.
+            Upload your monthly pay slips, company letters, or verified certificates. Files are
+            stored securely with encrypted access.
           </p>
 
           <form onSubmit={handleUploadSubmit}>
@@ -730,7 +756,14 @@ export default function TargetEmployeeDocuments() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    marginBottom: '0.35rem',
+                  }}
+                >
                   Document Category
                 </label>
                 <select
@@ -755,9 +788,15 @@ export default function TargetEmployeeDocuments() {
               <FormField
                 label="Document Title / Period Name"
                 type="text"
-                placeholder={uploadCategory === 'payslips' ? 'e.g. Salary Pay Slip — November 2026' : 'e.g. Relieving Certificate'}
+                placeholder={
+                  uploadCategory === 'payslips'
+                    ? 'e.g. Salary Pay Slip — November 2026'
+                    : 'e.g. Relieving Certificate'
+                }
                 value={uploadDocTitle}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUploadDocTitle(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setUploadDocTitle(e.target.value)
+                }
                 required
               />
 
@@ -767,7 +806,9 @@ export default function TargetEmployeeDocuments() {
                   type="text"
                   placeholder="e.g. 16545 or 58200"
                   value={uploadAmount}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUploadAmount(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setUploadAmount(e.target.value)
+                  }
                 />
               )}
 
@@ -843,10 +884,7 @@ export default function TargetEmployeeDocuments() {
       {/* DOCUMENT PREVIEW MODAL                                                */}
       {/* --------------------------------------------------------------------- */}
       {previewDoc && (
-        <Modal
-          onClose={() => setPreviewDoc(null)}
-          title={previewDoc.title}
-        >
+        <Modal onClose={() => setPreviewDoc(null)} title={previewDoc.title}>
           <p className="muted" style={{ margin: '0 0 1rem 0', fontSize: '0.85rem' }}>
             {`Verified employee record for ${dossier.fullName} (${dossier.employeeCode})`}
           </p>
@@ -871,7 +909,11 @@ export default function TargetEmployeeDocuments() {
                   marginBottom: '0.75rem',
                 }}
               >
-                {previewDoc.category === 'payslips' ? <DollarSign size={36} /> : <FileText size={36} />}
+                {previewDoc.category === 'payslips' ? (
+                  <DollarSign size={36} />
+                ) : (
+                  <FileText size={36} />
+                )}
               </div>
 
               <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', fontWeight: 700 }}>
@@ -882,7 +924,14 @@ export default function TargetEmployeeDocuments() {
               </div>
 
               {previewDoc.amount && (
-                <div style={{ marginTop: '0.5rem', fontSize: '1.15rem', fontWeight: 800, color: '#065f46' }}>
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    fontSize: '1.15rem',
+                    fontWeight: 800,
+                    color: '#065f46',
+                  }}
+                >
                   Net Payout: {previewDoc.amount}
                 </div>
               )}
@@ -913,13 +962,29 @@ export default function TargetEmployeeDocuments() {
                 fontSize: '0.85rem',
               }}
             >
-              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '0.75rem', borderRadius: '6px' }}>
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                }}
+              >
                 <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Record Date:</span>
                 <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>{previewDoc.date}</p>
               </div>
-              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '0.75rem', borderRadius: '6px' }}>
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                }}
+              >
                 <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Storage Policy:</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>Private S3 · Signed URL Access</p>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>
+                  Private S3 · Signed URL Access
+                </p>
               </div>
             </div>
 
@@ -936,10 +1001,7 @@ export default function TargetEmployeeDocuments() {
               <Button variant="secondary" onClick={() => setPreviewDoc(null)}>
                 Close Preview
               </Button>
-              <Button
-                variant="primary"
-                onClick={() => handleDownload(previewDoc)}
-              >
+              <Button variant="primary" onClick={() => handleDownload(previewDoc)}>
                 <Download size={14} /> Download File
               </Button>
             </div>
@@ -949,4 +1011,3 @@ export default function TargetEmployeeDocuments() {
     </div>
   );
 }
-

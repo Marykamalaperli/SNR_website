@@ -1,6 +1,6 @@
 # SNR NEST implementation progress
 
-Last verified: 22 November 2026
+Last verified: 24 November 2026
 
 This is the shared handoff ledger for Codex, Antigravity and human contributors.
 It records repository and cloud evidence; it does not replace the five-document
@@ -119,6 +119,25 @@ At the end of every work package, update this file in the same pull request with
 
 Never record planned behavior as operational, and never include credentials,
 tokens, signed URLs, personal data or private request content.
+
+## CI formatting and browser-suite alignment (24 November 2026)
+
+- **Implemented and locally validated:** branch `agy/fix-ci-formatting` corrects the
+  Prettier and Ruff failures reported by GitHub Actions run `45342569834` without
+  changing application behavior or dependencies.
+- The default `test:browser` command now runs the active responsive/accessibility
+  and production-boundary Playwright projects. Supabase, personal-QR and guard
+  station projects remain available as `test:browser:legacy`; they are retained as
+  transition evidence but are not active target-contract gates.
+- Validation passed: frontend Prettier, ESLint (one pre-existing Hook dependency
+  warning), TypeScript, 215 Vitest tests, 39 Node server tests, production build;
+  backend Ruff lint/format, dependency check and 46 Pytest tests; 21 deployment,
+  AWS and server assertions; and 11 active Playwright browser tests.
+- No cloud resources, deployments, live migrations, DNS, credentials or private
+  data were changed. The branch is not pushed and no pull request exists because
+  repository policy requires explicit push authorization.
+- Next bounded package: replace the retained legacy browser projects with target
+  FastAPI/store-QR end-to-end coverage before removing any historical fixtures.
 
 ## Super Admin Store Management & Google Maps Location Picker (November 2026)
 

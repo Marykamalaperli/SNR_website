@@ -72,8 +72,7 @@ export default function TargetEmployeeProfile() {
   } | null>(null);
 
   const roleDef =
-    STORE_ROLE_DEFINITIONS[dossier.designation] ||
-    STORE_ROLE_DEFINITIONS.picker_packer;
+    STORE_ROLE_DEFINITIONS[dossier.designation] || STORE_ROLE_DEFINITIONS.picker_packer;
 
   // Open edit modal with current bank details
   const handleOpenBankModal = () => {
@@ -215,9 +214,7 @@ export default function TargetEmployeeProfile() {
   ];
 
   const filteredDocuments =
-    docCategory === 'all'
-      ? documentsList
-      : documentsList.filter((d) => d.category === docCategory);
+    docCategory === 'all' ? documentsList : documentsList.filter((d) => d.category === docCategory);
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '3rem' }}>
@@ -277,7 +274,9 @@ export default function TargetEmployeeProfile() {
             </div>
 
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}
+              >
                 <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, color: '#ffffff' }}>
                   {dossier.fullName}
                 </h1>
@@ -311,7 +310,9 @@ export default function TargetEmployeeProfile() {
               >
                 <span style={{ color: '#f4a261', fontWeight: 600 }}>{roleDef.label}</span>
                 <span>•</span>
-                <span>Code: <strong>{dossier.employeeCode}</strong></span>
+                <span>
+                  Code: <strong>{dossier.employeeCode}</strong>
+                </span>
                 <span>•</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                   <Building2 size={14} /> {dossier.storeName || 'Development Store'}
@@ -329,7 +330,14 @@ export default function TargetEmployeeProfile() {
               textAlign: 'right',
             }}
           >
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div
+              style={{
+                fontSize: '0.75rem',
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
               Official Staff Dossier
             </div>
             <div
@@ -345,7 +353,12 @@ export default function TargetEmployeeProfile() {
               <ShieldCheck size={16} /> Verified Store Placement
             </div>
             <div style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>
-              Joined: {new Date(dossier.dateOfJoining).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+              Joined:{' '}
+              {new Date(dossier.dateOfJoining).toLocaleDateString('en-IN', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
             </div>
           </div>
         </div>
@@ -459,7 +472,14 @@ export default function TargetEmployeeProfile() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Personal Demographics */}
           <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '1.25rem',
+              }}
+            >
               <User size={20} className="text-primary" />
               <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>
                 Personal Information & Demographics
@@ -474,56 +494,111 @@ export default function TargetEmployeeProfile() {
               }}
             >
               <div>
-                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>First Name</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>{dossier.firstName}</p>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                  First Name
+                </span>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>
+                  {dossier.firstName}
+                </p>
               </div>
 
               <div>
-                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>Middle Name</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>{dossier.middleName || '—'}</p>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                  Middle Name
+                </span>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>
+                  {dossier.middleName || '—'}
+                </p>
               </div>
 
               <div>
-                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>Last Name</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>{dossier.lastName}</p>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                  Last Name
+                </span>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>
+                  {dossier.lastName}
+                </p>
               </div>
 
               <div>
-                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>Date of Birth</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>{dossier.dob}</p>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                  Date of Birth
+                </span>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>
+                  {dossier.dob}
+                </p>
               </div>
 
               <div>
-                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>Gender</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>{dossier.gender}</p>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                  Gender
+                </span>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>
+                  {dossier.gender}
+                </p>
               </div>
 
               <div>
-                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>Marital Status</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>{dossier.maritalStatus}</p>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                  Marital Status
+                </span>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 600, fontSize: '0.95rem' }}>
+                  {dossier.maritalStatus}
+                </p>
               </div>
             </div>
           </Card>
 
           {/* Contact Details & Emergency */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '1.5rem',
+            }}
+          >
             <Card>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '1.25rem',
+                }}
+              >
                 <Phone size={19} className="text-primary" />
                 <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>Contact Details</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Primary Mobile Number</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                    Primary Mobile Number
+                  </span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      marginTop: '0.2rem',
+                    }}
+                  >
                     <Phone size={15} color="#64748b" />
                     <strong>{dossier.phone}</strong>
                   </div>
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Official / Login Email</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                    Official / Login Email
+                  </span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      marginTop: '0.2rem',
+                    }}
+                  >
                     <Mail size={15} color="#64748b" />
                     <strong>{dossier.email}</strong>
                   </div>
@@ -531,7 +606,14 @@ export default function TargetEmployeeProfile() {
 
                 <div>
                   <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Work Location</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      marginTop: '0.2rem',
+                    }}
+                  >
                     <Building2 size={15} color="#64748b" />
                     <strong>{dossier.storeName || 'Development Store'}</strong>
                   </div>
@@ -540,22 +622,42 @@ export default function TargetEmployeeProfile() {
             </Card>
 
             <Card>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '1.25rem',
+                }}
+              >
                 <HeartHandshake size={19} color="#e76f51" />
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>Emergency Contact</h3>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>
+                  Emergency Contact
+                </h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
                   <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Contact Person</span>
-                  <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>{dossier.emergencyContact.name}</p>
+                  <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>
+                    {dossier.emergencyContact.name}
+                  </p>
                 </div>
                 <div>
                   <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Relationship</span>
-                  <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>{dossier.emergencyContact.relationship}</p>
+                  <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>
+                    {dossier.emergencyContact.relationship}
+                  </p>
                 </div>
                 <div>
                   <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Emergency Phone</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      marginTop: '0.2rem',
+                    }}
+                  >
                     <Phone size={15} color="#e76f51" />
                     <strong style={{ color: '#b91c1c' }}>{dossier.emergencyContact.phone}</strong>
                   </div>
@@ -566,7 +668,14 @@ export default function TargetEmployeeProfile() {
 
           {/* Store & Workplace Assignment */}
           <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '1.25rem',
+              }}
+            >
               <Building2 size={20} className="text-primary" />
               <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>
                 Store & Designation Assignment
@@ -581,7 +690,9 @@ export default function TargetEmployeeProfile() {
             >
               <div>
                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Designation</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 700, color: '#0f766e' }}>{roleDef.label}</p>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 700, color: '#0f766e' }}>
+                  {roleDef.label}
+                </p>
               </div>
               <div>
                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Reporting Line</span>
@@ -593,7 +704,9 @@ export default function TargetEmployeeProfile() {
               </div>
               <div>
                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Shift Assignment</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>General Shift · 09:00 – 18:00</p>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>
+                  General Shift · 09:00 – 18:00
+                </p>
               </div>
             </div>
 
@@ -606,12 +719,23 @@ export default function TargetEmployeeProfile() {
                 border: '1px solid #e2e8f0',
               }}
             >
-              <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+              <div
+                style={{
+                  fontSize: '0.825rem',
+                  fontWeight: 700,
+                  color: '#334155',
+                  marginBottom: '0.35rem',
+                }}
+              >
                 Operational Role Authorizations:
               </div>
-              <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.85rem', color: '#475569' }}>
+              <ul
+                style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.85rem', color: '#475569' }}
+              >
                 {roleDef.authorizations.map((auth, idx) => (
-                  <li key={idx} style={{ marginBottom: '0.25rem' }}>{auth}</li>
+                  <li key={idx} style={{ marginBottom: '0.25rem' }}>
+                    {auth}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -625,7 +749,14 @@ export default function TargetEmployeeProfile() {
       {activeTab === 'experience' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <Card>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1.25rem',
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Briefcase size={20} className="text-primary" />
                 <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>
@@ -649,16 +780,27 @@ export default function TargetEmployeeProfile() {
                   }}
                 >
                   <div>
-                    <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                    <span
+                      style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}
+                    >
                       Previous Employer / Company
                     </span>
-                    <p style={{ margin: '0.25rem 0 0', fontWeight: 700, fontSize: '1.05rem', color: '#1e293b' }}>
+                    <p
+                      style={{
+                        margin: '0.25rem 0 0',
+                        fontWeight: 700,
+                        fontSize: '1.05rem',
+                        color: '#1e293b',
+                      }}
+                    >
                       {dossier.previousEmployment.companyName}
                     </p>
                   </div>
 
                   <div>
-                    <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                    <span
+                      style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}
+                    >
                       Last Held Designation
                     </span>
                     <p style={{ margin: '0.25rem 0 0', fontWeight: 600, fontSize: '1rem' }}>
@@ -667,10 +809,21 @@ export default function TargetEmployeeProfile() {
                   </div>
 
                   <div>
-                    <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                    <span
+                      style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}
+                    >
                       Verification Status
                     </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.25rem', color: '#16a34a', fontWeight: 600 }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        marginTop: '0.25rem',
+                        color: '#16a34a',
+                        fontWeight: 600,
+                      }}
+                    >
                       <CheckCircle2 size={16} /> Background Check Cleared
                     </div>
                   </div>
@@ -680,7 +833,13 @@ export default function TargetEmployeeProfile() {
                   <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem' }}>
                     Uploaded Previous Employment Documents:
                   </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                      gap: '1rem',
+                    }}
+                  >
                     <div
                       style={{
                         padding: '1rem',
@@ -695,7 +854,9 @@ export default function TargetEmployeeProfile() {
                         <FileCheck size={24} color="#16a34a" />
                         <div>
                           <strong>Last 3 Months Pay Slips</strong>
-                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Month 1, 2 & 3 verified</div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                            Month 1, 2 & 3 verified
+                          </div>
                         </div>
                       </div>
                       <Button
@@ -724,7 +885,9 @@ export default function TargetEmployeeProfile() {
                         <FileCheck size={24} color="#16a34a" />
                         <div>
                           <strong>Previous Offer / Relieving Letter</strong>
-                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Formal clearance letter</div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                            Formal clearance letter
+                          </div>
                         </div>
                       </div>
                       <Button
@@ -814,31 +977,75 @@ export default function TargetEmployeeProfile() {
               }}
             >
               <div>
-                <span style={{ fontSize: '0.775rem', color: '#9a3412', textTransform: 'uppercase', fontWeight: 700 }}>
+                <span
+                  style={{
+                    fontSize: '0.775rem',
+                    color: '#9a3412',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                  }}
+                >
                   Account Holder Name (As Per Passbook)
                 </span>
-                <p style={{ margin: '0.25rem 0 0', fontWeight: 800, fontSize: '1.1rem', color: '#1e293b' }}>
+                <p
+                  style={{
+                    margin: '0.25rem 0 0',
+                    fontWeight: 800,
+                    fontSize: '1.1rem',
+                    color: '#1e293b',
+                  }}
+                >
                   {dossier.bankDetails.accountHolderName}
                 </p>
               </div>
 
               <div>
-                <span style={{ fontSize: '0.775rem', color: '#9a3412', textTransform: 'uppercase', fontWeight: 700 }}>
+                <span
+                  style={{
+                    fontSize: '0.775rem',
+                    color: '#9a3412',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                  }}
+                >
                   Bank Name
                 </span>
-                <p style={{ margin: '0.25rem 0 0', fontWeight: 700, fontSize: '1.05rem', color: '#1e293b' }}>
+                <p
+                  style={{
+                    margin: '0.25rem 0 0',
+                    fontWeight: 700,
+                    fontSize: '1.05rem',
+                    color: '#1e293b',
+                  }}
+                >
                   {dossier.bankDetails.bankName}
                 </p>
                 {dossier.bankDetails.branchName && (
-                  <small style={{ color: '#64748b' }}>Branch: {dossier.bankDetails.branchName}</small>
+                  <small style={{ color: '#64748b' }}>
+                    Branch: {dossier.bankDetails.branchName}
+                  </small>
                 )}
               </div>
 
               <div>
-                <span style={{ fontSize: '0.775rem', color: '#9a3412', textTransform: 'uppercase', fontWeight: 700 }}>
+                <span
+                  style={{
+                    fontSize: '0.775rem',
+                    color: '#9a3412',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                  }}
+                >
                   Account Number
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginTop: '0.25rem',
+                  }}
+                >
                   <span
                     style={{
                       fontFamily: 'monospace',
@@ -870,10 +1077,24 @@ export default function TargetEmployeeProfile() {
               </div>
 
               <div>
-                <span style={{ fontSize: '0.775rem', color: '#9a3412', textTransform: 'uppercase', fontWeight: 700 }}>
+                <span
+                  style={{
+                    fontSize: '0.775rem',
+                    color: '#9a3412',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                  }}
+                >
                   IFSC Code
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    marginTop: '0.25rem',
+                  }}
+                >
                   <span
                     style={{
                       background: '#ffedd5',
@@ -910,7 +1131,8 @@ export default function TargetEmployeeProfile() {
                 <FileCheck size={24} color="#16a34a" />
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                    Uploaded Bank Proof: {dossier.bankDetails.passbookFileName || 'passbook_record.pdf'}
+                    Uploaded Bank Proof:{' '}
+                    {dossier.bankDetails.passbookFileName || 'passbook_record.pdf'}
                   </div>
                   <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
                     Passbook / Cancelled Cheque verified by Store Accounts
@@ -939,7 +1161,8 @@ export default function TargetEmployeeProfile() {
             </div>
 
             <p style={{ margin: '1rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-              🔒 Bank information is encrypted and transmitted directly to the organization's automated payout gateway. Only bank details can be edited directly by the employee.
+              🔒 Bank information is encrypted and transmitted directly to the organization's
+              automated payout gateway. Only bank details can be edited directly by the employee.
             </p>
           </Card>
         </div>
@@ -951,7 +1174,14 @@ export default function TargetEmployeeProfile() {
       {activeTab === 'salary' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <Card>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1.25rem',
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Calculator size={20} className="text-primary" />
                 <div>
@@ -982,8 +1212,17 @@ export default function TargetEmployeeProfile() {
                   padding: '1.25rem',
                 }}
               >
-                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>Gross Monthly CTC</span>
-                <p style={{ margin: '0.25rem 0 0', fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
+                  Gross Monthly CTC
+                </span>
+                <p
+                  style={{
+                    margin: '0.25rem 0 0',
+                    fontSize: '1.5rem',
+                    fontWeight: 800,
+                    color: '#1e293b',
+                  }}
+                >
                   ₹{dossier.salary.grossSalary.toLocaleString('en-IN')}
                 </p>
               </div>
@@ -996,10 +1235,24 @@ export default function TargetEmployeeProfile() {
                   padding: '1.25rem',
                 }}
               >
-                <span style={{ fontSize: '0.8rem', color: '#047857', textTransform: 'uppercase', fontWeight: 700 }}>
+                <span
+                  style={{
+                    fontSize: '0.8rem',
+                    color: '#047857',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                  }}
+                >
                   Estimated Net Take-Home
                 </span>
-                <p style={{ margin: '0.25rem 0 0', fontSize: '1.5rem', fontWeight: 800, color: '#065f46' }}>
+                <p
+                  style={{
+                    margin: '0.25rem 0 0',
+                    fontSize: '1.5rem',
+                    fontWeight: 800,
+                    color: '#065f46',
+                  }}
+                >
                   ₹{dossier.salary.netTakeHome.toLocaleString('en-IN')}
                 </p>
               </div>
@@ -1012,11 +1265,28 @@ export default function TargetEmployeeProfile() {
                   padding: '1.25rem',
                 }}
               >
-                <span style={{ fontSize: '0.8rem', color: '#c2410c', textTransform: 'uppercase', fontWeight: 700 }}>
+                <span
+                  style={{
+                    fontSize: '0.8rem',
+                    color: '#c2410c',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                  }}
+                >
                   Total Deductions (PF/ESI)
                 </span>
-                <p style={{ margin: '0.25rem 0 0', fontSize: '1.5rem', fontWeight: 800, color: '#9a3412' }}>
-                  ₹{(dossier.salary.pfDeduction + dossier.salary.esiDeduction).toLocaleString('en-IN')}
+                <p
+                  style={{
+                    margin: '0.25rem 0 0',
+                    fontSize: '1.5rem',
+                    fontWeight: 800,
+                    color: '#9a3412',
+                  }}
+                >
+                  ₹
+                  {(dossier.salary.pfDeduction + dossier.salary.esiDeduction).toLocaleString(
+                    'en-IN',
+                  )}
                 </p>
               </div>
             </div>
@@ -1029,7 +1299,9 @@ export default function TargetEmployeeProfile() {
               }}
             >
               <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
+                <tr
+                  style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}
+                >
                   <th style={{ padding: '0.6rem 0' }}>Component</th>
                   <th style={{ padding: '0.6rem 0' }}>Classification</th>
                   <th style={{ padding: '0.6rem 0', textAlign: 'right' }}>Monthly Amount (₹)</th>
@@ -1044,7 +1316,9 @@ export default function TargetEmployeeProfile() {
                   </td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '0.75rem 0', fontWeight: 600 }}>House Rent Allowance (HRA)</td>
+                  <td style={{ padding: '0.75rem 0', fontWeight: 600 }}>
+                    House Rent Allowance (HRA)
+                  </td>
                   <td style={{ padding: '0.75rem 0', color: '#64748b' }}>Earnings</td>
                   <td style={{ padding: '0.75rem 0', textAlign: 'right', fontWeight: 600 }}>
                     ₹{dossier.salary.hra.toLocaleString('en-IN')}
@@ -1058,7 +1332,9 @@ export default function TargetEmployeeProfile() {
                   </td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #f1f5f9', color: '#b91c1c' }}>
-                  <td style={{ padding: '0.75rem 0', fontWeight: 600 }}>Provident Fund (PF Employee)</td>
+                  <td style={{ padding: '0.75rem 0', fontWeight: 600 }}>
+                    Provident Fund (PF Employee)
+                  </td>
                   <td style={{ padding: '0.75rem 0' }}>Statutory Deduction</td>
                   <td style={{ padding: '0.75rem 0', textAlign: 'right', fontWeight: 600 }}>
                     - ₹{dossier.salary.pfDeduction.toLocaleString('en-IN')}
@@ -1066,7 +1342,9 @@ export default function TargetEmployeeProfile() {
                 </tr>
                 {dossier.salary.esiDeduction > 0 && (
                   <tr style={{ borderBottom: '1px solid #f1f5f9', color: '#b91c1c' }}>
-                    <td style={{ padding: '0.75rem 0', fontWeight: 600 }}>Employee State Insurance (ESI)</td>
+                    <td style={{ padding: '0.75rem 0', fontWeight: 600 }}>
+                      Employee State Insurance (ESI)
+                    </td>
                     <td style={{ padding: '0.75rem 0' }}>Statutory Deduction</td>
                     <td style={{ padding: '0.75rem 0', textAlign: 'right', fontWeight: 600 }}>
                       - ₹{dossier.salary.esiDeduction.toLocaleString('en-IN')}
@@ -1076,7 +1354,14 @@ export default function TargetEmployeeProfile() {
                 <tr style={{ borderTop: '2px solid #cbd5e1', fontWeight: 800 }}>
                   <td style={{ padding: '0.85rem 0', fontSize: '1rem' }}>Net Take-Home Pay</td>
                   <td style={{ padding: '0.85rem 0', color: '#059669' }}>Disbursed to Bank</td>
-                  <td style={{ padding: '0.85rem 0', textAlign: 'right', fontSize: '1.1rem', color: '#059669' }}>
+                  <td
+                    style={{
+                      padding: '0.85rem 0',
+                      textAlign: 'right',
+                      fontSize: '1.1rem',
+                      color: '#059669',
+                    }}
+                  >
                     ₹{dossier.salary.netTakeHome.toLocaleString('en-IN')}
                   </td>
                 </tr>
@@ -1094,7 +1379,8 @@ export default function TargetEmployeeProfile() {
                 color: '#64748b',
               }}
             >
-              Draft — Official SNR NEST store salary template per SRS P-01/P-08 compliance. Only Store Admin and HR can reassign templates.
+              Draft — Official SNR NEST store salary template per SRS P-01/P-08 compliance. Only
+              Store Admin and HR can reassign templates.
             </div>
           </Card>
         </div>
@@ -1106,7 +1392,16 @@ export default function TargetEmployeeProfile() {
       {activeTab === 'documents' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <Card>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1.25rem',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FileText size={20} className="text-primary" />
                 <div>
@@ -1187,7 +1482,14 @@ export default function TargetEmployeeProfile() {
                   }}
                 >
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '0.5rem',
+                      }}
+                    >
                       <div
                         style={{
                           background: '#fef3c7',
@@ -1216,7 +1518,14 @@ export default function TargetEmployeeProfile() {
                       </span>
                     </div>
 
-                    <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '0.975rem', fontWeight: 700, color: '#1e293b' }}>
+                    <h4
+                      style={{
+                        margin: '0 0 0.25rem 0',
+                        fontSize: '0.975rem',
+                        fontWeight: 700,
+                        color: '#1e293b',
+                      }}
+                    >
                       {doc.title}
                     </h4>
                     <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.35rem' }}>
@@ -1249,9 +1558,7 @@ export default function TargetEmployeeProfile() {
                       justifyContent: 'space-between',
                     }}
                   >
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                      {doc.filename}
-                    </span>
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{doc.filename}</span>
 
                     <div style={{ display: 'flex', gap: '0.35rem' }}>
                       <Button
@@ -1283,10 +1590,7 @@ export default function TargetEmployeeProfile() {
       {/* EDIT BANK DETAILS MODAL (ONLY EDIT OPTION AS REQUESTED)               */}
       {/* --------------------------------------------------------------------- */}
       {bankModalOpen && (
-        <Modal
-          onClose={() => setBankModalOpen(false)}
-          title="Edit Bank Account Details"
-        >
+        <Modal onClose={() => setBankModalOpen(false)} title="Edit Bank Account Details">
           <p className="muted" style={{ margin: '0 0 1rem 0', fontSize: '0.85rem' }}>
             Direct deposit account for payroll disbursement. Updates are logged to audit records.
           </p>
@@ -1316,7 +1620,9 @@ export default function TargetEmployeeProfile() {
                 label="Account Holder Name (As per Bank Passbook)"
                 type="text"
                 value={editHolderName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditHolderName(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setEditHolderName(e.target.value)
+                }
                 required
               />
 
@@ -1326,7 +1632,9 @@ export default function TargetEmployeeProfile() {
                   type="text"
                   placeholder="e.g. HDFC Bank, SBI, ICICI"
                   value={editBankName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditBankName(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEditBankName(e.target.value)
+                  }
                   required
                 />
                 <FormField
@@ -1334,7 +1642,9 @@ export default function TargetEmployeeProfile() {
                   type="text"
                   placeholder="e.g. Madhapur, Indiranagar"
                   value={editBranchName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditBranchName(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEditBranchName(e.target.value)
+                  }
                 />
               </div>
 
@@ -1343,14 +1653,18 @@ export default function TargetEmployeeProfile() {
                   label="Account Number"
                   type="text"
                   value={editAccountNumber}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditAccountNumber(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEditAccountNumber(e.target.value)
+                  }
                   required
                 />
                 <FormField
                   label="Confirm Account Number"
                   type="text"
                   value={editConfirmAccountNumber}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditConfirmAccountNumber(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEditConfirmAccountNumber(e.target.value)
+                  }
                   required
                 />
               </div>
@@ -1360,7 +1674,9 @@ export default function TargetEmployeeProfile() {
                 type="text"
                 placeholder="e.g. HDFC0001234"
                 value={editIfscCode}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditIfscCode(e.target.value.toUpperCase())}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setEditIfscCode(e.target.value.toUpperCase())
+                }
                 required
               />
 
@@ -1436,10 +1752,7 @@ export default function TargetEmployeeProfile() {
       {/* DOCUMENT PREVIEW MODAL                                                */}
       {/* --------------------------------------------------------------------- */}
       {previewDoc && (
-        <Modal
-          onClose={() => setPreviewDoc(null)}
-          title={previewDoc.title}
-        >
+        <Modal onClose={() => setPreviewDoc(null)} title={previewDoc.title}>
           <p className="muted" style={{ margin: '0 0 1rem 0', fontSize: '0.85rem' }}>
             {`Verified official document for ${dossier.fullName} (${dossier.employeeCode})`}
           </p>
@@ -1498,13 +1811,31 @@ export default function TargetEmployeeProfile() {
                 fontSize: '0.85rem',
               }}
             >
-              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '0.75rem', borderRadius: '6px' }}>
-                <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Upload / Issuance Date:</span>
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                }}
+              >
+                <span style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                  Upload / Issuance Date:
+                </span>
                 <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>{previewDoc.date}</p>
               </div>
-              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '0.75rem', borderRadius: '6px' }}>
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                }}
+              >
                 <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Storage Security:</span>
-                <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>Private S3 · Signed URL Access</p>
+                <p style={{ margin: '0.2rem 0 0', fontWeight: 600 }}>
+                  Private S3 · Signed URL Access
+                </p>
               </div>
             </div>
 

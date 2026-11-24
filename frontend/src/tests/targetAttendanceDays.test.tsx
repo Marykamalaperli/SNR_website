@@ -60,7 +60,10 @@ describe('TargetAttendanceDays Component', () => {
   });
 
   it('renders empty state when no days exist for employee', async () => {
-    vi.mocked(targetAttendanceService.listMyAttendanceDays).mockResolvedValue({ items: [], total: 0 });
+    vi.mocked(targetAttendanceService.listMyAttendanceDays).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
 
     render(<TargetAttendanceDays role="employee" />);
 
@@ -120,7 +123,9 @@ describe('TargetAttendanceDays Component', () => {
       items: [mockDay],
       total: 1,
     });
-    vi.mocked(targetAttendanceService.requestAttendanceAdjustment).mockResolvedValue(mockPendingAdj);
+    vi.mocked(targetAttendanceService.requestAttendanceAdjustment).mockResolvedValue(
+      mockPendingAdj,
+    );
 
     render(<TargetAttendanceDays role="employee" />);
 
@@ -152,7 +157,9 @@ describe('TargetAttendanceDays Component', () => {
       items: [mockDay],
       total: 1,
     });
-    vi.mocked(targetAttendanceService.listAttendanceAdjustments).mockResolvedValue([mockPendingAdj]);
+    vi.mocked(targetAttendanceService.listAttendanceAdjustments).mockResolvedValue([
+      mockPendingAdj,
+    ]);
     vi.mocked(targetAttendanceService.reviewAttendanceAdjustment).mockResolvedValue({
       ...mockPendingAdj,
       status: 'approved',

@@ -277,7 +277,9 @@ export async function uploadPhotoBlob(uploadUrl: string, blob: Blob): Promise<vo
       throw err;
     }
     const rawMsg =
-      typeof err === 'object' && err && 'message' in err ? String((err as { message: unknown }).message) : '';
+      typeof err === 'object' && err && 'message' in err
+        ? String((err as { message: unknown }).message)
+        : '';
     throw new Error(rawMsg || 'Failed to upload attendance photo. Please try again.');
   }
 }

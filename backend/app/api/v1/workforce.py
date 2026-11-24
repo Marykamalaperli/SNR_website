@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db_session
 from app.core.errors import DomainError
 from app.core.security import require_current_user, require_role, require_scope
-from app.models.identity import Employee, Organization, Store
+from app.models.identity import Organization, Store
 from app.models.workforce import Shift
 from app.schemas.auth import CurrentUser
 from app.schemas.workforce import (
@@ -115,7 +115,9 @@ def create_employee(
             raise DomainError("missing_organization", "An organization must exist.", 400)
         target_org_id = first_org
 
-    scope = require_scope(user, target_org_id, store_id=payload.home_store_id, permitted=EMPLOYEE_WRITERS)
+    scope = require_scope(
+        user, target_org_id, store_id=payload.home_store_id, permitted=EMPLOYEE_WRITERS
+    )
     employee = EmployeeService(db).create_employee(payload, target_org_id, scope)
     return EmployeeOut.model_validate(employee)
 
@@ -420,5 +422,3 @@ def list_all_store_admins(
             break
     items, total = StoreService(db).list_all_store_admins(store_id, scope)
     return StoreAdminListOut(items=[StoreAdminOut.model_validate(a) for a in items], total=total)
-
-

@@ -8,6 +8,7 @@ Create Date: 2026-11-23
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "202611220008"
@@ -20,7 +21,9 @@ def upgrade() -> None:
     op.add_column("stores", sa.Column("latitude", sa.Float(), nullable=True))
     op.add_column("stores", sa.Column("longitude", sa.Float(), nullable=True))
     op.add_column("stores", sa.Column("map_url", sa.String(length=4096), nullable=True))
-    op.add_column("stores", sa.Column("radius_meters", sa.Integer(), nullable=True, server_default="50"))
+    op.add_column(
+        "stores", sa.Column("radius_meters", sa.Integer(), nullable=True, server_default="50")
+    )
 
 
 def downgrade() -> None:
@@ -28,4 +31,3 @@ def downgrade() -> None:
     op.drop_column("stores", "map_url")
     op.drop_column("stores", "longitude")
     op.drop_column("stores", "latitude")
-

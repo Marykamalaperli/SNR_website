@@ -35,7 +35,10 @@ import FormField from '../../components/forms/FormField';
 import { useAuth } from '../../hooks/useAuth';
 import GoogleMapLocationPicker from './GoogleMapLocationPicker';
 import TargetStaffRegistrationWizard from './TargetStaffRegistrationWizard';
-import { getOnboardingDossiers, STORE_ROLE_DEFINITIONS } from '../../services/staffOnboardingService';
+import {
+  getOnboardingDossiers,
+  STORE_ROLE_DEFINITIONS,
+} from '../../services/staffOnboardingService';
 import {
   createAssignment,
   createEmployee,
@@ -59,7 +62,8 @@ interface TargetStoreHubProps {
   onBack: () => void;
 }
 
-export type ActiveSection = 'none' | 'details' | 'admins' | 'employees' | 'shifts' | 'attendance' | 'geofence';
+export type ActiveSection =
+  'none' | 'details' | 'admins' | 'employees' | 'shifts' | 'attendance' | 'geofence';
 
 const TIMEZONE_OPTIONS = [
   'Asia/Kolkata',
@@ -176,9 +180,9 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
 
   const isSuperAdmin = Boolean(
     session?.actual_role === 'system_admin' ||
-      session?.role === 'system_admin' ||
-      session?.role === 'admin' ||
-      session?.scopes?.some((s: { role: string }) => s.role === 'system_admin'),
+    session?.role === 'system_admin' ||
+    session?.role === 'admin' ||
+    session?.scopes?.some((s: { role: string }) => s.role === 'system_admin'),
   );
 
   async function loadStoreHubData() {
@@ -191,8 +195,16 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
       // Prepopulate edit form
       setEditName(storeData.name);
       setEditTimezone(storeData.timezone || 'Asia/Kolkata');
-      setEditLatitude(storeData.latitude !== undefined && storeData.latitude !== null ? String(storeData.latitude) : '');
-      setEditLongitude(storeData.longitude !== undefined && storeData.longitude !== null ? String(storeData.longitude) : '');
+      setEditLatitude(
+        storeData.latitude !== undefined && storeData.latitude !== null
+          ? String(storeData.latitude)
+          : '',
+      );
+      setEditLongitude(
+        storeData.longitude !== undefined && storeData.longitude !== null
+          ? String(storeData.longitude)
+          : '',
+      );
       setEditRadius(storeData.radius_meters ? String(storeData.radius_meters) : '50');
       setEditActive(storeData.active);
 
@@ -324,8 +336,12 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
         code: shiftCode.trim().toUpperCase(),
         name: shiftName.trim(),
         store_id: storeId,
-        start_time: shiftStart.includes(':') && shiftStart.split(':').length === 2 ? `${shiftStart}:00` : shiftStart,
-        end_time: shiftEnd.includes(':') && shiftEnd.split(':').length === 2 ? `${shiftEnd}:00` : shiftEnd,
+        start_time:
+          shiftStart.includes(':') && shiftStart.split(':').length === 2
+            ? `${shiftStart}:00`
+            : shiftStart,
+        end_time:
+          shiftEnd.includes(':') && shiftEnd.split(':').length === 2 ? `${shiftEnd}:00` : shiftEnd,
         break_minutes: parseInt(shiftBreak, 10) || 0,
         is_overnight: shiftOvernight,
       });
@@ -406,7 +422,10 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
   }
 
   if (loading) return <LoadingState label="Loading store management options..." />;
-  if (!store) return <EmptyState title="Store Not Found" description="The requested store could not be found." />;
+  if (!store)
+    return (
+      <EmptyState title="Store Not Found" description="The requested store could not be found." />
+    );
 
   const hasLocation =
     store.latitude !== undefined &&
@@ -415,7 +434,10 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
     store.longitude !== null;
 
   return (
-    <div className="target-store-hub" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div
+      className="target-store-hub"
+      style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+    >
       {/* Notifications */}
       {error && (
         <div
@@ -437,7 +459,13 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
           <button
             type="button"
             onClick={() => setError(null)}
-            style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
+            style={{
+              marginLeft: 'auto',
+              background: 'none',
+              border: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}
           >
             <X size={16} />
           </button>
@@ -464,7 +492,13 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
           <button
             type="button"
             onClick={() => setSuccessMsg(null)}
-            style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}
+            style={{
+              marginLeft: 'auto',
+              background: 'none',
+              border: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}
           >
             <X size={16} />
           </button>
@@ -477,7 +511,15 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
       {activeSection === 'none' && (
         <>
           {/* Top Header & Back Link */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
             <div>
               <button
                 type="button"
@@ -519,7 +561,8 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 </StatusBadge>
               </div>
               <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
-                Store-scoped management hub: details, manager access, employees, shifts, and attendance.
+                Store-scoped management hub: details, manager access, employees, shifts, and
+                attendance.
               </p>
             </div>
 
@@ -551,14 +594,38 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               }}
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ display: 'inline-flex', padding: '0.5rem', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        padding: '0.5rem',
+                        borderRadius: '8px',
+                        background: '#e0f2fe',
+                        color: '#0284c7',
+                      }}
+                    >
                       <Building2 size={20} />
                     </span>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>Store Details & Location</h3>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>
+                        Store Details & Location
+                      </h3>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: '#64748b',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
                         CODE: {store.code}
                       </span>
                     </div>
@@ -568,16 +635,37 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                   </StatusBadge>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   <Globe size={14} />
-                  <span>Timezone: <strong>{store.timezone}</strong></span>
+                  <span>
+                    Timezone: <strong>{store.timezone}</strong>
+                  </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '1.25rem',
+                  }}
+                >
                   <MapPin size={14} style={{ color: hasLocation ? '#0284c7' : '#94a3b8' }} />
                   {hasLocation ? (
                     <span>
-                      {store.latitude?.toFixed(4)}, {store.longitude?.toFixed(4)} (±{store.radius_meters || 50}m)
+                      {store.latitude?.toFixed(4)}, {store.longitude?.toFixed(4)} (±
+                      {store.radius_meters || 50}m)
                     </span>
                   ) : (
                     <span style={{ fontStyle: 'italic' }}>No Google Maps location set</span>
@@ -606,14 +694,38 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               }}
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ display: 'inline-flex', padding: '0.5rem', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        padding: '0.5rem',
+                        borderRadius: '8px',
+                        background: '#e0f2fe',
+                        color: '#0284c7',
+                      }}
+                    >
                       <UserCheck size={20} />
                     </span>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>Manager Access</h3>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>
+                        Manager Access
+                      </h3>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: '#64748b',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
                         ROLE: STORE ADMIN
                       </span>
                     </div>
@@ -623,14 +735,34 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                   </StatusBadge>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   <UserCheck size={14} />
                   <span>Store-scoped managerial access</span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '1.25rem',
+                  }}
+                >
                   <Mail size={14} />
-                  <span>{admins.length > 0 ? admins[0].email : 'No store admin account assigned'}</span>
+                  <span>
+                    {admins.length > 0 ? admins[0].email : 'No store admin account assigned'}
+                  </span>
                 </div>
               </div>
 
@@ -655,14 +787,38 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               }}
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ display: 'inline-flex', padding: '0.5rem', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        padding: '0.5rem',
+                        borderRadius: '8px',
+                        background: '#e0f2fe',
+                        color: '#0284c7',
+                      }}
+                    >
                       <Users size={20} />
                     </span>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>Store Employees</h3>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>
+                        Store Employees
+                      </h3>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: '#64748b',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
                         WORKFORCE: {employees.length} STAFF
                       </span>
                     </div>
@@ -672,12 +828,30 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                   </StatusBadge>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   <Building2 size={14} />
                   <span>Home store workforce directory</span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '1.25rem',
+                  }}
+                >
                   <Users size={14} />
                   <span>{employees.length} active employees registered</span>
                 </div>
@@ -704,14 +878,38 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               }}
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ display: 'inline-flex', padding: '0.5rem', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        padding: '0.5rem',
+                        borderRadius: '8px',
+                        background: '#e0f2fe',
+                        color: '#0284c7',
+                      }}
+                    >
                       <Clock size={20} />
                     </span>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>Shifts & Rosters</h3>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>
+                        Shifts & Rosters
+                      </h3>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: '#64748b',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
                         SCHEDULE: {shifts.length} SHIFTS
                       </span>
                     </div>
@@ -721,12 +919,30 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                   </StatusBadge>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   <Clock size={14} />
                   <span>Operational shift definitions & breaks</span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '1.25rem',
+                  }}
+                >
                   <Calendar size={14} />
                   <span>Effective-dated roster assignments</span>
                 </div>
@@ -753,14 +969,38 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               }}
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ display: 'inline-flex', padding: '0.5rem', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        padding: '0.5rem',
+                        borderRadius: '8px',
+                        background: '#e0f2fe',
+                        color: '#0284c7',
+                      }}
+                    >
                       <QrCode size={20} />
                     </span>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>Attendance QR Station</h3>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>
+                        Attendance QR Station
+                      </h3>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: '#64748b',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
                         KIOSK: ENTRANCE TABLET
                       </span>
                     </div>
@@ -768,12 +1008,30 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                   <StatusBadge tone="success">15s Anti-Replay</StatusBadge>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   <QrCode size={14} />
                   <span>Dynamic rotating HMAC store challenge</span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '1.25rem',
+                  }}
+                >
                   <MapPin size={14} />
                   <span>Enforces physical location & photo capture</span>
                 </div>
@@ -800,29 +1058,73 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               }}
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '0.75rem',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ display: 'inline-flex', padding: '0.5rem', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7' }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        padding: '0.5rem',
+                        borderRadius: '8px',
+                        background: '#e0f2fe',
+                        color: '#0284c7',
+                      }}
+                    >
                       <LocateFixed size={20} />
                     </span>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>Geofence Accuracy Tester</h3>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>
+                        Geofence Accuracy Tester
+                      </h3>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: '#64748b',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
                         RADIUS: ±{store.radius_meters || 50}M
                       </span>
                     </div>
                   </div>
-                  <StatusBadge tone={gpsTestResult ? (gpsTestResult.inside ? 'success' : 'danger') : 'neutral'}>
+                  <StatusBadge
+                    tone={gpsTestResult ? (gpsTestResult.inside ? 'success' : 'danger') : 'neutral'}
+                  >
                     {gpsTestResult ? (gpsTestResult.inside ? 'Inside' : 'Outside') : 'Ready'}
                   </StatusBadge>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   <LocateFixed size={14} />
                   <span>Verify device GPS against store pin</span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8125rem',
+                    color: '#64748b',
+                    marginBottom: '1.25rem',
+                  }}
+                >
                   <MapPin size={14} />
                   <span>
                     {gpsTestResult
@@ -850,7 +1152,15 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
       {activeSection === 'details' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Section Breadcrumb & Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
             <div>
               <button
                 type="button"
@@ -873,7 +1183,9 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 Back to {store.name} Hub
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Store Details & Location</h1>
+                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                  Store Details & Location
+                </h1>
                 <span
                   style={{
                     fontSize: '0.75rem',
@@ -892,7 +1204,8 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 </StatusBadge>
               </div>
               <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
-                Configure store branding, operational timezone, and Google Maps geofence coordinates.
+                Configure store branding, operational timezone, and Google Maps geofence
+                coordinates.
               </p>
             </div>
 
@@ -903,8 +1216,17 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
 
           {/* Full Page Store Details Form Card */}
           <Card style={{ padding: '1.5rem' }}>
-            <form onSubmit={handleUpdateStore} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            <form
+              onSubmit={handleUpdateStore}
+              style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+            >
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '1rem',
+                }}
+              >
                 <FormField
                   label="Store Code"
                   type="text"
@@ -923,9 +1245,22 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '1rem',
+                }}
+              >
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      marginBottom: '0.35rem',
+                    }}
+                  >
                     Operational Timezone
                   </label>
                   <select
@@ -942,10 +1277,19 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                     }}
                   >
                     {TIMEZONE_OPTIONS.map((tz) => (
-                      <option key={tz} value={tz}>{tz}</option>
+                      <option key={tz} value={tz}>
+                        {tz}
+                      </option>
                     ))}
                   </select>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      color: '#64748b',
+                      marginTop: '0.25rem',
+                      display: 'block',
+                    }}
+                  >
                     Used for daily attendance cut-offs and shift schedules.
                   </span>
                 </div>
@@ -976,12 +1320,22 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               </div>
 
               {/* Location Picker & Geofence Boundary */}
-              <div style={{ marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+              <div
+                style={{ marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}
+              >
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   Store Entrance Pin & Geofence Boundary (Google Maps)
                 </label>
                 <p style={{ margin: '0 0 1rem 0', fontSize: '0.825rem', color: '#64748b' }}>
-                  Search for your store, paste a Google Maps URL, or click directly on the map to pin the physical entrance and set the allowed geofence radius.
+                  Search for your store, paste a Google Maps URL, or click directly on the map to
+                  pin the physical entrance and set the allowed geofence radius.
                 </p>
                 <GoogleMapLocationPicker
                   latitude={editLatitude}
@@ -999,8 +1353,20 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               </div>
 
               {isSuperAdmin && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
-                  <Button variant="secondary" type="button" onClick={() => goToSection('none')} disabled={actionInProgress}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '0.75rem',
+                    marginTop: '1.25rem',
+                  }}
+                >
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={() => goToSection('none')}
+                    disabled={actionInProgress}
+                  >
                     Cancel
                   </Button>
                   <Button variant="primary" type="submit" disabled={actionInProgress}>
@@ -1020,7 +1386,15 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
       {activeSection === 'admins' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Section Breadcrumb & Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
             <div>
               <button
                 type="button"
@@ -1043,7 +1417,9 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 Back to {store.name} Hub
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Store Administrators</h1>
+                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                  Store Administrators
+                </h1>
                 <span
                   style={{
                     fontSize: '0.75rem',
@@ -1058,7 +1434,8 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 </span>
               </div>
               <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
-                Managers with administrative access for {store.name} (viewing employee records, managing shifts & rosters, approving exceptions).
+                Managers with administrative access for {store.name} (viewing employee records,
+                managing shifts & rosters, approving exceptions).
               </p>
             </div>
 
@@ -1083,9 +1460,24 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               />
             ) : (
               <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    textAlign: 'left',
+                    fontSize: '0.875rem',
+                  }}
+                >
                   <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                    <tr
+                      style={{
+                        background: '#f8fafc',
+                        borderBottom: '1px solid #e2e8f0',
+                        color: '#475569',
+                        fontSize: '0.75rem',
+                        textTransform: 'uppercase',
+                      }}
+                    >
                       <th style={{ padding: '0.75rem 1rem' }}>Administrator</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Email Address</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Role Authority</th>
@@ -1096,14 +1488,24 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                   <tbody>
                     {admins.map((adm) => (
                       <tr key={adm.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}>{adm.display_name}</td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}>
+                          {adm.display_name}
+                        </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                             <Mail size={14} /> {adm.email}
                           </span>
                         </td>
                         <td style={{ padding: '0.75rem 1rem' }}>
-                          <span style={{ background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                          <span
+                            style={{
+                              background: '#f1f5f9',
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                            }}
+                          >
                             store_admin
                           </span>
                         </td>
@@ -1112,7 +1514,9 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                             {adm.active ? 'Active' : 'Inactive'}
                           </StatusBadge>
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8rem' }}>
+                        <td
+                          style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8rem' }}
+                        >
                           {adm.created_at ? new Date(adm.created_at).toLocaleDateString() : '—'}
                         </td>
                       </tr>
@@ -1144,7 +1548,15 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
       {activeSection === 'employees' && !showStaffWizard && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Section Breadcrumb & Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
             <div>
               <button
                 type="button"
@@ -1220,9 +1632,24 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               />
             ) : (
               <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    textAlign: 'left',
+                    fontSize: '0.875rem',
+                  }}
+                >
                   <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                    <tr
+                      style={{
+                        background: '#f8fafc',
+                        borderBottom: '1px solid #e2e8f0',
+                        color: '#475569',
+                        fontSize: '0.75rem',
+                        textTransform: 'uppercase',
+                      }}
+                    >
                       <th style={{ padding: '0.75rem 1rem' }}>Employee Code</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Full Name</th>
                       <th style={{ padding: '0.75rem 1rem' }}>Designation / Level</th>
@@ -1233,16 +1660,37 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                   <tbody>
                     {employees.map((emp) => {
                       const dossiers = getOnboardingDossiers();
-                      const d = dossiers.find((x) => x.employeeId === emp.id || x.employeeCode === emp.employee_code);
+                      const d = dossiers.find(
+                        (x) => x.employeeId === emp.id || x.employeeCode === emp.employee_code,
+                      );
                       const roleLabel = d
-                        ? STORE_ROLE_DEFINITIONS[d.designation]?.label || d.customDesignation || d.designation
+                        ? STORE_ROLE_DEFINITIONS[d.designation]?.label ||
+                          d.customDesignation ||
+                          d.designation
                         : 'Associate Staff';
                       return (
                         <tr key={emp.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#0284c7' }}>{emp.employee_code}</td>
-                          <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}>{emp.display_name}</td>
+                          <td
+                            style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#0284c7' }}
+                          >
+                            {emp.employee_code}
+                          </td>
+                          <td
+                            style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}
+                          >
+                            {emp.display_name}
+                          </td>
                           <td style={{ padding: '0.75rem 1rem' }}>
-                            <span style={{ background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>
+                            <span
+                              style={{
+                                background: '#f1f5f9',
+                                padding: '0.2rem 0.5rem',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                color: '#334155',
+                              }}
+                            >
                               {roleLabel}
                             </span>
                           </td>
@@ -1251,7 +1699,13 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                               {emp.status}
                             </StatusBadge>
                           </td>
-                          <td style={{ padding: '0.75rem 1rem', color: '#64748b', fontSize: '0.8rem' }}>
+                          <td
+                            style={{
+                              padding: '0.75rem 1rem',
+                              color: '#64748b',
+                              fontSize: '0.8rem',
+                            }}
+                          >
                             {emp.hire_date || '—'}
                           </td>
                         </tr>
@@ -1271,7 +1725,15 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
       {activeSection === 'shifts' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Section Breadcrumb & Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
             <div>
               <button
                 type="button"
@@ -1294,7 +1756,9 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 Back to {store.name} Hub
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Shifts & Rostering</h1>
+                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                  Shifts & Rostering
+                </h1>
                 <span
                   style={{
                     fontSize: '0.75rem',
@@ -1309,7 +1773,8 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 </span>
               </div>
               <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
-                Configure operational shift schedules and assign employees to effective-dated rosters for {store.name}.
+                Configure operational shift schedules and assign employees to effective-dated
+                rosters for {store.name}.
               </p>
             </div>
 
@@ -1335,13 +1800,32 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
           </div>
 
           {/* Full Page Shifts & Rosters View */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.25rem' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+              gap: '1.25rem',
+            }}
+          >
             {/* Shifts Column */}
             <Card style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Configured Shifts ({shifts.length})</h3>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem',
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
+                  Configured Shifts ({shifts.length})
+                </h3>
                 {isSuperAdmin && (
-                  <Button variant="secondary" onClick={() => setShowCreateShiftModal(true)} style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowCreateShiftModal(true)}
+                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
+                  >
                     <Plus size={13} /> Add Shift
                   </Button>
                 )}
@@ -1370,18 +1854,48 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <strong style={{ fontSize: '0.95rem' }}>{s.name}</strong>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', background: '#e0f2fe', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
+                          <span
+                            style={{
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              color: '#0284c7',
+                              background: '#e0f2fe',
+                              padding: '0.15rem 0.4rem',
+                              borderRadius: '4px',
+                            }}
+                          >
                             {s.code}
                           </span>
                           {s.is_overnight && (
-                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#7c3aed', background: '#f5f3ff', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                color: '#7c3aed',
+                                background: '#f5f3ff',
+                                padding: '0.15rem 0.4rem',
+                                borderRadius: '4px',
+                              }}
+                            >
                               Overnight
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: '0.825rem', color: '#475569', marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div
+                          style={{
+                            fontSize: '0.825rem',
+                            color: '#475569',
+                            marginTop: '0.35rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                          }}
+                        >
                           <span>
-                            <Clock size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                            <Clock
+                              size={12}
+                              style={{ display: 'inline', marginRight: '0.25rem' }}
+                            />
                             {s.start_time?.slice(0, 5)} → {s.end_time?.slice(0, 5)}
                           </span>
                           <span>Break: {s.break_minutes} mins</span>
@@ -1395,8 +1909,17 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
 
             {/* Rosters Column */}
             <Card style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Active Employee Rosters ({assignments.length})</h3>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem',
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
+                  Active Employee Rosters ({assignments.length})
+                </h3>
                 {isSuperAdmin && (
                   <Button
                     variant="primary"
@@ -1440,10 +1963,14 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                           <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>
                             {emp ? `${emp.display_name} (${emp.employee_code})` : asgn.employee_id}
                           </div>
-                          <div style={{ fontSize: '0.825rem', color: '#0284c7', marginTop: '0.2rem' }}>
+                          <div
+                            style={{ fontSize: '0.825rem', color: '#0284c7', marginTop: '0.2rem' }}
+                          >
                             {sh ? `${sh.name} (${sh.code})` : asgn.shift_id}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+                          <div
+                            style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}
+                          >
                             Effective: {asgn.effective_from} to {asgn.effective_until}
                           </div>
                         </div>
@@ -1464,7 +1991,15 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
       {activeSection === 'attendance' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Section Breadcrumb & Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
             <div>
               <button
                 type="button"
@@ -1487,7 +2022,9 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 Back to {store.name} Hub
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Attendance QR Station</h1>
+                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                  Attendance QR Station
+                </h1>
                 <StatusBadge tone="success">15s Dynamic Anti-Replay</StatusBadge>
               </div>
               <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
@@ -1501,37 +2038,89 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
           </div>
 
           {/* QR Station Info & Launch Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.25rem' }}>
-            <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+              gap: '1.25rem',
+            }}
+          >
+            <Card
+              style={{
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <span style={{ display: 'inline-flex', padding: '0.75rem', borderRadius: '10px', background: '#e0f2fe', color: '#0284c7' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    marginBottom: '1rem',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      padding: '0.75rem',
+                      borderRadius: '10px',
+                      background: '#e0f2fe',
+                      color: '#0284c7',
+                    }}
+                  >
                     <QrCode size={28} />
                   </span>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>Store Entrance Tablet Kiosk</h3>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
+                      Store Entrance Tablet Kiosk
+                    </h3>
                     <p style={{ margin: '0.2rem 0 0 0', color: '#64748b', fontSize: '0.85rem' }}>
-                      Designed to run fullscreen on a fixed tablet mounted at the physical store entrance.
+                      Designed to run fullscreen on a fixed tablet mounted at the physical store
+                      entrance.
                     </p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#334155', margin: '1.25rem 0' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    fontSize: '0.875rem',
+                    color: '#334155',
+                    margin: '1.25rem 0',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <ShieldCheck size={18} style={{ color: '#16a34a' }} />
-                    <span><strong>HMAC-SHA256 Challenge:</strong> Generated with server-signed store secrets.</span>
+                    <span>
+                      <strong>HMAC-SHA256 Challenge:</strong> Generated with server-signed store
+                      secrets.
+                    </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Clock size={18} style={{ color: '#0284c7' }} />
-                    <span><strong>15-Second Rotation:</strong> Dynamic anti-replay token expires immediately.</span>
+                    <span>
+                      <strong>15-Second Rotation:</strong> Dynamic anti-replay token expires
+                      immediately.
+                    </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <LocateFixed size={18} style={{ color: '#d97706' }} />
-                    <span><strong>Geofence Check:</strong> Scans verified within ±{store.radius_meters || 50}m of store pin.</span>
+                    <span>
+                      <strong>Geofence Check:</strong> Scans verified within ±
+                      {store.radius_meters || 50}m of store pin.
+                    </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Radio size={18} style={{ color: '#7c3aed' }} />
-                    <span><strong>No Biometric Retention:</strong> Verified private selfie upload without facial template storage.</span>
+                    <span>
+                      <strong>No Biometric Retention:</strong> Verified private selfie upload
+                      without facial template storage.
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1539,34 +2128,87 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               <Button
                 variant="primary"
                 onClick={() => window.open(`/attendance/station#storeId=${store.id}`, '_blank')}
-                style={{ width: '100%', justifyContent: 'center', padding: '0.75rem 1rem', fontSize: '1rem' }}
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  padding: '0.75rem 1rem',
+                  fontSize: '1rem',
+                }}
               >
                 <ExternalLink size={18} /> Launch Fullscreen Entrance Kiosk
               </Button>
             </Card>
 
-            <Card style={{ padding: '1.5rem', background: '#f8fafc', border: '1px dashed #cbd5e1' }}>
-              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', fontWeight: 600 }}>Station Deployment Parameters</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.4rem' }}>
+            <Card
+              style={{ padding: '1.5rem', background: '#f8fafc', border: '1px dashed #cbd5e1' }}
+            >
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', fontWeight: 600 }}>
+                Station Deployment Parameters
+              </h3>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.6rem',
+                  fontSize: '0.85rem',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.4rem',
+                  }}
+                >
                   <span style={{ color: '#64748b' }}>Store Target</span>
                   <strong>{store.name}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.4rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.4rem',
+                  }}
+                >
                   <span style={{ color: '#64748b' }}>Store Code</span>
                   <strong>{store.code}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.4rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.4rem',
+                  }}
+                >
                   <span style={{ color: '#64748b' }}>Timezone Authority</span>
                   <strong>{store.timezone}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.4rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.4rem',
+                  }}
+                >
                   <span style={{ color: '#64748b' }}>Geofence Center</span>
                   <strong>
-                    {hasLocation ? `${store.latitude?.toFixed(4)}, ${store.longitude?.toFixed(4)}` : 'Not Set'}
+                    {hasLocation
+                      ? `${store.latitude?.toFixed(4)}, ${store.longitude?.toFixed(4)}`
+                      : 'Not Set'}
                   </strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.4rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #e2e8f0',
+                    paddingBottom: '0.4rem',
+                  }}
+                >
                   <span style={{ color: '#64748b' }}>Allowed Radius</span>
                   <strong>±{store.radius_meters || 50} meters</strong>
                 </div>
@@ -1593,7 +2235,15 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
       {activeSection === 'geofence' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Section Breadcrumb & Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
             <div>
               <button
                 type="button"
@@ -1616,13 +2266,22 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 Back to {store.name} Hub
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Geofence Accuracy Tester</h1>
-                <StatusBadge tone={gpsTestResult ? (gpsTestResult.inside ? 'success' : 'danger') : 'neutral'}>
-                  {gpsTestResult ? (gpsTestResult.inside ? 'Inside Geofence' : 'Outside Geofence') : 'Ready to Test'}
+                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+                  Geofence Accuracy Tester
+                </h1>
+                <StatusBadge
+                  tone={gpsTestResult ? (gpsTestResult.inside ? 'success' : 'danger') : 'neutral'}
+                >
+                  {gpsTestResult
+                    ? gpsTestResult.inside
+                      ? 'Inside Geofence'
+                      : 'Outside Geofence'
+                    : 'Ready to Test'}
                 </StatusBadge>
               </div>
               <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
-                Verify physical device GPS reception and accuracy against the configured store entrance pin.
+                Verify physical device GPS reception and accuracy against the configured store
+                entrance pin.
               </p>
             </div>
 
@@ -1633,11 +2292,23 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
 
           {/* Live Geofence Test Suite */}
           <Card style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                marginBottom: '1.25rem',
+              }}
+            >
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600 }}>Test Device GPS Reception</h3>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 600 }}>
+                  Test Device GPS Reception
+                </h3>
                 <p style={{ margin: '0.2rem 0 0 0', color: '#64748b', fontSize: '0.85rem' }}>
-                  Click below while standing at the store entrance to confirm device geolocation falls within ±{store.radius_meters || 50}m.
+                  Click below while standing at the store entrance to confirm device geolocation
+                  falls within ±{store.radius_meters || 50}m.
                 </p>
               </div>
               <Button
@@ -1652,8 +2323,18 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
             </div>
 
             {!hasLocation && (
-              <div style={{ padding: '1rem', background: '#fef2f2', border: '1px solid #ef4444', borderRadius: '6px', color: '#b91c1c', fontSize: '0.875rem' }}>
-                ⚠️ This store does not have Google Maps coordinates configured yet. Please go to <strong>Store Details & Location</strong> to set coordinates.
+              <div
+                style={{
+                  padding: '1rem',
+                  background: '#fef2f2',
+                  border: '1px solid #ef4444',
+                  borderRadius: '6px',
+                  color: '#b91c1c',
+                  fontSize: '0.875rem',
+                }}
+              >
+                ⚠️ This store does not have Google Maps coordinates configured yet. Please go to{' '}
+                <strong>Store Details & Location</strong> to set coordinates.
               </div>
             )}
 
@@ -1669,7 +2350,16 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                   marginBottom: '1.25rem',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   {gpsTestResult.inside ? (
                     <>
                       <CheckCircle2 size={22} style={{ color: '#16a34a' }} />
@@ -1683,34 +2373,91 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                   )}
                 </div>
                 <div style={{ fontSize: '0.9rem', lineHeight: '1.5' }}>
-                  Calculated distance from store entrance: <strong>{gpsTestResult.distance} meters</strong>.
-                  Allowed store radius: <strong>±{store.radius_meters || 50} meters</strong>.
-                  Browser GPS accuracy estimate: <strong>±{gpsTestResult.accuracy} meters</strong>.
+                  Calculated distance from store entrance:{' '}
+                  <strong>{gpsTestResult.distance} meters</strong>. Allowed store radius:{' '}
+                  <strong>±{store.radius_meters || 50} meters</strong>. Browser GPS accuracy
+                  estimate: <strong>±{gpsTestResult.accuracy} meters</strong>.
                 </div>
               </div>
             )}
 
             {/* Coordinates Comparison Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-              <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Store Entrance Center Pin</span>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginTop: '0.35rem' }}>
-                  {hasLocation ? `${store.latitude?.toFixed(6)}, ${store.longitude?.toFixed(6)}` : 'Not Set'}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '1rem',
+              }}
+            >
+              <div
+                style={{
+                  padding: '1rem',
+                  background: '#f8fafc',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: '#64748b',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Store Entrance Center Pin
+                </span>
+                <div
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    color: '#0f172a',
+                    marginTop: '0.35rem',
+                  }}
+                >
+                  {hasLocation
+                    ? `${store.latitude?.toFixed(6)}, ${store.longitude?.toFixed(6)}`
+                    : 'Not Set'}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
                   Geofence radius: ±{store.radius_meters || 50} meters
                 </div>
               </div>
 
-              <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Current Device GPS Fix</span>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginTop: '0.35rem' }}>
+              <div
+                style={{
+                  padding: '1rem',
+                  background: '#f8fafc',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: '#64748b',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Current Device GPS Fix
+                </span>
+                <div
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    color: '#0f172a',
+                    marginTop: '0.35rem',
+                  }}
+                >
                   {gpsTestResult?.userLat !== undefined
                     ? `${gpsTestResult.userLat.toFixed(6)}, ${gpsTestResult.userLng?.toFixed(6)}`
                     : 'Awaiting test click…'}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
-                  {gpsTestResult ? `Accuracy fix: ±${gpsTestResult.accuracy}m` : 'Click "Test Device Location Now"'}
+                  {gpsTestResult
+                    ? `Accuracy fix: ±${gpsTestResult.accuracy}m`
+                    : 'Click "Test Device Location Now"'}
                 </div>
               </div>
             </div>
@@ -1729,13 +2476,18 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
           onClose={() => setShowAddAdminModal(false)}
           busy={actionInProgress}
         >
-          <form onSubmit={handleCreateStoreAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form
+            onSubmit={handleCreateStoreAdmin}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
             <FormField
               label="Admin Full Name"
               type="text"
               placeholder="e.g. Anand Varma"
               value={adminDisplayName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminDisplayName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setAdminDisplayName(e.target.value)
+              }
               required
             />
             <FormField
@@ -1752,12 +2504,26 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               type="password"
               placeholder="At least 8 characters"
               value={adminPassword}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdminPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setAdminPassword(e.target.value)
+              }
               required
               hint="Minimum 8 characters long."
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-              <Button variant="secondary" type="button" onClick={() => setShowAddAdminModal(false)} disabled={actionInProgress}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem',
+                marginTop: '1rem',
+              }}
+            >
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setShowAddAdminModal(false)}
+                disabled={actionInProgress}
+              >
                 Cancel
               </Button>
               <Button variant="primary" type="submit" disabled={actionInProgress}>
@@ -1775,13 +2541,18 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
           onClose={() => setShowAddEmployeeModal(false)}
           busy={actionInProgress}
         >
-          <form onSubmit={handleCreateEmployee} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form
+            onSubmit={handleCreateEmployee}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
             <FormField
               label="Employee Code"
               type="text"
               placeholder="e.g. EMP-101"
               value={empCode}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmpCode(e.target.value.toUpperCase())}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setEmpCode(e.target.value.toUpperCase())
+              }
               required
               hint="Unique identifier for workforce roster."
             />
@@ -1800,8 +2571,20 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmpHireDate(e.target.value)}
               required
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-              <Button variant="secondary" type="button" onClick={() => setShowAddEmployeeModal(false)} disabled={actionInProgress}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem',
+                marginTop: '1rem',
+              }}
+            >
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setShowAddEmployeeModal(false)}
+                disabled={actionInProgress}
+              >
                 Cancel
               </Button>
               <Button variant="primary" type="submit" disabled={actionInProgress}>
@@ -1819,13 +2602,18 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
           onClose={() => setShowCreateShiftModal(false)}
           busy={actionInProgress}
         >
-          <form onSubmit={handleCreateShift} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form
+            onSubmit={handleCreateShift}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
             <FormField
               label="Shift Code"
               type="text"
               placeholder="e.g. MORN-01"
               value={shiftCode}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setShiftCode(e.target.value.toUpperCase())}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setShiftCode(e.target.value.toUpperCase())
+              }
               required
             />
             <FormField
@@ -1871,8 +2659,20 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 Shift spans past midnight (overnight shift)
               </label>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-              <Button variant="secondary" type="button" onClick={() => setShowCreateShiftModal(false)} disabled={actionInProgress}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem',
+                marginTop: '1rem',
+              }}
+            >
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setShowCreateShiftModal(false)}
+                disabled={actionInProgress}
+              >
                 Cancel
               </Button>
               <Button variant="primary" type="submit" disabled={actionInProgress}>
@@ -1890,15 +2690,30 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
           onClose={() => setShowAssignRosterModal(false)}
           busy={actionInProgress}
         >
-          <form onSubmit={handleAssignRoster} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form
+            onSubmit={handleAssignRoster}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  marginBottom: '0.25rem',
+                }}
+              >
                 Select Employee <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <select
                 value={rosterEmpId}
                 onChange={(e) => setRosterEmpId(e.target.value)}
-                style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                style={{
+                  width: '100%',
+                  padding: '0.6rem 0.75rem',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                }}
                 required
               >
                 {employees.map((e) => (
@@ -1910,13 +2725,25 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  marginBottom: '0.25rem',
+                }}
+              >
                 Select Shift <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <select
                 value={rosterShiftId}
                 onChange={(e) => setRosterShiftId(e.target.value)}
-                style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                style={{
+                  width: '100%',
+                  padding: '0.6rem 0.75rem',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                }}
                 required
               >
                 {shifts.map((s) => (
@@ -1939,13 +2766,27 @@ export default function TargetStoreHub({ storeId, onBack }: TargetStoreHubProps)
                 label="Effective Until"
                 type="date"
                 value={rosterUntil}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRosterUntil(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setRosterUntil(e.target.value)
+                }
                 required
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-              <Button variant="secondary" type="button" onClick={() => setShowAssignRosterModal(false)} disabled={actionInProgress}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem',
+                marginTop: '1rem',
+              }}
+            >
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setShowAssignRosterModal(false)}
+                disabled={actionInProgress}
+              >
                 Cancel
               </Button>
               <Button variant="primary" type="submit" disabled={actionInProgress}>

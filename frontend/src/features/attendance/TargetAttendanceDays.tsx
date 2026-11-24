@@ -147,7 +147,9 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
       >
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>
-            {role === 'employee' ? 'My Daily Attendance & Exceptions' : 'Daily Attendance Records & Exceptions'}
+            {role === 'employee'
+              ? 'My Daily Attendance & Exceptions'
+              : 'Daily Attendance Records & Exceptions'}
           </h2>
           <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
             Daily summaries, punch exceptions, and audited corrections
@@ -254,8 +256,20 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
                     </td>
                     <td style={{ padding: '0.5rem' }}>{adj.reason}</td>
                     <td style={{ padding: '0.5rem' }}>
-                      In: {adj.after_json.first_in ? new Date(String(adj.after_json.first_in)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'None'}{' '}
-                      | Out: {adj.after_json.last_out ? new Date(String(adj.after_json.last_out)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'None'}
+                      In:{' '}
+                      {adj.after_json.first_in
+                        ? new Date(String(adj.after_json.first_in)).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : 'None'}{' '}
+                      | Out:{' '}
+                      {adj.after_json.last_out
+                        ? new Date(String(adj.after_json.last_out)).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : 'None'}
                     </td>
                     <td style={{ padding: '0.5rem' }}>
                       <Button
@@ -414,9 +428,12 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
                               OT (+{day.overtime_minutes}m)
                             </span>
                           )}
-                          {!day.is_missing_punch && !day.is_late && !day.is_early_departure && !day.is_overtime && (
-                            <span style={{ color: '#10b981', fontSize: '0.75rem' }}>Normal</span>
-                          )}
+                          {!day.is_missing_punch &&
+                            !day.is_late &&
+                            !day.is_early_departure &&
+                            !day.is_overtime && (
+                              <span style={{ color: '#10b981', fontSize: '0.75rem' }}>Normal</span>
+                            )}
                         </div>
                       </td>
 
@@ -462,7 +479,8 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
           onClose={() => setSelectedDay(null)}
         >
           <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: '#6b7280' }}>
-            Raw punch events remain immutable. This correction will create an append-only audit adjustment and recalculate daily summary hours.
+            Raw punch events remain immutable. This correction will create an append-only audit
+            adjustment and recalculate daily summary hours.
           </p>
 
           {adjustError && (
@@ -481,7 +499,14 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
           )}
 
           <form onSubmit={handleSubmitAdjustment}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.75rem',
+                marginBottom: '1rem',
+              }}
+            >
               <FormField label="First In (Local Time)">
                 {(props) => (
                   <input
@@ -528,7 +553,11 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
                 gap: '0.75rem',
               }}
             >
-              <Button variant="secondary" onClick={() => setSelectedDay(null)} disabled={adjustSubmitting}>
+              <Button
+                variant="secondary"
+                onClick={() => setSelectedDay(null)}
+                disabled={adjustSubmitting}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={adjustSubmitting}>
@@ -541,14 +570,19 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
 
       {/* Modal: HR Review Pending Adjustment */}
       {reviewModalAdj && (
-        <Modal
-          title="Review Attendance Correction Request"
-          onClose={() => setReviewModalAdj(null)}
-        >
+        <Modal title="Review Attendance Correction Request" onClose={() => setReviewModalAdj(null)}>
           <div style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
-            <p><strong>Reason:</strong> {reviewModalAdj.reason}</p>
-            <p><strong>Before:</strong> In: {String(reviewModalAdj.before_json.first_in || 'None')} | Out: {String(reviewModalAdj.before_json.last_out || 'None')}</p>
-            <p><strong>After:</strong> In: {String(reviewModalAdj.after_json.first_in || 'None')} | Out: {String(reviewModalAdj.after_json.last_out || 'None')}</p>
+            <p>
+              <strong>Reason:</strong> {reviewModalAdj.reason}
+            </p>
+            <p>
+              <strong>Before:</strong> In: {String(reviewModalAdj.before_json.first_in || 'None')} |
+              Out: {String(reviewModalAdj.before_json.last_out || 'None')}
+            </p>
+            <p>
+              <strong>After:</strong> In: {String(reviewModalAdj.after_json.first_in || 'None')} |
+              Out: {String(reviewModalAdj.after_json.last_out || 'None')}
+            </p>
           </div>
 
           <FormField label="Review Notes (Optional)">
@@ -563,7 +597,14 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
             )}
           </FormField>
 
-          <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <div
+            style={{
+              marginTop: '1.25rem',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '0.75rem',
+            }}
+          >
             <Button
               variant="secondary"
               onClick={() => handleReviewDecision('reject')}
@@ -571,10 +612,7 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
             >
               Reject Request
             </Button>
-            <Button
-              onClick={() => handleReviewDecision('approve')}
-              disabled={reviewSubmitting}
-            >
+            <Button onClick={() => handleReviewDecision('approve')} disabled={reviewSubmitting}>
               Approve Request
             </Button>
           </div>
@@ -583,4 +621,3 @@ export default function TargetAttendanceDays({ role = 'employee', storeId }: Pro
     </div>
   );
 }
-

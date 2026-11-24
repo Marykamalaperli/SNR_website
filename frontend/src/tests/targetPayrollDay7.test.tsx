@@ -60,7 +60,9 @@ const mockDraftRun: PayrollRun = {
       hourly_rate: '250.75',
       gross_pay: '4283.65',
       net_pay: '4283.65',
-      earnings_json: [{ component: 'Base Hourly Pay', hours: '17.08', rate: '250.75', amount: '4283.65' }],
+      earnings_json: [
+        { component: 'Base Hourly Pay', hours: '17.08', rate: '250.75', amount: '4283.65' },
+      ],
       deductions_json: [],
       unresolved_exceptions_count: 0,
       watermark: 'Draft - Not for payment',
@@ -103,11 +105,9 @@ describe('TargetPayrollRuns Day 7 - Approval and Release', () => {
     await waitFor(() => {
       expect(targetPayrollService.approvePayrollRun).toHaveBeenCalledWith(
         'run-1',
-        'Approved by authorized HR staff'
+        'Approved by authorized HR staff',
       );
-      expect(
-        screen.getByText(/Payroll run successfully approved and locked/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Payroll run successfully approved and locked/i)).toBeInTheDocument();
     });
   });
 

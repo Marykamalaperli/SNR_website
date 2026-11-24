@@ -19,7 +19,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:browser": "playwright test",
+    "test:browser": "playwright test --project=development --project=production",
+    "test:browser:legacy": "playwright test --project=employee-qr --project=attendance-station --project=attendance --project=accounts --project=workforce --project=authentication",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

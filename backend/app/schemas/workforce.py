@@ -180,5 +180,3 @@ class StoreAdminOut(BaseModel):
 class StoreAdminListOut(BaseModel):
     items: list[StoreAdminOut]
     total: int
-
-
