@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from '../lib/apiClient';
+import { apiRequest, getApiBaseUrl } from '../lib/apiClient';
 
 export interface PayPeriod {
   id: string;
@@ -97,31 +97,13 @@ export interface PayslipDownloadIntent {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const base = getApiBaseUrl().replace(/\/$/, '');
-  const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
-  const res = await fetch(url, {
+  return apiRequest(path, {
     ...options,
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      Accept: 'application/json',
       ...options.headers,
     },
   });
-
-  if (!res.ok) {
-    let errorDetail = 'Payroll request failed';
-    try {
-      const data = await res.json();
-      errorDetail =
-        data.detail || (data.error && data.error.message) || data.message || errorDetail;
-    } catch {
-      errorDetail = `HTTP ${res.status} ${res.statusText}`;
-    }
-    throw new Error(errorDetail);
-  }
-
-  return res.json();
 }
 
 export async function fetchPayPeriods(): Promise<PayPeriod[]> {
