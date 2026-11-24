@@ -1,0 +1,209 @@
+name: Deploy AWS production
+
+on:
+  workflow_run:
+    workflows: [Application checks]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Component to deploy from main
+        required: true
+        default: both
+        type: choice
+        options:
+          - frontend
+          - api
+          - both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-production-deployment
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_frontend: ${{ steps.scope.outputs.deploy_frontend }}
+      deploy_api: ${{ steps.scope.outputs.deploy_api }}
+      release_sha: ${{ steps.scope.outputs.release_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 2
+
+      - id: scope
+        name: Select changed production components
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_TARGET: ${{ inputs.target }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          deploy_frontend=false
+          deploy_api=false
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            [[ "$MANUAL_TARGET" == "frontend" || "$MANUAL_TARGET" == "both" ]] && deploy_frontend=true
+            [[ "$MANUAL_TARGET" == "api" || "$MANUAL_TARGET" == "both" ]] && deploy_api=true
+          else
+            if ! git diff --quiet "${RELEASE_SHA}^" "$RELEASE_SHA" -- frontend/; then
+              deploy_frontend=true
+            fi
+            if ! git diff --quiet "${RELEASE_SHA}^" "$RELEASE_SHA" -- \
+              backend/ \
+              infra/aws/elasticbeanstalk/ \
+              infra/caddy/Caddyfile \
+              infra/docker/backend.Dockerfile \
+              scripts/build-elastic-beanstalk-bundle.sh; then
+              deploy_api=true
+            fi
+          fi
+
+          echo "deploy_frontend=$deploy_frontend" >> "$GITHUB_OUTPUT"
+          echo "deploy_api=$deploy_api" >> "$GITHUB_OUTPUT"
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: prepare
+    if: >-
+      needs.prepare.outputs.deploy_frontend == 'true' ||
+      needs.prepare.outputs.deploy_api == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      FRONTEND_BUCKET: snrnest-staging-web-${{ vars.AWS_ACCOUNT_ID }}-${{ vars.AWS_REGION }}
+      DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      EB_APPLICATION: snrnest-production-pilot
+      EB_ENVIRONMENT: snrnest-production-pilot
+      EB_RELEASE_BUCKET: elasticbeanstalk-${{ vars.AWS_REGION }}-${{ vars.AWS_ACCOUNT_ID }}
+      RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.release_sha }}
+
+      - name: Configure AWS credentials through GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-session-name: snrnest-production-${{ github.run_id }}
+
+      - name: Verify deployment identity
+        run: |
+          set -euo pipefail
+          account_id="$(aws sts get-caller-identity --query Account --output text)"
+          test "$account_id" = "${{ vars.AWS_ACCOUNT_ID }}"
+
+      - name: Build Elastic Beanstalk release bundle
+        if: needs.prepare.outputs.deploy_api == 'true'
+        run: bash scripts/build-elastic-beanstalk-bundle.sh "$RUNNER_TEMP/snrnest-api.zip"
+
+      - name: Deploy API to Elastic Beanstalk
+        if: needs.prepare.outputs.deploy_api == 'true'
+        run: |
+          set -euo pipefail
+          version="main-${RELEASE_SHA:0:12}"
+          object_key="snrnest/releases/${version}.zip"
+
+          aws s3 cp "$RUNNER_TEMP/snrnest-api.zip" "s3://${EB_RELEASE_BUCKET}/${object_key}" \
+            --sse AES256 \
+            --only-show-errors
+
+          existing="$(aws elasticbeanstalk describe-application-versions \
+            --application-name "$EB_APPLICATION" \
+            --version-labels "$version" \
+            --query 'length(ApplicationVersions)' \
+            --output text)"
+          if [[ "$existing" == "0" ]]; then
+            aws elasticbeanstalk create-application-version \
+              --application-name "$EB_APPLICATION" \
+              --version-label "$version" \
+              --description "GitHub main ${RELEASE_SHA}" \
+              --source-bundle "S3Bucket=${EB_RELEASE_BUCKET},S3Key=${object_key}" \
+              --process >/dev/null
+          fi
+
+          aws elasticbeanstalk update-environment \
+            --environment-name "$EB_ENVIRONMENT" \
+            --version-label "$version" >/dev/null
+          aws elasticbeanstalk wait environment-updated \
+            --environment-names "$EB_ENVIRONMENT"
+
+          read -r status health health_status deployed_version < <(
+            aws elasticbeanstalk describe-environments \
+              --environment-names "$EB_ENVIRONMENT" \
+              --query 'Environments[0].[Status,Health,HealthStatus,VersionLabel]' \
+              --output text
+          )
+          test "$status" = "Ready"
+          test "$health" = "Green"
+          test "$health_status" = "Ok"
+          test "$deployed_version" = "$version"
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 \
+            https://api.snrnest.in/api/v1/ready >/dev/null
+
+      - uses: actions/setup-node@v4
+        if: needs.prepare.outputs.deploy_frontend == 'true'
+        with:
+          node-version-file: frontend/.node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        if: needs.prepare.outputs.deploy_frontend == 'true'
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: https://api.snrnest.in
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy frontend to private S3 origin
+        if: needs.prepare.outputs.deploy_frontend == 'true'
+        run: |
+          set -euo pipefail
+          test -n "$DISTRIBUTION_ID"
+          aws s3 sync frontend/dist/ "s3://${FRONTEND_BUCKET}/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "sw.js" \
+            --exclude "manifest.webmanifest" \
+            --only-show-errors
+          aws s3 cp frontend/dist/index.html "s3://${FRONTEND_BUCKET}/index.html" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --only-show-errors
+          aws s3 cp frontend/dist/sw.js "s3://${FRONTEND_BUCKET}/sw.js" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --only-show-errors
+          aws s3 cp frontend/dist/manifest.webmanifest "s3://${FRONTEND_BUCKET}/manifest.webmanifest" \
+            --cache-control "public, max-age=86400, must-revalidate" \
+            --only-show-errors
+          aws cloudfront create-invalidation \
+            --distribution-id "$DISTRIBUTION_ID" \
+            --paths "/index.html" "/sw.js" "/manifest.webmanifest" >/dev/null
+
+      - name: Verify public application endpoints
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 \
+            https://api.snrnest.in/health >/dev/null
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 \
+            https://app.snrnest.in/ >/dev/null

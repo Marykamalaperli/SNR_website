@@ -23,6 +23,21 @@ Run the manual `Verify AWS OIDC identity` workflow before granting deployment
 permissions. It can obtain temporary credentials and call STS only; it cannot
 provision application resources.
 
+Production application delivery is defined in
+`.github/workflows/deploy-production-aws.yml`. After the `Application checks`
+workflow succeeds for `main`, it detects frontend and API changes and requests the
+protected `production` GitHub Environment. The same workflow supports an explicit
+manual redeployment from `main`. It uploads frontend assets only to the named
+private origin bucket and API bundles only to the named Elastic Beanstalk release
+prefix, then verifies the public HTTPS endpoints. The production environment must
+define `CLOUDFRONT_DISTRIBUTION_ID=E3M8PS2Q089C7Y`; the account, Region and role
+variables remain repository variables.
+
+The additional least-privilege permissions are recorded in
+`iam/github-production-deploy-policy.json`. Applying that inline policy and the
+`production` OIDC trust subject is a separate reviewed AWS mutation; merging the
+workflow alone does not grant cloud access.
+
 `foundation.template.json` defines the first reviewable staging slice: four private
 S3 buckets and a CloudFront OAC distribution. Validate it locally with:
 
