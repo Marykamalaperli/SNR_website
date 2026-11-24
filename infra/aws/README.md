@@ -33,6 +33,16 @@ aws cloudformation validate-template `
   --template-body file://infra/aws/foundation.template.json
 ```
 
+`production-pilot.template.json` is the separate server/database review slice. It
+defines a dedicated VPC, Elastic Beanstalk SingleInstance Docker environment,
+private Single-AZ RDS PostgreSQL, Secrets Manager credentials, monitoring and AWS
+Budget alerts. Supply the alert address through the `AlertEmail` parameter; never
+commit a personal address to the template or parameter files.
+
+The production-pilot stack requires `CAPABILITY_IAM`. Its execution role and
+no-execute change set must be reviewed separately before provisioning. DNS,
+certificates, application versions and database migrations are not included.
+
 The IAM documents under `iam/` separate GitHub's change-set authority from the
 CloudFormation service role's resource-management authority. Do not broaden either
 policy to administrator access. Template validation and a no-execute change set are

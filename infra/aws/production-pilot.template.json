@@ -1,0 +1,452 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "SNR NEST production-pilot API, private PostgreSQL, monitoring and budget controls",
+  "Parameters": {
+    "AlertEmail": {
+      "Type": "String",
+      "NoEcho": true,
+      "AllowedPattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+    },
+    "MonthlyBudgetUsd": { "Type": "Number", "Default": 45, "MinValue": 1 },
+    "DatabaseName": {
+      "Type": "String",
+      "Default": "snrnest",
+      "AllowedPattern": "^[a-zA-Z][a-zA-Z0-9_]+$"
+    },
+    "DatabaseUsername": {
+      "Type": "String",
+      "Default": "snrnest_app",
+      "AllowedPattern": "^[a-zA-Z][a-zA-Z0-9_]+$"
+    },
+    "DatabaseInstanceClass": {
+      "Type": "String",
+      "Default": "db.t4g.micro",
+      "AllowedValues": ["db.t4g.micro", "db.t4g.small"]
+    },
+    "ApplicationInstanceType": {
+      "Type": "String",
+      "Default": "t3.small",
+      "AllowedValues": ["t3.micro", "t3.small", "t3.medium"]
+    },
+    "SolutionStackName": {
+      "Type": "String",
+      "Default": "64bit Amazon Linux 2023 v4.14.4 running Docker"
+    }
+  },
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.42.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "Tags": [{ "Key": "Name", "Value": "snrnest-production-pilot" }]
+      }
+    },
+    "InternetGateway": { "Type": "AWS::EC2::InternetGateway" },
+    "GatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "InternetGatewayId": { "Ref": "InternetGateway" },
+        "VpcId": { "Ref": "Vpc" }
+      }
+    },
+    "PublicSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": { "Fn::Select": [0, { "Fn::GetAZs": "" }] },
+        "CidrBlock": "10.42.0.0/24",
+        "MapPublicIpOnLaunch": true,
+        "VpcId": { "Ref": "Vpc" }
+      }
+    },
+    "PrivateDatabaseSubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": { "Fn::Select": [0, { "Fn::GetAZs": "" }] },
+        "CidrBlock": "10.42.10.0/24",
+        "MapPublicIpOnLaunch": false,
+        "VpcId": { "Ref": "Vpc" }
+      }
+    },
+    "PrivateDatabaseSubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": { "Fn::Select": [1, { "Fn::GetAZs": "" }] },
+        "CidrBlock": "10.42.11.0/24",
+        "MapPublicIpOnLaunch": false,
+        "VpcId": { "Ref": "Vpc" }
+      }
+    },
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": { "VpcId": { "Ref": "Vpc" } }
+    },
+    "DefaultPublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "GatewayAttachment",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": { "Ref": "InternetGateway" },
+        "RouteTableId": { "Ref": "PublicRouteTable" }
+      }
+    },
+    "PublicRouteAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": { "Ref": "PublicRouteTable" },
+        "SubnetId": { "Ref": "PublicSubnet" }
+      }
+    },
+    "ApplicationSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "SNR NEST API ingress",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "VpcId": { "Ref": "Vpc" }
+      }
+    },
+    "DatabaseSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "PostgreSQL from application only",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 5432,
+            "ToPort": 5432,
+            "SourceSecurityGroupId": { "Ref": "ApplicationSecurityGroup" }
+          }
+        ],
+        "VpcId": { "Ref": "Vpc" }
+      }
+    },
+    "DatabaseSubnetGroup": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "Private database subnets",
+        "SubnetIds": [
+          { "Ref": "PrivateDatabaseSubnetA" },
+          { "Ref": "PrivateDatabaseSubnetB" }
+        ]
+      }
+    },
+    "DatabaseCredentials": {
+      "Type": "AWS::SecretsManager::Secret",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "Description": "SNR NEST production-pilot database credentials",
+        "GenerateSecretString": {
+          "SecretStringTemplate": {
+            "Fn::Sub": "{\"username\":\"${DatabaseUsername}\"}"
+          },
+          "GenerateStringKey": "password",
+          "ExcludeCharacters": "@/\\\"'",
+          "PasswordLength": 32
+        }
+      }
+    },
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "DeletionPolicy": "Snapshot",
+      "UpdateReplacePolicy": "Snapshot",
+      "Properties": {
+        "AllocatedStorage": "20",
+        "AutoMinorVersionUpgrade": true,
+        "BackupRetentionPeriod": 7,
+        "CopyTagsToSnapshot": true,
+        "DBInstanceClass": { "Ref": "DatabaseInstanceClass" },
+        "DBName": { "Ref": "DatabaseName" },
+        "DBSubnetGroupName": { "Ref": "DatabaseSubnetGroup" },
+        "DeletionProtection": true,
+        "Engine": "postgres",
+        "EngineVersion": "16.4",
+        "MasterUsername": {
+          "Fn::Sub": "{{resolve:secretsmanager:${DatabaseCredentials}:SecretString:username}}"
+        },
+        "MasterUserPassword": {
+          "Fn::Sub": "{{resolve:secretsmanager:${DatabaseCredentials}:SecretString:password}}"
+        },
+        "MultiAZ": false,
+        "PubliclyAccessible": false,
+        "StorageEncrypted": true,
+        "StorageType": "gp3",
+        "VPCSecurityGroups": [
+          { "Fn::GetAtt": ["DatabaseSecurityGroup", "GroupId"] }
+        ]
+      }
+    },
+    "ApplicationRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": "ec2.amazonaws.com" },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "snrnest-private-storage",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:s3:::snrnest-staging-evidence-${AWS::AccountId}-${AWS::Region}/*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:s3:::snrnest-staging-payslips-${AWS::AccountId}-${AWS::Region}/*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:s3:::snrnest-staging-backups-${AWS::AccountId}-${AWS::Region}/*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "secretsmanager:GetSecretValue",
+                  "Resource": { "Ref": "DatabaseCredentials" }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ApplicationInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": { "Roles": [{ "Ref": "ApplicationRole" }] }
+    },
+    "BeanstalkServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": "elasticbeanstalk.amazonaws.com" },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkEnhancedHealth",
+          "arn:aws:iam::aws:policy/AWSElasticBeanstalkManagedUpdatesCustomerRolePolicy"
+        ]
+      }
+    },
+    "Application": {
+      "Type": "AWS::ElasticBeanstalk::Application",
+      "Properties": { "ApplicationName": "snrnest-production-pilot" }
+    },
+    "Environment": {
+      "Type": "AWS::ElasticBeanstalk::Environment",
+      "Properties": {
+        "ApplicationName": { "Ref": "Application" },
+        "EnvironmentName": "snrnest-production-pilot",
+        "SolutionStackName": { "Ref": "SolutionStackName" },
+        "OptionSettings": [
+          {
+            "Namespace": "aws:elasticbeanstalk:environment",
+            "OptionName": "EnvironmentType",
+            "Value": "SingleInstance"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:environment",
+            "OptionName": "ServiceRole",
+            "Value": { "Ref": "BeanstalkServiceRole" }
+          },
+          {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "IamInstanceProfile",
+            "Value": { "Ref": "ApplicationInstanceProfile" }
+          },
+          {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "InstanceType",
+            "Value": { "Ref": "ApplicationInstanceType" }
+          },
+          {
+            "Namespace": "aws:autoscaling:launchconfiguration",
+            "OptionName": "SecurityGroups",
+            "Value": { "Ref": "ApplicationSecurityGroup" }
+          },
+          {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "VPCId",
+            "Value": { "Ref": "Vpc" }
+          },
+          {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "Subnets",
+            "Value": { "Ref": "PublicSubnet" }
+          },
+          {
+            "Namespace": "aws:ec2:vpc",
+            "OptionName": "AssociatePublicIpAddress",
+            "Value": "true"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:command",
+            "OptionName": "DeploymentPolicy",
+            "Value": "AllAtOnce"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:managedactions",
+            "OptionName": "ManagedActionsEnabled",
+            "Value": "true"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:managedactions",
+            "OptionName": "PreferredStartTime",
+            "Value": "Sun:22:00"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:managedactions:platformupdate",
+            "OptionName": "UpdateLevel",
+            "Value": "minor"
+          },
+          {
+            "Namespace": "aws:elasticbeanstalk:managedactions:platformupdate",
+            "OptionName": "InstanceRefreshEnabled",
+            "Value": "true"
+          }
+        ]
+      }
+    },
+    "AlertTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "snrnest-production-pilot-alerts",
+        "Subscription": [
+          { "Endpoint": { "Ref": "AlertEmail" }, "Protocol": "email" }
+        ]
+      }
+    },
+    "DatabaseCpuAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmActions": [{ "Ref": "AlertTopic" }],
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          { "Name": "DBInstanceIdentifier", "Value": { "Ref": "Database" } }
+        ],
+        "EvaluationPeriods": 3,
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/RDS",
+        "Period": 300,
+        "Statistic": "Average",
+        "Threshold": 80,
+        "TreatMissingData": "missing"
+      }
+    },
+    "DatabaseStorageAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmActions": [{ "Ref": "AlertTopic" }],
+        "ComparisonOperator": "LessThanThreshold",
+        "Dimensions": [
+          { "Name": "DBInstanceIdentifier", "Value": { "Ref": "Database" } }
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "FreeStorageSpace",
+        "Namespace": "AWS/RDS",
+        "Period": 300,
+        "Statistic": "Average",
+        "Threshold": 5368709120,
+        "TreatMissingData": "missing"
+      }
+    },
+    "MonthlyBudget": {
+      "Type": "AWS::Budgets::Budget",
+      "Properties": {
+        "Budget": {
+          "BudgetLimit": {
+            "Amount": { "Ref": "MonthlyBudgetUsd" },
+            "Unit": "USD"
+          },
+          "BudgetName": "snrnest-production-pilot-monthly",
+          "BudgetType": "COST",
+          "TimeUnit": "MONTHLY"
+        },
+        "NotificationsWithSubscribers": [
+          {
+            "Notification": {
+              "ComparisonOperator": "GREATER_THAN",
+              "NotificationType": "FORECASTED",
+              "Threshold": 50,
+              "ThresholdType": "PERCENTAGE"
+            },
+            "Subscribers": [
+              {
+                "Address": { "Ref": "AlertEmail" },
+                "SubscriptionType": "EMAIL"
+              }
+            ]
+          },
+          {
+            "Notification": {
+              "ComparisonOperator": "GREATER_THAN",
+              "NotificationType": "FORECASTED",
+              "Threshold": 80,
+              "ThresholdType": "PERCENTAGE"
+            },
+            "Subscribers": [
+              {
+                "Address": { "Ref": "AlertEmail" },
+                "SubscriptionType": "EMAIL"
+              }
+            ]
+          },
+          {
+            "Notification": {
+              "ComparisonOperator": "GREATER_THAN",
+              "NotificationType": "ACTUAL",
+              "Threshold": 100,
+              "ThresholdType": "PERCENTAGE"
+            },
+            "Subscribers": [
+              {
+                "Address": { "Ref": "AlertEmail" },
+                "SubscriptionType": "EMAIL"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "EnvironmentEndpoint": {
+      "Value": { "Fn::GetAtt": ["Environment", "EndpointURL"] }
+    },
+    "DatabaseEndpoint": {
+      "Value": { "Fn::GetAtt": ["Database", "Endpoint.Address"] }
+    },
+    "DatabaseSecretArn": { "Value": { "Ref": "DatabaseCredentials" } },
+    "AlertTopicArn": { "Value": { "Ref": "AlertTopic" } }
+  }
+}

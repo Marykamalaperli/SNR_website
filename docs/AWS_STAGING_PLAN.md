@@ -78,3 +78,31 @@ that GitHub can manage.
   incident contacts.
 - Approve evidence, payslip, audit and backup retention periods.
 - Approve the production identity/session and CSRF design.
+
+## Approved production-pilot extension
+
+The owner selected a cost-controlled Elastic Beanstalk path that can later move
+from `SingleInstance` to a load-balanced Auto Scaling environment. PostgreSQL is a
+private, encrypted, deletion-protected Single-AZ RDS instance for the pilot. This
+is a secure production-pilot baseline, not a high-availability claim.
+
+`infra/aws/production-pilot.template.json` implements the reviewable definition:
+
+- a dedicated VPC with one public application subnet and two private database
+  subnets in separate Availability Zones;
+- an Elastic Beanstalk Docker environment with an EC2 instance profile and no
+  long-lived application AWS keys;
+- private RDS PostgreSQL with generated Secrets Manager credentials, seven-day
+  automated backups and snapshot retention on deletion or replacement;
+- application-only PostgreSQL security-group ingress;
+- RDS CPU and free-storage alarms; and
+- a monthly budget with alerts at 50, 80 and 100 percent.
+
+The alert email is a `NoEcho` deployment parameter and is not stored in the
+repository. The default budget is USD 45 as a conservative approximation of the
+INR 4,000 planning ceiling; exchange rate, tax and actual usage can exceed the
+estimate.
+
+DNS, ACM certificates, application deployment, live migrations and stack execution
+remain separate approval gates. The HA upgrade adds a load balancer, at least two
+application instances and Multi-AZ RDS and requires a new cost approval.

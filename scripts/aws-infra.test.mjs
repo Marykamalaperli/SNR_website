@@ -7,6 +7,7 @@ const loadJson = async (path) =>
   JSON.parse(await readFile(new URL(path, root), "utf8"));
 
 const template = await loadJson("infra/aws/foundation.template.json");
+const pilot = await loadJson("infra/aws/production-pilot.template.json");
 const deployPolicy = await loadJson("infra/aws/iam/github-deploy-policy.json");
 const servicePolicy = await loadJson(
   "infra/aws/iam/cloudformation-service-policy.json",
@@ -24,7 +25,10 @@ test("foundation contains only the approved edge and storage resource types", ()
   ]);
 
   for (const resource of Object.values(template.Resources)) {
-    assert.ok(allowed.has(resource.Type), `unexpected resource ${resource.Type}`);
+    assert.ok(
+      allowed.has(resource.Type),
+      `unexpected resource ${resource.Type}`,
+    );
   }
 });
 
@@ -49,7 +53,8 @@ test("every bucket blocks public access and retained data buckets are versioned"
 
 test("only CloudFront can read frontend objects", () => {
   const statement =
-    template.Resources.FrontendBucketPolicy.Properties.PolicyDocument.Statement[0];
+    template.Resources.FrontendBucketPolicy.Properties.PolicyDocument
+      .Statement[0];
   assert.deepEqual(statement.Principal, {
     Service: "cloudfront.amazonaws.com",
   });
@@ -59,7 +64,8 @@ test("only CloudFront can read frontend objects", () => {
 
 test("private buckets do not receive retention deletion rules before approval", () => {
   for (const name of ["EvidenceBucket", "PayslipBucket", "BackupBucket"]) {
-    const rules = template.Resources[name].Properties.LifecycleConfiguration.Rules;
+    const rules =
+      template.Resources[name].Properties.LifecycleConfiguration.Rules;
     assert.equal(rules.length, 1);
     assert.ok(rules[0].AbortIncompleteMultipartUpload);
     assert.equal("ExpirationInDays" in rules[0], false);
@@ -81,4 +87,49 @@ test("CloudFormation service policy cannot manage compute, databases, DNS, or IA
   for (const action of actions) {
     assert.doesNotMatch(action, /^(ec2|rds|lightsail|route53|acm|iam):/);
   }
+});
+
+test("production pilot keeps PostgreSQL private and protected", () => {
+  const database = pilot.Resources.Database;
+  assert.equal(database.Type, "AWS::RDS::DBInstance");
+  assert.equal(database.Properties.PubliclyAccessible, false);
+  assert.equal(database.Properties.StorageEncrypted, true);
+  assert.equal(database.Properties.DeletionProtection, true);
+  assert.equal(database.Properties.MultiAZ, false);
+  assert.equal(database.DeletionPolicy, "Snapshot");
+  assert.equal(database.UpdateReplacePolicy, "Snapshot");
+});
+
+test("production pilot uses temporary EC2 role credentials", () => {
+  const profile = pilot.Resources.ApplicationInstanceProfile;
+  const role = pilot.Resources.ApplicationRole;
+  assert.equal(profile.Type, "AWS::IAM::InstanceProfile");
+  assert.equal(role.Type, "AWS::IAM::Role");
+  assert.equal(
+    role.Properties.AssumeRolePolicyDocument.Statement[0].Principal.Service,
+    "ec2.amazonaws.com",
+  );
+  assert.doesNotMatch(JSON.stringify(pilot), /AccessKey|SecretAccessKey/);
+});
+
+test("production pilot starts single-instance and preserves an HA upgrade path", () => {
+  const settings = pilot.Resources.Environment.Properties.OptionSettings;
+  const environmentType = settings.find(
+    (setting) => setting.OptionName === "EnvironmentType",
+  );
+  assert.equal(environmentType.Value, "SingleInstance");
+  assert.equal(
+    pilot.Resources.Environment.Type,
+    "AWS::ElasticBeanstalk::Environment",
+  );
+});
+
+test("production pilot sets three monthly budget thresholds", () => {
+  const notifications =
+    pilot.Resources.MonthlyBudget.Properties.NotificationsWithSubscribers;
+  assert.deepEqual(
+    notifications.map((item) => item.Notification.Threshold),
+    [50, 80, 100],
+  );
+  assert.equal(pilot.Parameters.AlertEmail.NoEcho, true);
 });
