@@ -122,9 +122,11 @@ tokens, signed URLs, personal data or private request content.
 
 ## CI formatting and browser-suite alignment (24 November 2026)
 
-- **Implemented and locally validated:** branch `agy/fix-ci-formatting` corrects the
-  Prettier and Ruff failures reported by GitHub Actions run `45342569834` without
-  changing application behavior or dependencies.
+- **Implemented and validated:** branch `agy/fix-ci-formatting`, PR
+  [#7](https://github.com/elite-horizon/SNR_website/pull/7), corrects the Prettier
+  and Ruff failures reported by GitHub Actions run `45342569834` without changing
+  application behavior or dependencies. Push validation run `45361128844` passed
+  the frontend, backend, database and target-foundation jobs.
 - The default `test:browser` command now runs the active responsive/accessibility
   and production-boundary Playwright projects. Supabase, personal-QR and guard
   station projects remain available as `test:browser:legacy`; they are retained as
