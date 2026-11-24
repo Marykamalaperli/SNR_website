@@ -124,7 +124,8 @@ tokens, signed URLs, personal data or private request content.
 ## AWS production-pilot infrastructure definition (24 November 2026)
 
 - **Implemented and locally/AWS-validated, not provisioned:** branch
-  `agy/aws-production-pilot` adds a dedicated VPC, Elastic Beanstalk
+  `agy/aws-production-pilot`, PR
+  [#8](https://github.com/elite-horizon/SNR_website/pull/8), commit `fc576d9`, adds a dedicated VPC, Elastic Beanstalk
   SingleInstance Docker environment, private encrypted Single-AZ RDS PostgreSQL,
   generated Secrets Manager credentials, EC2 workload identity, alarms and AWS
   Budget thresholds.
