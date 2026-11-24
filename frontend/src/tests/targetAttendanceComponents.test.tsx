@@ -59,6 +59,69 @@ describe('Target Attendance Components', () => {
 
       fireEvent.click(punchButton);
       expect(screen.getByText(/Step 1: Scan Store QR Challenge/i)).toBeInTheDocument();
+      expect(screen.getByText(/Point camera at Store QR Station/i)).toBeInTheDocument();
+
+      // Enforce: Next button is locked until a valid QR is scanned
+      const lockButton = screen.getByRole('button', { name: /Scan Store QR Code to Unlock/i });
+      expect(lockButton).toBeDisabled();
+    });
+
+    it('enforces mandatory QR scan lock and unlocks clock-in when store QR is scanned', async () => {
+      vi.mocked(targetAttendanceService.listAttendanceEvents).mockResolvedValue({
+        items: [],
+        total: 0,
+      });
+      vi.mocked(targetAttendanceService.issueStoreQRChallenge).mockResolvedValue({
+        challenge_token: 'store1:1700000000:nonce:signature',
+        store_id: 'store-1',
+        expires_at: new Date(Date.now() + 60000).toISOString(),
+      });
+      vi.mocked(targetAttendanceService.requestPhotoUploadIntent).mockResolvedValue({
+        upload_url: 'https://upload.example.com/photo.jpg',
+        photo_key: 'evidence/photo123.jpg',
+        expires_in: 300,
+        max_bytes: 5242880,
+      });
+      vi.mocked(targetAttendanceService.uploadPhotoBlob).mockResolvedValue();
+      vi.mocked(targetAttendanceService.recordAttendanceEvent).mockResolvedValue({
+        id: 'new-punch-1',
+        organization_id: 'org-1',
+        store_id: 'store-1',
+        employee_id: 'emp-1',
+        shift_id: null,
+        action: 'clock_in',
+        server_timestamp: '2026-11-24T09:00:00Z',
+        store_timestamp: '2026-11-24T09:00:00Z',
+        photo_key: 'evidence/photo123.jpg',
+      });
+
+      render(<TargetPunchCard storeId="store-1" storeName="Hyderabad Store" latestEvent={null} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Clocked out')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: /clock in/i }));
+
+      // Button is locked initially
+      const unlockButton = screen.getByRole('button', { name: /Scan Store QR Code to Unlock/i });
+      expect(unlockButton).toBeDisabled();
+
+      // Simulate store QR scan via station auto-fetch
+      fireEvent.click(screen.getByRole('button', { name: /Dev \/ Station Auto-Fetch/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Store QR Challenge Verified!/i)).toBeInTheDocument();
+      });
+
+      // Now the button is unlocked
+      const nextButton = screen.getByRole('button', { name: /Next: Take Verification Photo/i });
+      expect(nextButton).not.toBeDisabled();
+      fireEvent.click(nextButton);
+
+      // Advances to Step 2: Selfie Photo
+      await waitFor(() => {
+        expect(screen.getByText(/Step 2: Take Verification Selfie/i)).toBeInTheDocument();
+      });
     });
 
     it('renders Clock Out button when latest event is clock_in', async () => {

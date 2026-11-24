@@ -1,13 +1,21 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import jsQR from 'jsqr';
 import {
   Camera,
   LogIn,
   LogOut,
   CheckCircle,
+  CheckCircle2,
   AlertCircle,
   RefreshCw,
   QrCode,
   Upload,
+  Lock,
+  Unlock,
+  ScanLine,
+  ArrowRight,
+  ShieldCheck,
+  Check,
 } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
@@ -66,6 +74,7 @@ export default function TargetPunchCard({
   const [modalOpen, setModalOpen] = useState(false);
   const [step, setStep] = useState<'qr' | 'photo' | 'review'>('qr');
   const [challengeToken, setChallengeToken] = useState('');
+  const [isQrScanned, setIsQrScanned] = useState(false);
   const [fetchingQR, setFetchingQR] = useState(false);
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
@@ -73,71 +82,225 @@ export default function TargetPunchCard({
   const [error, setError] = useState('');
   const [successBanner, setSuccessBanner] = useState<AttendanceEvent | null>(null);
 
-  // Camera state
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [cameraError, setCameraError] = useState('');
+  // QR Scanner Camera state
+  const qrVideoRef = useRef<HTMLVideoElement | null>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const qrStreamRef = useRef<MediaStream | null>(null);
+  const qrScanAnimationRef = useRef<number | null>(null);
+  const [qrScanningActive, setQrScanningActive] = useState(false);
+  const [qrCameraError, setQrCameraError] = useState('');
+  const qrFileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+  // Selfie Camera state
+  const selfieVideoRef = useRef<HTMLVideoElement | null>(null);
+  const selfieCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const selfieStreamRef = useRef<MediaStream | null>(null);
+  const selfieFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selfieCameraError, setSelfieCameraError] = useState('');
+
+  // -------------------------------------------------------------------------
+  // QR CAMERA & SCANNER ENGINE
+  // -------------------------------------------------------------------------
+  const stopQrCamera = () => {
+    if (qrScanAnimationRef.current) {
+      cancelAnimationFrame(qrScanAnimationRef.current);
+      qrScanAnimationRef.current = null;
+    }
+    if (qrStreamRef.current) {
+      qrStreamRef.current.getTracks().forEach((track) => track.stop());
+      qrStreamRef.current = null;
+    }
+    setQrScanningActive(false);
+  };
+
+  const handleScannedChallenge = useCallback((token: string) => {
+    const trimmed = token.trim();
+    if (!trimmed) return;
+
+    // Validate that the scanned QR looks like a store challenge (or token)
+    setChallengeToken(trimmed);
+    setIsQrScanned(true);
+    setError('');
+
+    // Optional audio beep / visual cue
+    try {
+      if (typeof window !== 'undefined' && 'AudioContext' in window) {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch success beep
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.12);
+      }
+    } catch {
+      // Audio not permitted or unavailable
+    }
+
+    stopQrCamera();
+  }, []);
+
+  const scanQrFrame = useCallback(() => {
+    const video = qrVideoRef.current;
+    const canvas = qrCanvasRef.current;
+    if (!video || !canvas) return;
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+
+        if (code && code.data) {
+          handleScannedChallenge(code.data);
+          return; // Stop scanning loop on success
+        }
+      }
+    }
+
+    qrScanAnimationRef.current = requestAnimationFrame(scanQrFrame);
+  }, [handleScannedChallenge]);
+
+  const startQrCamera = async () => {
+    setQrCameraError('');
+    setQrScanningActive(true);
+    try {
+      // Prefer environment (back camera) for scanning physical QR stations on mobile
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 } },
+        audio: false,
+      });
+      qrStreamRef.current = stream;
+      if (qrVideoRef.current) {
+        qrVideoRef.current.srcObject = stream;
+        await qrVideoRef.current.play();
+        qrScanAnimationRef.current = requestAnimationFrame(scanQrFrame);
+      }
+    } catch (err: unknown) {
+      setQrCameraError(
+        err instanceof Error
+          ? err.message
+          : 'Could not access back camera for QR scanning. Please grant camera permission.',
+      );
+      setQrScanningActive(false);
     }
   };
 
-  const startCamera = async () => {
-    setCameraError('');
+  // Decode QR code from an uploaded image file
+  const handleQrImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imgData.data, imgData.width, imgData.height);
+        if (code && code.data) {
+          handleScannedChallenge(code.data);
+        } else {
+          setError('No valid QR code detected in the uploaded image. Please try another image.');
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // -------------------------------------------------------------------------
+  // SELFIE CAMERA ENGINE
+  // -------------------------------------------------------------------------
+  const stopSelfieCamera = () => {
+    if (selfieStreamRef.current) {
+      selfieStreamRef.current.getTracks().forEach((track) => track.stop());
+      selfieStreamRef.current = null;
+    }
+  };
+
+  const startSelfieCamera = async () => {
+    setSelfieCameraError('');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 640 } },
         audio: false,
       });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      selfieStreamRef.current = stream;
+      if (selfieVideoRef.current) {
+        selfieVideoRef.current.srcObject = stream;
+        await selfieVideoRef.current.play();
       }
     } catch (err: unknown) {
-      setCameraError(
+      setSelfieCameraError(
         err instanceof Error
           ? err.message
-          : 'Could not access camera. Please allow camera permissions or upload a selfie.',
+          : 'Could not access front camera. Please allow camera permissions or upload a selfie.',
       );
     }
   };
 
+  // Manage streams on step changes
   useEffect(() => {
-    if (modalOpen && step === 'photo') {
-      startCamera();
+    if (modalOpen) {
+      if (step === 'qr') {
+        stopSelfieCamera();
+        if (!isQrScanned) {
+          startQrCamera();
+        }
+      } else if (step === 'photo') {
+        stopQrCamera();
+        startSelfieCamera();
+      } else {
+        stopQrCamera();
+        stopSelfieCamera();
+      }
     } else {
-      stopCamera();
+      stopQrCamera();
+      stopSelfieCamera();
     }
+
     return () => {
-      stopCamera();
+      stopQrCamera();
+      stopSelfieCamera();
     };
-  }, [modalOpen, step]);
+  }, [modalOpen, step, isQrScanned]);
 
   const handleOpenModal = () => {
     setError('');
     setStep('qr');
+    setChallengeToken('');
+    setIsQrScanned(false);
     setPhotoBlob(null);
     setPhotoPreview('');
     setModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    stopCamera();
+    stopQrCamera();
+    stopSelfieCamera();
     setModalOpen(false);
   };
 
+  // Developer / test helper for environments without physical QR displays
   const handleAutoFetchQR = async () => {
     setFetchingQR(true);
     setError('');
     try {
       const challenge = await issueStoreQRChallenge(storeId);
-      setChallengeToken(challenge.challenge_token);
+      handleScannedChallenge(challenge.challenge_token);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Could not fetch active store QR challenge.');
     } finally {
@@ -146,8 +309,8 @@ export default function TargetPunchCard({
   };
 
   const handleCapturePhoto = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
+    const video = selfieVideoRef.current;
+    const canvas = selfieCanvasRef.current;
     if (!video || !canvas) return;
 
     canvas.width = video.videoWidth || 640;
@@ -161,7 +324,7 @@ export default function TargetPunchCard({
         if (blob) {
           setPhotoBlob(blob);
           setPhotoPreview(URL.createObjectURL(blob));
-          stopCamera();
+          stopSelfieCamera();
           setStep('review');
         } else {
           setError('Failed to capture photo. Please try again.');
@@ -172,26 +335,32 @@ export default function TargetPunchCard({
     );
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelfieFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setPhotoBlob(file);
       setPhotoPreview(URL.createObjectURL(file));
-      stopCamera();
+      stopSelfieCamera();
       setStep('review');
     }
   };
 
-  const handleRetake = () => {
+  const handleRetakePhoto = () => {
     setPhotoBlob(null);
     if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhotoPreview('');
     setStep('photo');
   };
 
+  const handleRescanQr = () => {
+    setChallengeToken('');
+    setIsQrScanned(false);
+    setStep('qr');
+  };
+
   const handleSubmitPunch = async () => {
     if (!challengeToken.trim()) {
-      setError('Please provide the Store QR Challenge token.');
+      setError('A valid Store QR Code must be scanned before clocking in.');
       setStep('qr');
       return;
     }
@@ -340,6 +509,9 @@ export default function TargetPunchCard({
             </div>
           )}
 
+          {/* ===================================================================== */}
+          {/* STEP 1: SCAN STORE QR CHALLENGE (MANDATORY REQUIREMENT)               */}
+          {/* ===================================================================== */}
           {step === 'qr' && (
             <div>
               <div
@@ -347,53 +519,270 @@ export default function TargetPunchCard({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  marginBottom: '0.75rem',
+                  marginBottom: '0.5rem',
                 }}
               >
                 <QrCode size={20} className="text-primary" />
-                <h3 style={{ margin: 0, fontSize: '1rem' }}>Step 1: Scan Store QR Challenge</h3>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>
+                  Step 1: Scan Store QR Challenge
+                </h3>
               </div>
-              <p className="muted" style={{ fontSize: '0.875rem' }}>
-                Enter or scan the rotating challenge token currently displayed on the store station
-                screen.
+              <p className="muted" style={{ fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
+                Point your camera at the rotating QR code displayed on the physical store entrance tablet station.
               </p>
 
-              <FormField
-                label="Store QR Challenge Token"
-                type="text"
-                placeholder="Paste or scan store QR challenge (e.g. store:timestamp:nonce:sig)"
-                value={challengeToken}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setChallengeToken(e.target.value)
-                }
-                required
-              />
+              {/* Scanned Success Confirmation Card */}
+              {isQrScanned ? (
+                <div
+                  style={{
+                    background: '#f0fdf4',
+                    border: '2px solid #16a34a',
+                    borderRadius: '8px',
+                    padding: '1.25rem',
+                    textAlign: 'center',
+                    marginBottom: '1rem',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      padding: '0.5rem',
+                      background: '#dcfce7',
+                      borderRadius: '50%',
+                      color: '#16a34a',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    <CheckCircle2 size={32} />
+                  </div>
+                  <h4 style={{ margin: '0 0 0.25rem 0', color: '#166534', fontSize: '1.1rem', fontWeight: 700 }}>
+                    Store QR Challenge Verified!
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '0.825rem', color: '#15803d' }}>
+                    Physical entrance QR token captured. Ready for verification selfie.
+                  </p>
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '6px',
+                      border: '1px solid #bbf7d0',
+                      marginTop: '0.75rem',
+                      fontFamily: 'monospace',
+                      fontSize: '0.75rem',
+                      color: '#14532d',
+                      wordBreak: 'break-all',
+                    }}
+                  >
+                    {challengeToken}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRescanQr}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#16a34a',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      marginTop: '0.75rem',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    Scan a different QR code
+                  </button>
+                </div>
+              ) : (
+                /* Active Live Camera Viewfinder with Target Reticle */
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      maxWidth: '380px',
+                      height: '260px',
+                      background: '#0f172a',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '2px solid #334155',
+                    }}
+                  >
+                    <video
+                      ref={qrVideoRef}
+                      playsInline
+                      muted
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
 
+                    {/* Viewfinder Overlay Reticle */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        width: '180px',
+                        height: '180px',
+                        border: '2px dashed rgba(255, 255, 255, 0.85)',
+                        borderRadius: '12px',
+                        boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.45)',
+                        pointerEvents: 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      {/* Scanning Laser Line */}
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '2px',
+                          background: 'linear-gradient(90deg, transparent, #22c55e, transparent)',
+                          boxShadow: '0 0 8px #22c55e',
+                          animation: 'scanLineAnim 1.8s ease-in-out infinite alternate',
+                        }}
+                      />
+                    </div>
+
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '12px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'rgba(0, 0, 0, 0.75)',
+                        color: '#ffffff',
+                        padding: '0.35rem 0.85rem',
+                        borderRadius: '999px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <ScanLine size={14} className="animate-pulse" style={{ color: '#22c55e' }} />
+                      Point camera at Store QR Station
+                    </div>
+                  </div>
+
+                  {qrCameraError && (
+                    <div
+                      style={{
+                        width: '100%',
+                        marginTop: '0.75rem',
+                        padding: '0.75rem',
+                        background: '#fef2f2',
+                        borderRadius: '6px',
+                        color: '#b91c1c',
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      {qrCameraError}
+                    </div>
+                  )}
+
+                  {/* Alternative Scanner Controls (Upload QR / Test helper) */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Button
+                      variant="secondary"
+                      onClick={() => qrFileInputRef.current?.click()}
+                      style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                    >
+                      <Upload size={13} /> Scan QR from Image / Photo
+                    </Button>
+                    <input
+                      ref={qrFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleQrImageUpload}
+                      style={{ display: 'none' }}
+                    />
+
+                    <Button
+                      variant="secondary"
+                      onClick={handleAutoFetchQR}
+                      disabled={fetchingQR}
+                      style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                    >
+                      <RefreshCw size={13} className={fetchingQR ? 'animate-spin' : ''} />
+                      {fetchingQR ? 'Verifying…' : 'Dev / Station Auto-Fetch'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Manual Input Fallback */}
               <div style={{ marginTop: '0.75rem' }}>
-                <Button variant="secondary" onClick={handleAutoFetchQR} disabled={fetchingQR}>
-                  <RefreshCw size={14} className={fetchingQR ? 'animate-spin' : ''} />
-                  {fetchingQR ? 'Fetching…' : 'Fetch Store QR (Dev / Auto)'}
-                </Button>
+                <FormField
+                  label="Store QR Challenge Token (Auto-filled on Scan)"
+                  type="text"
+                  placeholder="Scan QR code above to populate token"
+                  value={challengeToken}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setChallengeToken(e.target.value);
+                    if (e.target.value.trim().length > 10) {
+                      setIsQrScanned(true);
+                    }
+                  }}
+                  required
+                />
               </div>
 
+              {/* Modal Navigation */}
               <div
                 style={{
                   display: 'flex',
-                  justifyContent: 'flex-end',
-                  gap: '0.75rem',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   marginTop: '1.5rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid #e2e8f0',
                 }}
               >
                 <Button variant="secondary" onClick={handleCloseModal}>
                   Cancel
                 </Button>
-                <Button disabled={!challengeToken.trim()} onClick={() => setStep('photo')}>
-                  Next: Take Photo
+
+                {/* Lock Enforcement: Cannot proceed unless QR challenge is scanned */}
+                <Button
+                  variant="primary"
+                  disabled={!challengeToken.trim() || !isQrScanned}
+                  onClick={() => setStep('photo')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    background: challengeToken.trim() && isQrScanned ? '#16a34a' : undefined,
+                    borderColor: challengeToken.trim() && isQrScanned ? '#15803d' : undefined,
+                  }}
+                >
+                  {challengeToken.trim() && isQrScanned ? (
+                    <>
+                      <Unlock size={15} />
+                      Next: Take Verification Photo <ArrowRight size={15} />
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={15} />
+                      Scan Store QR Code to Unlock
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
           )}
 
+          {/* ===================================================================== */}
+          {/* STEP 2: TAKE VERIFICATION SELFIE PHOTO                                */}
+          {/* ===================================================================== */}
           {step === 'photo' && (
             <div>
               <div
@@ -401,17 +790,19 @@ export default function TargetPunchCard({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  marginBottom: '0.75rem',
+                  marginBottom: '0.5rem',
                 }}
               >
                 <Camera size={20} className="text-primary" />
-                <h3 style={{ margin: 0, fontSize: '1rem' }}>Step 2: Take Verification Photo</h3>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>
+                  Step 2: Take Verification Selfie
+                </h3>
               </div>
-              <p className="muted" style={{ fontSize: '0.875rem' }}>
-                Position your face clearly in the camera view to verify your physical presence.
+              <p className="muted" style={{ fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
+                Position your face in the front camera to verify identity and prevent buddy punching.
               </p>
 
-              {cameraError ? (
+              {selfieCameraError ? (
                 <div
                   style={{
                     padding: '1rem',
@@ -420,59 +811,91 @@ export default function TargetPunchCard({
                     color: '#b91c1c',
                   }}
                 >
-                  {cameraError}
+                  {selfieCameraError}
                   <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                    <Button variant="secondary" onClick={startCamera}>
-                      <RefreshCw size={14} /> Retry Camera
+                    <Button variant="secondary" onClick={startSelfieCamera}>
+                      <RefreshCw size={14} /> Retry Front Camera
                     </Button>
-                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                    <Button variant="secondary" onClick={() => selfieFileInputRef.current?.click()}>
                       <Upload size={14} /> Upload Selfie File
                     </Button>
                   </div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <video
-                    ref={videoRef}
-                    playsInline
-                    muted
+                  <div
                     style={{
+                      position: 'relative',
                       width: '100%',
-                      maxHeight: '260px',
-                      background: '#000',
+                      maxWidth: '380px',
                       borderRadius: '8px',
-                      objectFit: 'cover',
+                      overflow: 'hidden',
+                      background: '#000',
                     }}
-                  />
-                  <canvas ref={canvasRef} style={{ display: 'none' }} />
+                  >
+                    <video
+                      ref={selfieVideoRef}
+                      playsInline
+                      muted
+                      style={{
+                        width: '100%',
+                        maxHeight: '260px',
+                        background: '#000',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        left: '8px',
+                        background: 'rgba(22, 163, 74, 0.9)',
+                        color: '#fff',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.725rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                      }}
+                    >
+                      <Check size={12} /> QR Validated
+                    </div>
+                  </div>
+
+                  <canvas ref={selfieCanvasRef} style={{ display: 'none' }} />
 
                   <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
                     <Button onClick={handleCapturePhoto} style={{ minWidth: '160px' }}>
-                      <Camera size={18} />
-                      Capture Photo
+                      <Camera size={16} /> Snap Live Selfie
                     </Button>
-                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                      <Upload size={16} />
-                      Upload Photo
+                    <Button variant="secondary" onClick={() => selfieFileInputRef.current?.click()}>
+                      <Upload size={16} /> Upload Photo
                     </Button>
+                    <input
+                      ref={selfieFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSelfieFileChange}
+                      style={{ display: 'none' }}
+                    />
                   </div>
                 </div>
               )}
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="user"
-                style={{ display: 'none' }}
-                onChange={handleFileChange}
-              />
-
               <div
-                style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem',
+                  marginTop: '1.5rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid #e2e8f0',
+                }}
               >
                 <Button variant="secondary" onClick={() => setStep('qr')}>
-                  Back
+                  Back to QR Scan
                 </Button>
                 <Button variant="secondary" onClick={handleCloseModal}>
                   Cancel
@@ -481,50 +904,132 @@ export default function TargetPunchCard({
             </div>
           )}
 
+          {/* ===================================================================== */}
+          {/* STEP 3: REVIEW & CONFIRM CLOCK-IN                                     */}
+          {/* ===================================================================== */}
           {step === 'review' && (
             <div>
-              <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>
-                Step 3: Confirm & Submit Punch
-              </h3>
-
-              {photoPreview && (
-                <div style={{ textAlign: 'center', margin: '1rem 0' }}>
-                  <img
-                    src={photoPreview}
-                    alt="Captured selfie preview"
-                    style={{
-                      width: '180px',
-                      height: '180px',
-                      borderRadius: '8px',
-                      objectFit: 'cover',
-                      border: '2px solid #e5e7eb',
-                    }}
-                  />
-                  <div style={{ marginTop: '0.5rem' }}>
-                    <Button variant="secondary" onClick={handleRetake} disabled={busy}>
-                      Retake Photo
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem',
+                }}
+              >
+                <CheckCircle size={20} className="text-primary" />
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>
+                  Step 3: Confirm {targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}
+                </h3>
+              </div>
+              <p className="muted" style={{ fontSize: '0.85rem' }}>
+                Store QR challenge verified and presence photo captured. Confirm to record this punch.
+              </p>
 
               <div
                 style={{
-                  background: '#f9fafb',
-                  padding: '0.75rem',
-                  borderRadius: '6px',
-                  fontSize: '0.875rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  margin: '1.25rem 0',
                 }}
               >
-                <div>
-                  <strong>Action:</strong> {targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}
+                {/* Verified Store QR Token Pill */}
+                <div
+                  style={{
+                    background: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldCheck size={18} color="#16a34a" />
+                    <div>
+                      <strong style={{ fontSize: '0.85rem', color: '#166534' }}>
+                        Verified Store QR Challenge
+                      </strong>
+                      <div
+                        style={{
+                          fontSize: '0.75rem',
+                          color: '#15803d',
+                          fontFamily: 'monospace',
+                          marginTop: '0.15rem',
+                          maxWidth: '260px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {challengeToken}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRescanQr}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#16a34a',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    Rescan
+                  </button>
                 </div>
-                <div>
-                  <strong>Store:</strong> {storeName}
-                </div>
-                <div>
-                  <strong>Evidence:</strong> Fresh selfie captured
-                </div>
+
+                {/* Selfie Preview */}
+                {photoPreview && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      background: '#f8fafc',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                    }}
+                  >
+                    <img
+                      src={photoPreview}
+                      alt="Presence verification selfie"
+                      style={{
+                        width: '120px',
+                        height: '120px',
+                        objectFit: 'cover',
+                        borderRadius: '50%',
+                        border: '3px solid #16a34a',
+                        marginBottom: '0.5rem',
+                      }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                      Identity Photo Captured
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleRetakePhoto}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#0284c7',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        marginTop: '0.35rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Retake Selfie
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div
@@ -533,15 +1038,26 @@ export default function TargetPunchCard({
                   justifyContent: 'flex-end',
                   gap: '0.75rem',
                   marginTop: '1.5rem',
+                  paddingTop: '1rem',
+                  borderTop: '1px solid #e2e8f0',
                 }}
               >
-                <Button variant="secondary" onClick={handleRetake} disabled={busy}>
-                  Back
+                <Button variant="secondary" onClick={handleCloseModal} disabled={busy}>
+                  Cancel
                 </Button>
-                <Button onClick={handleSubmitPunch} disabled={busy}>
-                  {busy
-                    ? 'Submitting…'
-                    : `Confirm ${targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}`}
+                <Button
+                  variant="primary"
+                  onClick={handleSubmitPunch}
+                  disabled={busy}
+                  style={{ minWidth: '160px', background: '#16a34a', borderColor: '#15803d' }}
+                >
+                  {busy ? (
+                    'Recording Punch…'
+                  ) : (
+                    <>
+                      <CheckCircle2 size={16} /> Confirm {targetAction === 'clock_in' ? 'Clock In' : 'Clock Out'}
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
