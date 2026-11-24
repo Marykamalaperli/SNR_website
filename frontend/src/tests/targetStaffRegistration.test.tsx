@@ -113,13 +113,23 @@ describe('TargetStaffRegistrationWizard Component', () => {
     // Step 1: Personal Details
     fireEvent.change(screen.getByLabelText(/First Name/i), { target: { value: 'Anil' } });
     fireEvent.change(screen.getByLabelText(/Last Name/i), { target: { value: 'Kumar' } });
-    fireEvent.change(screen.getByLabelText(/Primary Phone Number/i), { target: { value: '9876543210' } });
-    fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'anil.kumar@snr.com' } });
-    fireEvent.change(screen.getByLabelText(/Contact Person Name/i), { target: { value: 'Sunita Kumar' } });
-    fireEvent.change(screen.getByLabelText(/Emergency Phone/i), { target: { value: '9876543211' } });
+    fireEvent.change(screen.getByLabelText(/Primary Phone Number/i), {
+      target: { value: '9876543210' },
+    });
+    fireEvent.change(screen.getByLabelText(/Email Address/i), {
+      target: { value: 'anil.kumar@snr.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/Contact Person Name/i), {
+      target: { value: 'Sunita Kumar' },
+    });
+    fireEvent.change(screen.getByLabelText(/Emergency Phone/i), {
+      target: { value: '9876543211' },
+    });
 
     // Mock photo upload
-    const fileInput = document.querySelector('input[type="file"][accept="image/*"]') as HTMLInputElement;
+    const fileInput = document.querySelector(
+      'input[type="file"][accept="image/*"]',
+    ) as HTMLInputElement;
     if (fileInput) {
       const file = new File(['dummy photo'], 'selfie.png', { type: 'image/png' });
       fireEvent.change(fileInput, { target: { files: [file] } });
@@ -144,11 +154,17 @@ describe('TargetStaffRegistrationWizard Component', () => {
 
     // Step 3: KYC Documents
     await waitFor(() => {
-      expect(screen.getByText(/Step 3: Verification, Previous Employment & KYC Documents/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Step 3: Verification, Previous Employment & KYC Documents/i),
+      ).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText(/Aadhar Card Number/i), { target: { value: '123456789012' } });
-    fireEvent.change(screen.getByLabelText(/PAN Card Number/i), { target: { value: 'ABCDE1234F' } });
+    fireEvent.change(screen.getByLabelText(/Aadhar Card Number/i), {
+      target: { value: '123456789012' },
+    });
+    fireEvent.change(screen.getByLabelText(/PAN Card Number/i), {
+      target: { value: 'ABCDE1234F' },
+    });
 
     fireEvent.click(screen.getByText(/Continue to Bank Details/i));
 
@@ -157,16 +173,24 @@ describe('TargetStaffRegistrationWizard Component', () => {
       expect(screen.getByText(/Step 4: Bank Account & Payment Details/i)).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText(/Account Holder Name/i), { target: { value: 'Anil Kumar' } });
-    fireEvent.change(screen.getByLabelText(/^Bank Account Number/i), { target: { value: '1234567890' } });
-    fireEvent.change(screen.getByLabelText(/Confirm Bank Account Number/i), { target: { value: '1234567890' } });
+    fireEvent.change(screen.getByLabelText(/Account Holder Name/i), {
+      target: { value: 'Anil Kumar' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Bank Account Number/i), {
+      target: { value: '1234567890' },
+    });
+    fireEvent.change(screen.getByLabelText(/Confirm Bank Account Number/i), {
+      target: { value: '1234567890' },
+    });
     fireEvent.change(screen.getByLabelText(/IFSC Code/i), { target: { value: 'SBIN0001234' } });
 
     fireEvent.click(screen.getByText(/Continue to Salary Structure/i));
 
     // Step 5: Salary Structure
     await waitFor(() => {
-      expect(screen.getByText(/Step 5: Salary Structure & Compensation Template/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Step 5: Salary Structure & Compensation Template/i),
+      ).toBeInTheDocument();
       expect(screen.getByText(/Draft - Not for payment/i)).toBeInTheDocument();
     });
 
@@ -178,9 +202,13 @@ describe('TargetStaffRegistrationWizard Component', () => {
 
     // Step 6: Review & Final Submit
     await waitFor(() => {
-      expect(screen.getByText(/Step 6: Review Candidate Dossier & Confirm Registration/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Step 6: Review Candidate Dossier & Confirm Registration/i),
+      ).toBeInTheDocument();
       expect(screen.getByText('Anil Kumar')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Confirm & Register Employee/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /Confirm & Register Employee/i }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Confirm & Register Employee/i }));
@@ -258,7 +286,9 @@ describe('TargetStoreOrgStructure Component', () => {
       expect(screen.getAllByText(/Security Guard & Watchman/i).length).toBeGreaterThan(0);
     });
 
-    expect(screen.getByRole('button', { name: /Register Staff \(5-Step Wizard\)/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Register Staff \(5-Step Wizard\)/i }),
+    ).toBeInTheDocument();
 
     // Verify clicking a Teams card opens the Microsoft Teams Profile & Dossier Drawer
     const personCards = screen.getAllByTestId('teams-person-card');

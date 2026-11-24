@@ -196,7 +196,9 @@ describe('TargetStoreManagement Component', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Store' }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Please choose the store location on Google Maps/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Please choose the store location on Google Maps/i),
+      ).toBeInTheDocument();
     });
     expect(createStore).not.toHaveBeenCalled();
   });
@@ -274,9 +276,7 @@ describe('TargetStoreManagement Component', () => {
       expect(screen.getByText('Bangalore Store')).toBeInTheDocument();
     });
 
-    expect(
-      screen.getByText(/Viewing stores in read-only mode/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Viewing stores in read-only mode/i)).toBeInTheDocument();
     expect(screen.queryByText('Add New Store')).not.toBeInTheDocument();
   });
 });

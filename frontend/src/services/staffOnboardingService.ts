@@ -32,7 +32,8 @@ export const STORE_ROLE_DEFINITIONS: Record<StoreRoleType, RoleDefinition> = {
       'Store inventory & floor replenishment direction',
       'Emergency escalation & incident response',
     ],
-    description: 'Direct in-store executive authority overseeing all shifts, teams, and daily operations.',
+    description:
+      'Direct in-store executive authority overseeing all shifts, teams, and daily operations.',
   },
   assistant_store_manager: {
     type: 'assistant_store_manager',
@@ -47,7 +48,8 @@ export const STORE_ROLE_DEFINITIONS: Record<StoreRoleType, RoleDefinition> = {
       'Roster coverage & floor supervisor coordination',
       'Secondary attendance exception review',
     ],
-    description: 'Second-in-command assisting Store Manager in daily execution and shift handovers.',
+    description:
+      'Second-in-command assisting Store Manager in daily execution and shift handovers.',
   },
   team_lead: {
     type: 'team_lead',
@@ -62,7 +64,8 @@ export const STORE_ROLE_DEFINITIONS: Record<StoreRoleType, RoleDefinition> = {
       'Order fulfillment queue monitoring',
       'Team punctuality & break coordination',
     ],
-    description: 'Floor supervisor managing front-line pickers, packers, and operational throughput.',
+    description:
+      'Floor supervisor managing front-line pickers, packers, and operational throughput.',
   },
   picker_packer: {
     type: 'picker_packer',
@@ -502,7 +505,7 @@ export function getCurrentEmployeeDossier(
   user?: { email?: string; display_name?: string; user_id?: string } | string | null,
 ): StaffOnboardingDossier {
   const list = getOnboardingDossiers();
-  
+
   if (user) {
     if (typeof user === 'string') {
       const match = list.find(
@@ -534,9 +537,7 @@ export function getCurrentEmployeeDossier(
         ? user
         : 'Tarun Teja';
   const resolvedEmail =
-    typeof user === 'object' && user?.email
-      ? user.email
-      : 'tarun.teja@snrnest.local';
+    typeof user === 'object' && user?.email ? user.email : 'tarun.teja@snrnest.local';
 
   const defaultDossier: StaffOnboardingDossier = {
     employeeId: 'emp-tarun-01',
@@ -595,7 +596,7 @@ export function updateEmployeeBankDetails(
 ): StaffOnboardingDossier {
   const list = getOnboardingDossiers();
   let found = list.find((d) => d.employeeId === idOrCode || d.employeeCode === idOrCode);
-  
+
   if (!found) {
     found = getCurrentEmployeeDossier(idOrCode);
   }
@@ -608,4 +609,3 @@ export function updateEmployeeBankDetails(
   saveOnboardingDossier(found);
   return found;
 }
-

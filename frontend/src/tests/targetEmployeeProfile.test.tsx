@@ -115,7 +115,9 @@ describe('TargetEmployeeProfile Component', () => {
 
     // Modal opens
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText(/Direct deposit account for payroll disbursement/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Direct deposit account for payroll disbursement/i),
+    ).toBeInTheDocument();
 
     // Fill form and save
     const holderInput = screen.getByLabelText(/Account Holder Name/i);

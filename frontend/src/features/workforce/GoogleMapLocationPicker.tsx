@@ -26,7 +26,7 @@ interface GoogleMapLocationPickerProps {
   }) => void;
 }
 
-const DEFAULT_CENTER: [number, number] = [17.3850, 78.4867]; // Default to Hyderabad, India (SNR NEST default region)
+const DEFAULT_CENTER: [number, number] = [17.385, 78.4867]; // Default to Hyderabad, India (SNR NEST default region)
 
 function createCustomPinIcon() {
   return L.divIcon({
@@ -177,7 +177,10 @@ export default function GoogleMapLocationPicker({
       latitude: latStr,
       longitude: lngStr,
       radiusMeters: radiusMeters || '50',
-      mapUrl: customMapUrl !== undefined ? customMapUrl : (mapUrl || `https://www.google.com/maps?q=${latStr},${lngStr}`),
+      mapUrl:
+        customMapUrl !== undefined
+          ? customMapUrl
+          : mapUrl || `https://www.google.com/maps?q=${latStr},${lngStr}`,
     });
 
     if (mapInstanceRef.current) {
@@ -207,7 +210,9 @@ export default function GoogleMapLocationPicker({
         updatePosition(foundLat, foundLng);
         setStatusNotice(`Found: "${data[0].display_name}". Location pin set!`);
       } else {
-        setErrorMessage(`Could not find "${query}". Try searching a city name or pasting a Google Maps link.`);
+        setErrorMessage(
+          `Could not find "${query}". Try searching a city name or pasting a Google Maps link.`,
+        );
       }
     } catch {
       setErrorMessage('Search request failed. Please check network or paste coordinates directly.');
@@ -232,7 +237,9 @@ export default function GoogleMapLocationPicker({
         const lat = Number(pos.coords.latitude.toFixed(7));
         const lng = Number(pos.coords.longitude.toFixed(7));
         updatePosition(lat, lng);
-        setStatusNotice(`Current GPS captured: ${lat}, ${lng} (±${Math.round(pos.coords.accuracy)}m accuracy)`);
+        setStatusNotice(
+          `Current GPS captured: ${lat}, ${lng} (±${Math.round(pos.coords.accuracy)}m accuracy)`,
+        );
       },
       (err) => {
         setLocating(false);
@@ -259,9 +266,13 @@ export default function GoogleMapLocationPicker({
       const parsed = parseStoreMapLink(url);
       if (parsed) {
         updatePosition(parsed.latitude, parsed.longitude, url);
-        setStatusNotice(`Coordinates extracted from Google Maps link: ${parsed.latitude}, ${parsed.longitude}`);
+        setStatusNotice(
+          `Coordinates extracted from Google Maps link: ${parsed.latitude}, ${parsed.longitude}`,
+        );
       } else {
-        setErrorMessage('Could not extract coordinates from link. Ensure it is a valid Google Maps pin or share URL.');
+        setErrorMessage(
+          'Could not extract coordinates from link. Ensure it is a valid Google Maps pin or share URL.',
+        );
       }
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Invalid map URL.');
@@ -428,12 +439,11 @@ export default function GoogleMapLocationPicker({
           }}
         >
           <span>
-            👉 <strong>Click anywhere on map</strong> to drop/move the store pin, or drag the blue marker.
+            👉 <strong>Click anywhere on map</strong> to drop/move the store pin, or drag the blue
+            marker.
           </span>
           {hasValidCoords && (
-            <span style={{ fontWeight: 600, color: '#0284c7' }}>
-              Geofence: ±{currentRadius}m
-            </span>
+            <span style={{ fontWeight: 600, color: '#0284c7' }}>Geofence: ±{currentRadius}m</span>
           )}
         </div>
       </div>
@@ -468,7 +478,8 @@ export default function GoogleMapLocationPicker({
           />
         </div>
         <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-          You can also copy the share link directly from Google Maps app or browser and paste it here.
+          You can also copy the share link directly from Google Maps app or browser and paste it
+          here.
         </span>
       </div>
 

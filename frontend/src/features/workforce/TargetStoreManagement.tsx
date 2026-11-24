@@ -24,12 +24,7 @@ import FormField from '../../components/forms/FormField';
 import { useAuth } from '../../hooks/useAuth';
 import GoogleMapLocationPicker from './GoogleMapLocationPicker';
 import TargetStoreHub from './TargetStoreHub';
-import {
-  createStore,
-  listStores,
-  Store,
-  updateStore,
-} from '../../services/targetWorkforceService';
+import { createStore, listStores, Store, updateStore } from '../../services/targetWorkforceService';
 
 const TIMEZONE_OPTIONS = [
   'Asia/Kolkata',
@@ -71,9 +66,9 @@ export default function TargetStoreManagement() {
 
   const isSuperAdmin = Boolean(
     session?.actual_role === 'system_admin' ||
-      session?.role === 'system_admin' ||
-      session?.role === 'admin' ||
-      session?.scopes?.some((s: { role: string }) => s.role === 'system_admin'),
+    session?.role === 'system_admin' ||
+    session?.role === 'admin' ||
+    session?.scopes?.some((s: { role: string }) => s.role === 'system_admin'),
   );
 
   async function loadStores() {
@@ -105,7 +100,9 @@ export default function TargetStoreManagement() {
     const radiusNum = storeRadius.trim() ? parseInt(storeRadius.trim(), 10) : 50;
 
     if (latNum === null || lngNum === null) {
-      setError('Please choose the store location on Google Maps (click the map, search an address, or paste a map link) before creating the store.');
+      setError(
+        'Please choose the store location on Google Maps (click the map, search an address, or paste a map link) before creating the store.',
+      );
       return;
     }
 
@@ -168,7 +165,10 @@ export default function TargetStoreManagement() {
   }
 
   return (
-    <div className="target-store-management" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div
+      className="target-store-management"
+      style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+    >
       {/* Header */}
       <div
         style={{
@@ -242,7 +242,9 @@ export default function TargetStoreManagement() {
         >
           <Shield size={16} className="text-primary" />
           <span>
-            Viewing stores in read-only mode. Only <strong>System Administrators (Super Admin)</strong> have authority to create and update stores.
+            Viewing stores in read-only mode. Only{' '}
+            <strong>System Administrators (Super Admin)</strong> have authority to create and update
+            stores.
           </span>
         </div>
       )}
@@ -334,7 +336,9 @@ export default function TargetStoreManagement() {
                       <Building2 size={20} />
                     </span>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>{st.name}</h3>
+                      <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>
+                        {st.name}
+                      </h3>
                       <span
                         style={{
                           fontSize: '0.75rem',
@@ -397,7 +401,8 @@ export default function TargetStoreManagement() {
                         textDecoration: 'underline',
                       }}
                     >
-                      {st.latitude?.toFixed(4)}, {st.longitude?.toFixed(4)} (±{st.radius_meters || 50}m)
+                      {st.latitude?.toFixed(4)}, {st.longitude?.toFixed(4)} (±
+                      {st.radius_meters || 50}m)
                       <ExternalLink size={12} />
                     </a>
                   ) : (
@@ -442,13 +447,18 @@ export default function TargetStoreManagement() {
           onClose={() => setShowAddStoreModal(false)}
           busy={actionInProgress}
         >
-          <form onSubmit={handleCreateStore} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form
+            onSubmit={handleCreateStore}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
             <FormField
               label="Store Code"
               type="text"
               placeholder="e.g. HYD-01"
               value={storeCode}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStoreCode(e.target.value.toUpperCase())}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setStoreCode(e.target.value.toUpperCase())
+              }
               required
               hint="Unique store identifier in uppercase (e.g. BLR-01, HYD-01)."
             />

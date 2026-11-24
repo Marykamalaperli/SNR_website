@@ -117,8 +117,9 @@ describe('TargetEmployeeDocuments Component', () => {
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Successfully uploaded "Salary Pay Slip — November 2026"/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Successfully uploaded "Salary Pay Slip — November 2026"/i),
+      ).toBeInTheDocument();
     });
   });
 });
-

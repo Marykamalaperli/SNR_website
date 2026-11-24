@@ -2,12 +2,7 @@
 // Strict Security Rule: Never cache authenticated API endpoints or private PDF/evidence documents.
 
 const CACHE_NAME = 'snr-nest-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/favicon.svg',
-  '/manifest.webmanifest',
-];
+const STATIC_ASSETS = ['/', '/index.html', '/favicon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -15,18 +10,18 @@ self.addEventListener('install', (event) => {
       return cache.addAll(STATIC_ASSETS).catch(() => {
         // Allow offline assets to be cached progressively
       });
-    })
+    }),
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      )
-    )
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+      ),
   );
   self.clients.claim();
 });
@@ -65,10 +60,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         }
         // Cache static JS/CSS/image assets
-        if (
-          url.pathname.match(/\.(js|css|svg|png|jpg|jpeg|woff2?)$/) ||
-          url.pathname === '/'
-        ) {
+        if (url.pathname.match(/\.(js|css|svg|png|jpg|jpeg|woff2?)$/) || url.pathname === '/') {
           const toCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, toCache);
@@ -76,7 +68,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       });
-    })
+    }),
   );
 });
-

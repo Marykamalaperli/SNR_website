@@ -55,7 +55,9 @@ const mockRun: PayrollRun = {
       hourly_rate: '250.75',
       gross_pay: '4283.65',
       net_pay: '4283.65',
-      earnings_json: [{ component: 'Base Hourly Pay', hours: '17.08', rate: '250.75', amount: '4283.65' }],
+      earnings_json: [
+        { component: 'Base Hourly Pay', hours: '17.08', rate: '250.75', amount: '4283.65' },
+      ],
       deductions_json: [],
       unresolved_exceptions_count: 0,
       watermark: 'Draft - Not for payment',
@@ -77,7 +79,7 @@ describe('TargetPayrollRuns Component', () => {
 
     expect(screen.getByText('DRAFT - NOT FOR PAYMENT')).toBeInTheDocument();
     expect(
-      screen.getByText(/Statutory, tax, deduction and overtime compliance rules/i)
+      screen.getByText(/Statutory, tax, deduction and overtime compliance rules/i),
     ).toBeInTheDocument();
 
     await waitFor(() => {
@@ -147,7 +149,9 @@ describe('TargetPayrollRuns Component', () => {
         pay_period_id: 'period-1',
         block_unresolved_exceptions: true,
       });
-      expect(screen.getByText('Deterministic draft payroll calculated successfully.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Deterministic draft payroll calculated successfully.'),
+      ).toBeInTheDocument();
     });
   });
 });

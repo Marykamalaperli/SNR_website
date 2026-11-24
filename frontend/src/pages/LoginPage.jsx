@@ -152,8 +152,19 @@ export default function LoginPage() {
       </form>
       <p className="login-help">Need access? Contact your HR administrator.</p>
       {import.meta.env.DEV && (
-        <div style={{ marginTop: '1.25rem', padding: '1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.85rem' }}>
-          <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: '#334155' }}>Demo / Dev Quick-Fill Accounts:</p>
+        <div
+          style={{
+            marginTop: '1.25rem',
+            padding: '1rem',
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+          }}
+        >
+          <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: '#334155' }}>
+            Demo / Dev Quick-Fill Accounts:
+          </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button
               type="button"

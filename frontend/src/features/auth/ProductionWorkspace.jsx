@@ -8,9 +8,9 @@ export default function ProductionWorkspace({ role }) {
   const { session } = useAuth();
   const isSuperAdmin = Boolean(
     session?.actual_role === 'system_admin' ||
-      session?.role === 'system_admin' ||
-      session?.role === 'admin' ||
-      session?.scopes?.some((s) => s.role === 'system_admin'),
+    session?.role === 'system_admin' ||
+    session?.role === 'admin' ||
+    session?.scopes?.some((s) => s.role === 'system_admin'),
   );
   const activeRole = isSuperAdmin ? 'admin' : role;
   const workspaceConfig = workspaces[activeRole] || workspaces[role];

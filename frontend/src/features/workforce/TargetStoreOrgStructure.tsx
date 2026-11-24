@@ -89,7 +89,9 @@ export default function TargetStoreOrgStructure({
 
   // Selected person for the Teams Profile Drawer
   const [inspectedPerson, setInspectedPerson] = useState<TeamsOrgPerson | null>(null);
-  const [activeProfileTab, setActiveProfileTab] = useState<'overview' | 'authorizations' | 'kyc' | 'compensation'>('overview');
+  const [activeProfileTab, setActiveProfileTab] = useState<
+    'overview' | 'authorizations' | 'kyc' | 'compensation'
+  >('overview');
 
   // Expand / collapse state for tree levels
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({
@@ -227,7 +229,10 @@ export default function TargetStoreOrgStructure({
   }
 
   return (
-    <div className="target-org-structure ms-teams-theme" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', position: 'relative' }}>
+    <div
+      className="target-org-structure ms-teams-theme"
+      style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', position: 'relative' }}
+    >
       {/* Top Microsoft Teams Header */}
       <div
         style={{
@@ -244,7 +249,14 @@ export default function TargetStoreOrgStructure({
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '0.25rem',
+            }}
+          >
             <span
               style={{
                 display: 'inline-flex',
@@ -265,11 +277,19 @@ export default function TargetStoreOrgStructure({
             <span style={{ fontSize: '0.75rem', color: '#8a8886' }}>· Super Admin Hierarchy</span>
           </div>
 
-          <h1 style={{ margin: '0 0 0.35rem 0', fontSize: '1.65rem', fontWeight: 700, color: '#242424' }}>
+          <h1
+            style={{
+              margin: '0 0 0.35rem 0',
+              fontSize: '1.65rem',
+              fontWeight: 700,
+              color: '#242424',
+            }}
+          >
             Store Organizational Structure & Roles
           </h1>
           <p style={{ margin: 0, fontSize: '0.875rem', color: '#605e5c' }}>
-            Interactive Microsoft Teams-style hierarchy tree, reporting lines, operational authorizations, and staff dossiers.
+            Interactive Microsoft Teams-style hierarchy tree, reporting lines, operational
+            authorizations, and staff dossiers.
           </p>
         </div>
 
@@ -445,7 +465,13 @@ export default function TargetStoreOrgStructure({
         <div style={{ position: 'relative', width: '300px' }}>
           <Search
             size={15}
-            style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#8a8886' }}
+            style={{
+              position: 'absolute',
+              left: '0.75rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#8a8886',
+            }}
           />
           <input
             type="text"
@@ -552,8 +578,22 @@ export default function TargetStoreOrgStructure({
                 <div style={{ width: '2px', height: '32px', background: '#c8c6c4' }} />
 
                 {/* LEVEL 1: STORE ADMINISTRATOR */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    width: '100%',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '1.5rem',
+                      justifyContent: 'center',
+                      flexWrap: 'wrap',
+                    }}
+                  >
                     {filteredAdmins.length === 0 ? (
                       <TeamsPersonCard
                         person={{
@@ -608,8 +648,22 @@ export default function TargetStoreOrgStructure({
                       <div style={{ width: '2px', height: '32px', background: '#c8c6c4' }} />
 
                       {/* LEVEL 2: STORE MANAGER (SM) */}
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                        <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          width: '100%',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '1.5rem',
+                            justifyContent: 'center',
+                            flexWrap: 'wrap',
+                          }}
+                        >
                           {smList.length === 0 ? (
                             <TeamsEmptyRoleCard
                               roleType="store_manager"
@@ -641,8 +695,22 @@ export default function TargetStoreOrgStructure({
                             <div style={{ width: '2px', height: '32px', background: '#c8c6c4' }} />
 
                             {/* LEVEL 3: ASSISTANT STORE MANAGER (ASM) */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                              <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                width: '100%',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  gap: '1.5rem',
+                                  justifyContent: 'center',
+                                  flexWrap: 'wrap',
+                                }}
+                              >
                                 {asmList.length === 0 ? (
                                   <TeamsEmptyRoleCard
                                     roleType="assistant_store_manager"
@@ -671,11 +739,27 @@ export default function TargetStoreOrgStructure({
                               {/* Tree Branch from ASM to Team Lead */}
                               {expandedNodes.assistant_store_manager && (
                                 <>
-                                  <div style={{ width: '2px', height: '32px', background: '#c8c6c4' }} />
+                                  <div
+                                    style={{ width: '2px', height: '32px', background: '#c8c6c4' }}
+                                  />
 
                                   {/* LEVEL 4: TEAM LEAD (TL) */}
-                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                                    <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      width: '100%',
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        gap: '1.5rem',
+                                        justifyContent: 'center',
+                                        flexWrap: 'wrap',
+                                      }}
+                                    >
                                       {tlList.length === 0 ? (
                                         <TeamsEmptyRoleCard
                                           roleType="team_lead"
@@ -692,7 +776,9 @@ export default function TargetStoreOrgStructure({
                                             key={tl.id}
                                             person={tl}
                                             isSelected={inspectedPerson?.id === tl.id}
-                                            directReportsCount={pickerList.length + secList.length + otherList.length}
+                                            directReportsCount={
+                                              pickerList.length + secList.length + otherList.length
+                                            }
                                             isExpanded={expandedNodes.team_lead}
                                             onToggleExpand={() => toggleNode('team_lead')}
                                             onSelect={(p) => setInspectedPerson(p)}
@@ -704,7 +790,13 @@ export default function TargetStoreOrgStructure({
                                     {/* Tree Branch from TL to Associates (Pickers, Packers & Security) */}
                                     {expandedNodes.team_lead && (
                                       <>
-                                        <div style={{ width: '2px', height: '32px', background: '#c8c6c4' }} />
+                                        <div
+                                          style={{
+                                            width: '2px',
+                                            height: '32px',
+                                            background: '#c8c6c4',
+                                          }}
+                                        />
 
                                         {/* Horizontal Distribution Line */}
                                         <div
@@ -721,7 +813,14 @@ export default function TargetStoreOrgStructure({
                                           }}
                                         >
                                           {/* Branch Pod: Associate (Picker & Packer) */}
-                                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '280px' }}>
+                                          <div
+                                            style={{
+                                              display: 'flex',
+                                              flexDirection: 'column',
+                                              alignItems: 'center',
+                                              minWidth: '280px',
+                                            }}
+                                          >
                                             <div
                                               style={{
                                                 fontSize: '0.75rem',
@@ -738,7 +837,15 @@ export default function TargetStoreOrgStructure({
                                               Fulfillment & Packing Pod · {pickerList.length} Active
                                             </div>
 
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', alignItems: 'center' }}>
+                                            <div
+                                              style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '0.75rem',
+                                                width: '100%',
+                                                alignItems: 'center',
+                                              }}
+                                            >
                                               {pickerList.length === 0 ? (
                                                 <TeamsEmptyRoleCard
                                                   roleType="picker_packer"
@@ -763,7 +870,14 @@ export default function TargetStoreOrgStructure({
                                           </div>
 
                                           {/* Branch Pod: Security Guard & Watchman */}
-                                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '280px' }}>
+                                          <div
+                                            style={{
+                                              display: 'flex',
+                                              flexDirection: 'column',
+                                              alignItems: 'center',
+                                              minWidth: '280px',
+                                            }}
+                                          >
                                             <div
                                               style={{
                                                 fontSize: '0.75rem',
@@ -777,10 +891,19 @@ export default function TargetStoreOrgStructure({
                                                 letterSpacing: '0.04em',
                                               }}
                                             >
-                                              Security Guard & Watchman Pod · {secList.length} Active
+                                              Security Guard & Watchman Pod · {secList.length}{' '}
+                                              Active
                                             </div>
 
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', alignItems: 'center' }}>
+                                            <div
+                                              style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '0.75rem',
+                                                width: '100%',
+                                                alignItems: 'center',
+                                              }}
+                                            >
                                               {secList.length === 0 ? (
                                                 <TeamsEmptyRoleCard
                                                   roleType="security_guard"
@@ -806,7 +929,14 @@ export default function TargetStoreOrgStructure({
 
                                           {/* Branch Pod: Other Roles (if any registered) */}
                                           {otherList.length > 0 && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '280px' }}>
+                                            <div
+                                              style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                minWidth: '280px',
+                                              }}
+                                            >
                                               <div
                                                 style={{
                                                   fontSize: '0.75rem',
@@ -823,7 +953,15 @@ export default function TargetStoreOrgStructure({
                                                 Specialist Roles Pod · {otherList.length} Active
                                               </div>
 
-                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', alignItems: 'center' }}>
+                                              <div
+                                                style={{
+                                                  display: 'flex',
+                                                  flexDirection: 'column',
+                                                  gap: '0.75rem',
+                                                  width: '100%',
+                                                  alignItems: 'center',
+                                                }}
+                                              >
                                                 {otherList.map((oth) => (
                                                   <TeamsPersonCard
                                                     key={oth.id}
@@ -980,7 +1118,9 @@ export default function TargetStoreOrgStructure({
                 <X size={18} />
               </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}
+              >
                 {/* Large Avatar */}
                 <div style={{ position: 'relative' }}>
                   {inspectedPerson.photoUrl ? (
@@ -1044,7 +1184,14 @@ export default function TargetStoreOrgStructure({
                   <div style={{ fontSize: '0.85rem', color: '#e1dfdd', marginTop: '0.2rem' }}>
                     {inspectedPerson.roleLabel}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.4rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      marginTop: '0.4rem',
+                    }}
+                  >
                     <span
                       style={{
                         fontSize: '0.725rem',
@@ -1131,7 +1278,8 @@ export default function TargetStoreOrgStructure({
                   style={{
                     background: 'none',
                     border: 'none',
-                    borderBottom: activeProfileTab === tab.id ? '3px solid #5b5fc7' : '3px solid transparent',
+                    borderBottom:
+                      activeProfileTab === tab.id ? '3px solid #5b5fc7' : '3px solid transparent',
                     color: activeProfileTab === tab.id ? '#5b5fc7' : '#605e5c',
                     fontWeight: activeProfileTab === tab.id ? 700 : 500,
                     padding: '0.75rem 0.85rem',
@@ -1145,12 +1293,35 @@ export default function TargetStoreOrgStructure({
             </div>
 
             {/* Tab Body */}
-            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+            <div
+              style={{
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                flex: 1,
+              }}
+            >
               {activeProfileTab === 'overview' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {/* Reporting Manager line */}
-                  <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+                  <div
+                    style={{
+                      background: '#f8fafc',
+                      padding: '0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        marginBottom: '0.35rem',
+                      }}
+                    >
                       Reporting Structure
                     </div>
                     <div style={{ fontSize: '0.875rem', color: '#0f172a' }}>
@@ -1159,11 +1330,33 @@ export default function TargetStoreOrgStructure({
                   </div>
 
                   {/* Personal & Demographic Info */}
-                  <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                  <div
+                    style={{
+                      background: '#f8fafc',
+                      padding: '0.85rem',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: '#64748b',
+                        textTransform: 'uppercase',
+                        marginBottom: '0.5rem',
+                      }}
+                    >
                       Contact & Demographic Details
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.825rem' }}>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '0.75rem',
+                        fontSize: '0.825rem',
+                      }}
+                    >
                       <div>
                         <span style={{ color: '#64748b', display: 'block' }}>Email Address</span>
                         <strong>{inspectedPerson.email}</strong>
@@ -1175,19 +1368,30 @@ export default function TargetStoreOrgStructure({
                       {inspectedPerson.dossier && (
                         <>
                           <div>
-                            <span style={{ color: '#64748b', display: 'block' }}>Date of Birth</span>
+                            <span style={{ color: '#64748b', display: 'block' }}>
+                              Date of Birth
+                            </span>
                             <strong>{inspectedPerson.dossier.dob}</strong>
                           </div>
                           <div>
-                            <span style={{ color: '#64748b', display: 'block' }}>Gender / Marital</span>
-                            <strong>{inspectedPerson.dossier.gender} · {inspectedPerson.dossier.maritalStatus}</strong>
+                            <span style={{ color: '#64748b', display: 'block' }}>
+                              Gender / Marital
+                            </span>
+                            <strong>
+                              {inspectedPerson.dossier.gender} ·{' '}
+                              {inspectedPerson.dossier.maritalStatus}
+                            </strong>
                           </div>
                           <div>
-                            <span style={{ color: '#64748b', display: 'block' }}>Date of Joining</span>
+                            <span style={{ color: '#64748b', display: 'block' }}>
+                              Date of Joining
+                            </span>
                             <strong>{inspectedPerson.dossier.dateOfJoining}</strong>
                           </div>
                           <div>
-                            <span style={{ color: '#64748b', display: 'block' }}>Assigned Store</span>
+                            <span style={{ color: '#64748b', display: 'block' }}>
+                              Assigned Store
+                            </span>
                             <strong>{inspectedPerson.dossier.storeName}</strong>
                           </div>
                         </>
@@ -1197,12 +1401,29 @@ export default function TargetStoreOrgStructure({
 
                   {/* Emergency Contact */}
                   {inspectedPerson.dossier?.emergencyContact && (
-                    <div style={{ background: '#fef2f2', padding: '0.85rem', borderRadius: '8px', border: '1px solid #fee2e2' }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b91c1c', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+                    <div
+                      style={{
+                        background: '#fef2f2',
+                        padding: '0.85rem',
+                        borderRadius: '8px',
+                        border: '1px solid #fee2e2',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: '#b91c1c',
+                          textTransform: 'uppercase',
+                          marginBottom: '0.35rem',
+                        }}
+                      >
                         Emergency Contact
                       </div>
                       <div style={{ fontSize: '0.85rem', color: '#991b1b' }}>
-                        <strong>{inspectedPerson.dossier.emergencyContact.name}</strong> ({inspectedPerson.dossier.emergencyContact.relationship}) · {inspectedPerson.dossier.emergencyContact.phone}
+                        <strong>{inspectedPerson.dossier.emergencyContact.name}</strong> (
+                        {inspectedPerson.dossier.emergencyContact.relationship}) ·{' '}
+                        {inspectedPerson.dossier.emergencyContact.phone}
                       </div>
                     </div>
                   )}
@@ -1212,12 +1433,16 @@ export default function TargetStoreOrgStructure({
               {activeProfileTab === 'authorizations' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div style={{ fontSize: '0.85rem', color: '#475569' }}>
-                    Operational authorizations and system scopes granted to <strong>{inspectedPerson.roleLabel}</strong> in SNR NEST:
+                    Operational authorizations and system scopes granted to{' '}
+                    <strong>{inspectedPerson.roleLabel}</strong> in SNR NEST:
                   </div>
 
-                  {inspectedPerson.roleType !== 'super_admin' && inspectedPerson.roleType !== 'store_admin' ? (
+                  {inspectedPerson.roleType !== 'super_admin' &&
+                  inspectedPerson.roleType !== 'store_admin' ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      {STORE_ROLE_DEFINITIONS[inspectedPerson.roleType as StoreRoleType].authorizations.map((auth, idx) => (
+                      {STORE_ROLE_DEFINITIONS[
+                        inspectedPerson.roleType as StoreRoleType
+                      ].authorizations.map((auth, idx) => (
                         <div
                           key={idx}
                           style={{
@@ -1239,15 +1464,48 @@ export default function TargetStoreOrgStructure({
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd', fontSize: '0.825rem' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: '#f0f9ff',
+                          borderRadius: '6px',
+                          border: '1px solid #bae6fd',
+                          fontSize: '0.825rem',
+                        }}
+                      >
                         <ShieldCheck size={16} color="#0284c7" />
                         <span>Authoritative store scope & management access</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd', fontSize: '0.825rem' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: '#f0f9ff',
+                          borderRadius: '6px',
+                          border: '1px solid #bae6fd',
+                          fontSize: '0.825rem',
+                        }}
+                      >
                         <ShieldCheck size={16} color="#0284c7" />
                         <span>Workforce shift assignments & kiosk QR rotation</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd', fontSize: '0.825rem' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: '#f0f9ff',
+                          borderRadius: '6px',
+                          border: '1px solid #bae6fd',
+                          fontSize: '0.825rem',
+                        }}
+                      >
                         <ShieldCheck size={16} color="#0284c7" />
                         <span>Payroll draft preview and attendance reconciliation</span>
                       </div>
@@ -1260,10 +1518,34 @@ export default function TargetStoreOrgStructure({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {inspectedPerson.dossier ? (
                     <>
-                      <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.825rem', fontWeight: 600 }}>Aadhar Identity Card</span>
-                          <span style={{ fontSize: '0.75rem', color: '#059669', background: '#ecfdf5', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                      <div
+                        style={{
+                          padding: '0.75rem',
+                          background: '#f8fafc',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <span style={{ fontSize: '0.825rem', fontWeight: 600 }}>
+                            Aadhar Identity Card
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.75rem',
+                              color: '#059669',
+                              background: '#ecfdf5',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '4px',
+                              fontWeight: 700,
+                            }}
+                          >
                             VERIFIED
                           </span>
                         </div>
@@ -1272,10 +1554,34 @@ export default function TargetStoreOrgStructure({
                         </div>
                       </div>
 
-                      <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.825rem', fontWeight: 600 }}>PAN Tax Card</span>
-                          <span style={{ fontSize: '0.75rem', color: '#059669', background: '#ecfdf5', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                      <div
+                        style={{
+                          padding: '0.75rem',
+                          background: '#f8fafc',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <span style={{ fontSize: '0.825rem', fontWeight: 600 }}>
+                            PAN Tax Card
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.75rem',
+                              color: '#059669',
+                              background: '#ecfdf5',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '4px',
+                              fontWeight: 700,
+                            }}
+                          >
                             VERIFIED
                           </span>
                         </div>
@@ -1285,17 +1591,39 @@ export default function TargetStoreOrgStructure({
                       </div>
 
                       {inspectedPerson.dossier.previousEmployment && (
-                        <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                        <div
+                          style={{
+                            padding: '0.75rem',
+                            background: '#f8fafc',
+                            borderRadius: '6px',
+                            border: '1px solid #e2e8f0',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              color: '#0284c7',
+                              textTransform: 'uppercase',
+                              marginBottom: '0.25rem',
+                            }}
+                          >
                             Previous Employment Experience
                           </div>
                           <div style={{ fontSize: '0.825rem', color: '#1e293b' }}>
-                            Company: <strong>{inspectedPerson.dossier.previousEmployment.companyName}</strong>
+                            Company:{' '}
+                            <strong>
+                              {inspectedPerson.dossier.previousEmployment.companyName}
+                            </strong>
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.15rem' }}>
+                          <div
+                            style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.15rem' }}
+                          >
                             Role: {inspectedPerson.dossier.previousEmployment.designation}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.35rem' }}>
+                          <div
+                            style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.35rem' }}
+                          >
                             ✓ 3 Months Pay Slips & Offer Letter Attached
                           </div>
                         </div>
@@ -1326,30 +1654,100 @@ export default function TargetStoreOrgStructure({
                   </div>
 
                   {inspectedPerson.dossier ? (
-                    <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.825rem' }}>
+                    <div
+                      style={{
+                        background: '#f8fafc',
+                        padding: '0.85rem',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '0.35rem 0',
+                          borderBottom: '1px solid #f1f5f9',
+                          fontSize: '0.825rem',
+                        }}
+                      >
                         <span>Basic Pay:</span>
-                        <strong>₹{inspectedPerson.dossier.salary.basic.toLocaleString('en-IN')}</strong>
+                        <strong>
+                          ₹{inspectedPerson.dossier.salary.basic.toLocaleString('en-IN')}
+                        </strong>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.825rem' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '0.35rem 0',
+                          borderBottom: '1px solid #f1f5f9',
+                          fontSize: '0.825rem',
+                        }}
+                      >
                         <span>House Rent Allowance (HRA):</span>
-                        <strong>₹{inspectedPerson.dossier.salary.hra.toLocaleString('en-IN')}</strong>
+                        <strong>
+                          ₹{inspectedPerson.dossier.salary.hra.toLocaleString('en-IN')}
+                        </strong>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.825rem' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '0.35rem 0',
+                          borderBottom: '1px solid #f1f5f9',
+                          fontSize: '0.825rem',
+                        }}
+                      >
                         <span>Special Allowance:</span>
-                        <strong>₹{inspectedPerson.dossier.salary.specialAllowance.toLocaleString('en-IN')}</strong>
+                        <strong>
+                          ₹{inspectedPerson.dossier.salary.specialAllowance.toLocaleString('en-IN')}
+                        </strong>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.825rem', color: '#dc2626' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '0.35rem 0',
+                          borderBottom: '1px solid #f1f5f9',
+                          fontSize: '0.825rem',
+                          color: '#dc2626',
+                        }}
+                      >
                         <span>Provident Fund (PF):</span>
-                        <span>-₹{inspectedPerson.dossier.salary.pfDeduction.toLocaleString('en-IN')}</span>
+                        <span>
+                          -₹{inspectedPerson.dossier.salary.pfDeduction.toLocaleString('en-IN')}
+                        </span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.825rem', color: '#dc2626' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '0.35rem 0',
+                          borderBottom: '1px solid #f1f5f9',
+                          fontSize: '0.825rem',
+                          color: '#dc2626',
+                        }}
+                      >
                         <span>Employee State Insurance (ESI):</span>
-                        <span>-₹{inspectedPerson.dossier.salary.esiDeduction.toLocaleString('en-IN')}</span>
+                        <span>
+                          -₹{inspectedPerson.dossier.salary.esiDeduction.toLocaleString('en-IN')}
+                        </span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0 0.2rem 0', fontSize: '0.9rem', fontWeight: 700, color: '#059669' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '0.5rem 0 0.2rem 0',
+                          fontSize: '0.9rem',
+                          fontWeight: 700,
+                          color: '#059669',
+                        }}
+                      >
                         <span>Net Take-Home Salary:</span>
-                        <span>₹{inspectedPerson.dossier.salary.netTakeHome.toLocaleString('en-IN')}/mo</span>
+                        <span>
+                          ₹{inspectedPerson.dossier.salary.netTakeHome.toLocaleString('en-IN')}/mo
+                        </span>
                       </div>
                     </div>
                   ) : (
@@ -1362,7 +1760,16 @@ export default function TargetStoreOrgStructure({
             </div>
 
             {/* Teams Drawer Footer */}
-            <div style={{ padding: '1rem', borderTop: '1px solid #edebe9', background: '#faf9f8', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+            <div
+              style={{
+                padding: '1rem',
+                borderTop: '1px solid #edebe9',
+                background: '#faf9f8',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.5rem',
+              }}
+            >
               <Button variant="secondary" onClick={() => setInspectedPerson(null)}>
                 Close
               </Button>
@@ -1594,7 +2001,12 @@ interface TeamsEmptyRoleCardProps {
   onRegister: () => void;
 }
 
-function TeamsEmptyRoleCard({ roleType, roleLabel, reportsTo, onRegister }: TeamsEmptyRoleCardProps) {
+function TeamsEmptyRoleCard({
+  roleType,
+  roleLabel,
+  reportsTo,
+  onRegister,
+}: TeamsEmptyRoleCardProps) {
   return (
     <div
       style={{
@@ -1606,7 +2018,14 @@ function TeamsEmptyRoleCard({ roleType, roleLabel, reportsTo, onRegister }: Team
         textAlign: 'left',
       }}
     >
-      <div style={{ fontSize: '0.725rem', color: '#8a8886', textTransform: 'uppercase', fontWeight: 600 }}>
+      <div
+        style={{
+          fontSize: '0.725rem',
+          color: '#8a8886',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+        }}
+      >
         Role Node · Reports to {reportsTo}
       </div>
       <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#323130', marginTop: '0.2rem' }}>
@@ -1618,7 +2037,12 @@ function TeamsEmptyRoleCard({ roleType, roleLabel, reportsTo, onRegister }: Team
       <Button
         variant="secondary"
         onClick={onRegister}
-        style={{ width: '100%', fontSize: '0.75rem', padding: '0.35rem 0.5rem', justifyContent: 'center' }}
+        style={{
+          width: '100%',
+          fontSize: '0.75rem',
+          padding: '0.35rem 0.5rem',
+          justifyContent: 'center',
+        }}
       >
         <Plus size={12} /> Register {roleLabel.split(' ')[0]}
       </Button>
@@ -1648,17 +2072,34 @@ function TeamsPodSection({
 }: TeamsPodSectionProps) {
   return (
     <Card style={{ padding: '1.25rem', border: '1px solid #edebe9', background: '#ffffff' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+        }}
+      >
         <div>
-          <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.15rem', fontWeight: 700, color: '#242424' }}>
+          <h3
+            style={{
+              margin: '0 0 0.25rem 0',
+              fontSize: '1.15rem',
+              fontWeight: 700,
+              color: '#242424',
+            }}
+          >
             {title}
           </h3>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: '#605e5c' }}>
-            {description}
-          </p>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: '#605e5c' }}>{description}</p>
         </div>
 
-        <StatusBadge tone={badgeTone === 'accent' ? 'neutral' : badgeTone === 'success' ? 'success' : 'neutral'}>
+        <StatusBadge
+          tone={
+            badgeTone === 'accent' ? 'neutral' : badgeTone === 'success' ? 'success' : 'neutral'
+          }
+        >
           {people.length} Members
         </StatusBadge>
       </div>
@@ -1672,13 +2113,18 @@ function TeamsPodSection({
         }}
       >
         {people.length === 0 ? (
-          <div style={{ fontSize: '0.85rem', color: '#8a8886', fontStyle: 'italic', padding: '1rem 0' }}>
+          <div
+            style={{
+              fontSize: '0.85rem',
+              color: '#8a8886',
+              fontStyle: 'italic',
+              padding: '1rem 0',
+            }}
+          >
             No team members registered under this pod yet.
           </div>
         ) : (
-          people.map((p) => (
-            <TeamsPersonCard key={p.id} person={p} onSelect={onSelectPerson} />
-          ))
+          people.map((p) => <TeamsPersonCard key={p.id} person={p} onSelect={onSelectPerson} />)
         )}
       </div>
     </Card>

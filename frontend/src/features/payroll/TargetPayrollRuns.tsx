@@ -60,10 +60,7 @@ export default function TargetPayrollRuns() {
     setLoading(true);
     setError(null);
     try {
-      const [periodsData, runsData] = await Promise.all([
-        fetchPayPeriods(),
-        fetchPayrollRuns(),
-      ]);
+      const [periodsData, runsData] = await Promise.all([fetchPayPeriods(), fetchPayrollRuns()]);
       setPayPeriods(periodsData);
       setRuns(runsData);
       if (periodsData.length > 0 && !selectedPeriodId) {
@@ -156,7 +153,9 @@ export default function TargetPayrollRuns() {
     setError(null);
     try {
       const approved = await approvePayrollRun(runId, 'Approved by authorized HR staff');
-      setSuccessMsg('Payroll run successfully approved and locked. Private PDF payslips generated.');
+      setSuccessMsg(
+        'Payroll run successfully approved and locked. Private PDF payslips generated.',
+      );
       await loadData();
       const full = await fetchPayrollRun(approved.id);
       setSelectedRun(full);
@@ -188,7 +187,10 @@ export default function TargetPayrollRuns() {
   }
 
   return (
-    <div className="target-payroll-container" style={{ padding: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div
+      className="target-payroll-container"
+      style={{ padding: '1.5rem', maxWidth: '1200px', margin: '0 auto' }}
+    >
       {/* SRS Compliance Watermark Banner */}
       <div
         role="alert"
@@ -209,19 +211,31 @@ export default function TargetPayrollRuns() {
             DRAFT - NOT FOR PAYMENT
           </div>
           <div style={{ color: '#b45309', fontSize: '0.875rem', marginTop: '2px' }}>
-            Statutory, tax, deduction and overtime compliance rules (SRS P-01 through P-10) remain unapproved.
-            All calculations use deterministic Decimal precision with zero floating-point drift and are strictly
-            for review, approval lock, and audit.
+            Statutory, tax, deduction and overtime compliance rules (SRS P-01 through P-10) remain
+            unapproved. All calculations use deterministic Decimal precision with zero
+            floating-point drift and are strictly for review, approval lock, and audit.
           </div>
         </div>
       </div>
 
       {/* Header and Controls */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem',
+          flexWrap: 'wrap',
+          gap: '1rem',
+        }}
+      >
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>Payroll Engine & Payslips</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>
+            Payroll Engine & Payslips
+          </h2>
           <p style={{ color: '#64748b', margin: '4px 0 0 0', fontSize: '0.875rem' }}>
-            Deterministic draft calculations, transactional approval locking, and private payslip distribution.
+            Deterministic draft calculations, transactional approval locking, and private payslip
+            distribution.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -279,40 +293,129 @@ export default function TargetPayrollRuns() {
 
       {/* Notifications */}
       {error && (
-        <div style={{ padding: '0.75rem 1rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.875rem' }}>
+        <div
+          style={{
+            padding: '0.75rem 1rem',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#991b1b',
+            borderRadius: '6px',
+            marginBottom: '1rem',
+            fontSize: '0.875rem',
+          }}
+        >
           {error}
         </div>
       )}
       {successMsg && (
-        <div style={{ padding: '0.75rem 1rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.875rem' }}>
+        <div
+          style={{
+            padding: '0.75rem 1rem',
+            backgroundColor: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            color: '#166534',
+            borderRadius: '6px',
+            marginBottom: '1rem',
+            fontSize: '0.875rem',
+          }}
+        >
           {successMsg}
         </div>
       )}
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div style={{ padding: '1rem', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.875rem' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '1rem',
+          marginBottom: '1.5rem',
+        }}
+      >
+        <div
+          style={{
+            padding: '1rem',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#64748b',
+              fontSize: '0.875rem',
+            }}
+          >
             <Calendar size={16} /> Pay Periods
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '6px' }}>{payPeriods.length}</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '6px' }}>
+            {payPeriods.length}
+          </div>
         </div>
-        <div style={{ padding: '1rem', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.875rem' }}>
+        <div
+          style={{
+            padding: '1rem',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#64748b',
+              fontSize: '0.875rem',
+            }}
+          >
             <FileSpreadsheet size={16} /> Pay Runs
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '6px' }}>{runs.length}</div>
         </div>
-        <div style={{ padding: '1rem', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.875rem' }}>
+        <div
+          style={{
+            padding: '1rem',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#64748b',
+              fontSize: '0.875rem',
+            }}
+          >
             <Clock size={16} /> Latest Run Hours
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '6px' }}>
             {runs[0] ? (runs[0].total_payable_minutes / 60).toFixed(2) : '0.00'} hrs
           </div>
         </div>
-        <div style={{ padding: '1rem', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.875rem' }}>
+        <div
+          style={{
+            padding: '1rem',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#64748b',
+              fontSize: '0.875rem',
+            }}
+          >
             <DollarSign size={16} /> Latest Run Gross Pay
           </div>
           <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '6px', color: '#0f766e' }}>
@@ -322,25 +425,60 @@ export default function TargetPayrollRuns() {
       </div>
 
       {/* Runs Table */}
-      <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', marginBottom: '2rem' }}>
-        <div style={{ padding: '1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          backgroundColor: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          marginBottom: '2rem',
+        }}
+      >
+        <div
+          style={{
+            padding: '1rem',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
           <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Payroll Runs</h3>
-          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Deterministic SHA-256 locked runs</span>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+            Deterministic SHA-256 locked runs
+          </span>
         </div>
 
         {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading payroll runs...</div>
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+            Loading payroll runs...
+          </div>
         ) : runs.length === 0 ? (
           <div style={{ padding: '2.5rem', textAlign: 'center', color: '#64748b' }}>
             <Calculator size={36} color="#cbd5e1" style={{ marginBottom: '8px' }} />
             <div>No draft payroll runs calculated yet.</div>
-            <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>Click "Calculate Draft Run" to run the deterministic engine.</div>
+            <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+              Click "Calculate Draft Run" to run the deterministic engine.
+            </div>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                textAlign: 'left',
+                fontSize: '0.875rem',
+              }}
+            >
               <thead>
-                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
+                <tr
+                  style={{
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '1px solid #e2e8f0',
+                    color: '#475569',
+                  }}
+                >
                   <th style={{ padding: '0.75rem 1rem' }}>Run Date</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Status</th>
                   <th style={{ padding: '0.75rem 1rem' }}>Employees</th>
@@ -363,7 +501,11 @@ export default function TargetPayrollRuns() {
                       }}
                     >
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>
-                        {new Date(r.created_at).toLocaleDateString()} {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(r.created_at).toLocaleDateString()}{' '}
+                        {new Date(r.created_at).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </td>
                       <td style={{ padding: '0.75rem 1rem' }}>
                         <span
@@ -384,11 +526,20 @@ export default function TargetPayrollRuns() {
                         </span>
                       </td>
                       <td style={{ padding: '0.75rem 1rem' }}>{r.total_employees}</td>
-                      <td style={{ padding: '0.75rem 1rem' }}>{(r.total_payable_minutes / 60).toFixed(2)} hrs</td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        {(r.total_payable_minutes / 60).toFixed(2)} hrs
+                      </td>
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f766e' }}>
                         ₹ {Number(r.total_gross_pay).toFixed(2)}
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#64748b' }}>
+                      <td
+                        style={{
+                          padding: '0.75rem 1rem',
+                          fontFamily: 'monospace',
+                          fontSize: '0.75rem',
+                          color: '#64748b',
+                        }}
+                      >
                         {`${r.input_hash.slice(0, 16)}...`}
                       </td>
                       <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
@@ -419,27 +570,69 @@ export default function TargetPayrollRuns() {
 
       {/* Selected Run Line Items, Lock & Release Controls */}
       {selectedRun && (
-        <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.25rem', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div
+          style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            marginBottom: '2rem',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.25rem',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
                   Run Line Items & Reconciliation
                 </h3>
                 {selectedRun.status === 'locked' && (
-                  <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#dbeafe', color: '#1d4ed8', fontWeight: 600 }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      backgroundColor: '#dbeafe',
+                      color: '#1d4ed8',
+                      fontWeight: 600,
+                    }}
+                  >
                     <Lock size={12} style={{ display: 'inline', marginRight: '3px' }} /> Locked
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px', fontFamily: 'monospace' }}>
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#64748b',
+                  marginTop: '2px',
+                  fontFamily: 'monospace',
+                }}
+              >
                 Full SHA-256 Hash: {selectedRun.input_hash}
               </div>
             </div>
 
             {/* Approval & Release Workflow Controls */}
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#16a34a', fontSize: '0.875rem', fontWeight: 500 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: '#16a34a',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                }}
+              >
                 <CheckCircle2 size={18} /> Deterministic Reconciliation Verified
               </div>
               {selectedRun.status === 'draft' && (
@@ -509,9 +702,22 @@ export default function TargetPayrollRuns() {
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                textAlign: 'left',
+                fontSize: '0.875rem',
+              }}
+            >
               <thead>
-                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
+                <tr
+                  style={{
+                    backgroundColor: '#f8fafc',
+                    borderBottom: '1px solid #e2e8f0',
+                    color: '#475569',
+                  }}
+                >
                   <th style={{ padding: '0.6rem 0.75rem' }}>Employee</th>
                   <th style={{ padding: '0.6rem 0.75rem' }}>Code</th>
                   <th style={{ padding: '0.6rem 0.75rem' }}>Hours</th>
@@ -525,12 +731,24 @@ export default function TargetPayrollRuns() {
               <tbody>
                 {selectedRun.items?.map((item) => (
                   <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '0.6rem 0.75rem', fontWeight: 500 }}>{item.employee_name}</td>
-                    <td style={{ padding: '0.6rem 0.75rem', color: '#64748b' }}>{item.employee_code}</td>
-                    <td style={{ padding: '0.6rem 0.75rem' }}>{(item.payable_minutes / 60).toFixed(2)}</td>
-                    <td style={{ padding: '0.6rem 0.75rem' }}>₹ {Number(item.hourly_rate).toFixed(2)}</td>
-                    <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600 }}>₹ {Number(item.gross_pay).toFixed(2)}</td>
-                    <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600, color: '#0f766e' }}>₹ {Number(item.net_pay).toFixed(2)}</td>
+                    <td style={{ padding: '0.6rem 0.75rem', fontWeight: 500 }}>
+                      {item.employee_name}
+                    </td>
+                    <td style={{ padding: '0.6rem 0.75rem', color: '#64748b' }}>
+                      {item.employee_code}
+                    </td>
+                    <td style={{ padding: '0.6rem 0.75rem' }}>
+                      {(item.payable_minutes / 60).toFixed(2)}
+                    </td>
+                    <td style={{ padding: '0.6rem 0.75rem' }}>
+                      ₹ {Number(item.hourly_rate).toFixed(2)}
+                    </td>
+                    <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600 }}>
+                      ₹ {Number(item.gross_pay).toFixed(2)}
+                    </td>
+                    <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600, color: '#0f766e' }}>
+                      ₹ {Number(item.net_pay).toFixed(2)}
+                    </td>
                     <td style={{ padding: '0.6rem 0.75rem' }}>
                       {item.unresolved_exceptions_count > 0 ? (
                         <span style={{ color: '#dc2626', fontWeight: 600 }}>
@@ -541,20 +759,42 @@ export default function TargetPayrollRuns() {
                       )}
                     </td>
                     <td style={{ padding: '0.6rem 0.75rem' }}>
-                      <span style={{ fontSize: '0.75rem', color: selectedRun.status === 'locked' ? '#1d4ed8' : '#ea580c', fontWeight: 500 }}>
-                        {selectedRun.status === 'locked' ? 'Locked (Payslip Ready)' : item.watermark}
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          color: selectedRun.status === 'locked' ? '#1d4ed8' : '#ea580c',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {selectedRun.status === 'locked'
+                          ? 'Locked (Payslip Ready)'
+                          : item.watermark}
                       </span>
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ backgroundColor: '#f8fafc', fontWeight: 700, borderTop: '2px solid #cbd5e1' }}>
-                  <td style={{ padding: '0.75rem' }} colSpan={2}>Reconciled Totals</td>
-                  <td style={{ padding: '0.75rem' }}>{(selectedRun.total_payable_minutes / 60).toFixed(2)} hrs</td>
+                <tr
+                  style={{
+                    backgroundColor: '#f8fafc',
+                    fontWeight: 700,
+                    borderTop: '2px solid #cbd5e1',
+                  }}
+                >
+                  <td style={{ padding: '0.75rem' }} colSpan={2}>
+                    Reconciled Totals
+                  </td>
+                  <td style={{ padding: '0.75rem' }}>
+                    {(selectedRun.total_payable_minutes / 60).toFixed(2)} hrs
+                  </td>
                   <td style={{ padding: '0.75rem' }}>-</td>
-                  <td style={{ padding: '0.75rem' }}>₹ {Number(selectedRun.total_gross_pay).toFixed(2)}</td>
-                  <td style={{ padding: '0.75rem', color: '#0f766e' }}>₹ {Number(selectedRun.total_net_pay).toFixed(2)}</td>
+                  <td style={{ padding: '0.75rem' }}>
+                    ₹ {Number(selectedRun.total_gross_pay).toFixed(2)}
+                  </td>
+                  <td style={{ padding: '0.75rem', color: '#0f766e' }}>
+                    ₹ {Number(selectedRun.total_net_pay).toFixed(2)}
+                  </td>
                   <td style={{ padding: '0.75rem' }} colSpan={2}>
                     <span style={{ color: '#16a34a' }}>✓ 100% Match</span>
                   </td>
@@ -567,50 +807,131 @@ export default function TargetPayrollRuns() {
 
       {/* Modal: New Pay Period */}
       {showPeriodModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', width: '100%', maxWidth: '450px' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              width: '100%',
+              maxWidth: '450px',
+            }}
+          >
             <h3 style={{ margin: '0 0 1rem 0' }}>Create Pay Period</h3>
             <form onSubmit={handleCreatePeriod}>
               <div style={{ marginBottom: '0.75rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '4px', fontWeight: 500 }}>Period Name</label>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    marginBottom: '4px',
+                    fontWeight: 500,
+                  }}
+                >
+                  Period Name
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. November 2026 - First Half"
                   value={newPeriodName}
                   onChange={(e) => setNewPeriodName(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
+                  }}
                   required
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '0.75rem',
+                  marginBottom: '0.75rem',
+                }}
+              >
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '4px', fontWeight: 500 }}>Start Date</label>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      marginBottom: '4px',
+                      fontWeight: 500,
+                    }}
+                  >
+                    Start Date
+                  </label>
                   <input
                     type="date"
                     value={newPeriodStart}
                     onChange={(e) => setNewPeriodStart(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      borderRadius: '4px',
+                      border: '1px solid #cbd5e1',
+                    }}
                     required
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '4px', fontWeight: 500 }}>End Date</label>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: '0.875rem',
+                      marginBottom: '4px',
+                      fontWeight: 500,
+                    }}
+                  >
+                    End Date
+                  </label>
                   <input
                     type="date"
                     value={newPeriodEnd}
                     onChange={(e) => setNewPeriodEnd(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      borderRadius: '4px',
+                      border: '1px solid #cbd5e1',
+                    }}
                     required
                   />
                 </div>
               </div>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '4px', fontWeight: 500 }}>Cutoff Date</label>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    marginBottom: '4px',
+                    fontWeight: 500,
+                  }}
+                >
+                  Cutoff Date
+                </label>
                 <input
                   type="date"
                   value={newPeriodCutoff}
                   onChange={(e) => setNewPeriodCutoff(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
+                  }}
                   required
                 />
               </div>
@@ -618,14 +939,28 @@ export default function TargetPayrollRuns() {
                 <button
                   type="button"
                   onClick={() => setShowPeriodModal(false)}
-                  style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', cursor: 'pointer' }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#ffffff',
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={calculating}
-                  style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', backgroundColor: '#ea580c', color: '#ffffff', fontWeight: 500, cursor: 'pointer' }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: '#ea580c',
+                    color: '#ffffff',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
                 >
                   {calculating ? 'Saving...' : 'Save Period'}
                 </button>
@@ -637,19 +972,52 @@ export default function TargetPayrollRuns() {
 
       {/* Modal: Calculate Draft Run */}
       {showCalculateModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '1.5rem', width: '100%', maxWidth: '480px' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              width: '100%',
+              maxWidth: '480px',
+            }}
+          >
             <h3 style={{ margin: '0 0 0.5rem 0' }}>Calculate Deterministic Draft Run</h3>
             <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
-              The engine will process locked attendance days, apply active rate configurations, compute SHA-256 snapshot hash, and reconcile totals.
+              The engine will process locked attendance days, apply active rate configurations,
+              compute SHA-256 snapshot hash, and reconcile totals.
             </p>
             <form onSubmit={handleCalculateRun}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '4px', fontWeight: 500 }}>Select Pay Period</label>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    marginBottom: '4px',
+                    fontWeight: 500,
+                  }}
+                >
+                  Select Pay Period
+                </label>
                 <select
                   value={selectedPeriodId}
                   onChange={(e) => setSelectedPeriodId(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                  style={{
+                    width: '100%',
+                    padding: '0.5rem',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
+                  }}
                   required
                 >
                   {payPeriods.map((p) => (
@@ -660,8 +1028,24 @@ export default function TargetPayrollRuns() {
                 </select>
               </div>
 
-              <div style={{ marginBottom: '1.25rem', backgroundColor: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem', cursor: 'pointer' }}>
+              <div
+                style={{
+                  marginBottom: '1.25rem',
+                  backgroundColor: '#f8fafc',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={blockExceptions}
@@ -671,8 +1055,16 @@ export default function TargetPayrollRuns() {
                     <strong>Block on unresolved attendance exceptions</strong> (Recommended)
                   </span>
                 </label>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px', marginLeft: '24px' }}>
-                  Rejects calculation if any employee has missing punches or pending adjustment requests.
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    color: '#64748b',
+                    marginTop: '4px',
+                    marginLeft: '24px',
+                  }}
+                >
+                  Rejects calculation if any employee has missing punches or pending adjustment
+                  requests.
                 </div>
               </div>
 
@@ -680,14 +1072,28 @@ export default function TargetPayrollRuns() {
                 <button
                   type="button"
                   onClick={() => setShowCalculateModal(false)}
-                  style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', cursor: 'pointer' }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#ffffff',
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={calculating}
-                  style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', backgroundColor: '#ea580c', color: '#ffffff', fontWeight: 500, cursor: 'pointer' }}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: '#ea580c',
+                    color: '#ffffff',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
                 >
                   {calculating ? 'Calculating...' : 'Run Engine'}
                 </button>
