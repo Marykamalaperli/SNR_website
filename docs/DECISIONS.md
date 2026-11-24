@@ -2,35 +2,36 @@
 
 ## Confirmed target decisions
 
-| Decision                                      | Status           | Consequence                                                                    |
-| --------------------------------------------- | ---------------- | ------------------------------------------------------------------------------ |
-| Supplied DOCX pack is authoritative           | Confirmed        | Existing code and Markdown are reuse evidence only                             |
-| React Vite PWA                                | Confirmed        | Reuse compatible frontend components and migrate target code to TypeScript     |
-| FastAPI modular monolith                      | Confirmed        | Business authorization moves behind tested API services                        |
-| PostgreSQL with SQLAlchemy and Alembic        | Confirmed        | Supabase-specific RPC and RLS code is not the target persistence API           |
-| Private S3 plus CloudFront OAC                | Confirmed target | Cloudflare Pages is superseded deployment history                              |
-| Separate private evidence and payslip storage | Confirmed        | No public object URLs or shared frontend bucket                                |
-| Short-lived signed store QR                   | Confirmed        | Personal QR and guard-passkey attendance is superseded history                 |
-| Server-authoritative attendance time          | Confirmed        | Client time is diagnostic only                                                 |
-| Append-only attendance and audit              | Confirmed        | Corrections add evidence rather than overwrite events                          |
-| Controlled draft payroll                      | Confirmed        | Calculations require approved rules and remain draft until compliance sign-off |
-| No facial recognition                         | Confirmed        | Photos support manual evidence review only                                     |
-| AWS staging account and workload region       | Confirmed        | Use account `376793939540` in `ap-south-1`; authenticate GitHub through OIDC    |
-| First-party opaque cookie sessions             | Confirmed        | HttpOnly Secure SameSite=Lax access/refresh cookies; store only token digests and rotate/revoke server state |
+| Decision                                      | Status           | Consequence                                                                                                                                                               |
+| --------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supplied DOCX pack is authoritative           | Confirmed        | Existing code and Markdown are reuse evidence only                                                                                                                        |
+| React Vite PWA                                | Confirmed        | Reuse compatible frontend components and migrate target code to TypeScript                                                                                                |
+| FastAPI modular monolith                      | Confirmed        | Business authorization moves behind tested API services                                                                                                                   |
+| PostgreSQL with SQLAlchemy and Alembic        | Confirmed        | Supabase-specific RPC and RLS code is not the target persistence API                                                                                                      |
+| Private S3 plus CloudFront OAC                | Confirmed target | Cloudflare Pages is superseded deployment history                                                                                                                         |
+| Separate private evidence and payslip storage | Confirmed        | No public object URLs or shared frontend bucket                                                                                                                           |
+| Short-lived signed store QR                   | Confirmed        | Personal QR and guard-passkey attendance is superseded history                                                                                                            |
+| Server-authoritative attendance time          | Confirmed        | Client time is diagnostic only                                                                                                                                            |
+| Append-only attendance and audit              | Confirmed        | Corrections add evidence rather than overwrite events                                                                                                                     |
+| Controlled draft payroll                      | Confirmed        | Calculations require approved rules and remain draft until compliance sign-off                                                                                            |
+| No facial recognition                         | Confirmed        | Photos support manual evidence review only                                                                                                                                |
+| AWS staging account and workload region       | Confirmed        | Use account `376793939540` in `ap-south-1`; authenticate GitHub through OIDC                                                                                              |
+| Production-pilot server and database          | Confirmed        | Start with Elastic Beanstalk SingleInstance plus private Single-AZ RDS PostgreSQL; retain a reviewed path to load-balanced Beanstalk and Multi-AZ RDS when budget permits |
+| First-party opaque cookie sessions            | Confirmed        | HttpOnly Secure SameSite=Lax access/refresh cookies; store only token digests and rotate/revoke server state                                                              |
 
 ## Transition decisions required
 
-| ID   | Decision                                                         | Default while open                                                      |
-| ---- | ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| T-01 | Approve migration from JavaScript to TypeScript and the sequence | New target code may use TypeScript; do not mass-convert unrelated files |
-| T-02 | Clean target database or migrate existing private data           | Use a clean pilot database; do not move private data                    |
-| T-03 | Exact AWS domain and API host                                   | Account `376793939540` and `ap-south-1` are confirmed; hostnames remain open |
-| T-04 | Linux host choice and PostgreSQL operating model                 | Keep deployment configuration abstract                                  |
-| T-05 | Identity session design: secure cookies or token strategy        | Resolved: first-party opaque cookies, PostgreSQL sessions and exact-Origin CSRF checks |
-| T-06 | Retention and deletion for photos, payslips, audit and backups   | Keep production storage disabled                                        |
-| T-07 | Malware scanning or image re-encoding approach                   | Uploaded objects remain untrusted                                       |
-| T-08 | RPO, RTO, monitoring owner and incident contacts                 | No production-readiness claim                                           |
-| T-09 | License selection                                                | Do not publish a license claim                                          |
+| ID   | Decision                                                         | Default while open                                                                                                       |
+| ---- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| T-01 | Approve migration from JavaScript to TypeScript and the sequence | New target code may use TypeScript; do not mass-convert unrelated files                                                  |
+| T-02 | Clean target database or migrate existing private data           | Use a clean pilot database; do not move private data                                                                     |
+| T-03 | Exact AWS domain and API host                                    | Account `376793939540` and `ap-south-1` are confirmed; hostnames remain open                                             |
+| T-04 | Linux host choice and PostgreSQL operating model                 | Resolved for pilot: Elastic Beanstalk SingleInstance and private Single-AZ RDS; cost-controlled but not highly available |
+| T-05 | Identity session design: secure cookies or token strategy        | Resolved: first-party opaque cookies, PostgreSQL sessions and exact-Origin CSRF checks                                   |
+| T-06 | Retention and deletion for photos, payslips, audit and backups   | Keep production storage disabled                                                                                         |
+| T-07 | Malware scanning or image re-encoding approach                   | Uploaded objects remain untrusted                                                                                        |
+| T-08 | RPO, RTO, monitoring owner and incident contacts                 | No production-readiness claim                                                                                            |
+| T-09 | License selection                                                | Do not publish a license claim                                                                                           |
 
 ## Payroll and compliance decisions
 
