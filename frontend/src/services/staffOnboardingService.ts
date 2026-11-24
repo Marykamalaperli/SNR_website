@@ -498,3 +498,114 @@ export function getOnboardingDossier(idOrCode: string): StaffOnboardingDossier |
   return list.find((d) => d.employeeId === idOrCode || d.employeeCode === idOrCode);
 }
 
+export function getCurrentEmployeeDossier(
+  user?: { email?: string; display_name?: string; user_id?: string } | string | null,
+): StaffOnboardingDossier {
+  const list = getOnboardingDossiers();
+  
+  if (user) {
+    if (typeof user === 'string') {
+      const match = list.find(
+        (d) =>
+          d.employeeId === user ||
+          d.employeeCode === user ||
+          d.email.toLowerCase() === user.toLowerCase() ||
+          d.fullName.toLowerCase() === user.toLowerCase(),
+      );
+      if (match) return match;
+    } else {
+      const userEmail = (user.email || '').toLowerCase();
+      const userName = (user.display_name || '').toLowerCase();
+      const match = list.find(
+        (d) =>
+          (userEmail && d.email.toLowerCase() === userEmail) ||
+          (userName && d.fullName.toLowerCase() === userName) ||
+          (user.user_id && d.employeeId === user.user_id),
+      );
+      if (match) return match;
+    }
+  }
+
+  // If a specific session name or email was given, dynamically initialize a tailored dossier
+  const resolvedName =
+    typeof user === 'object' && user?.display_name
+      ? user.display_name
+      : typeof user === 'string' && user
+        ? user
+        : 'Tarun Teja';
+  const resolvedEmail =
+    typeof user === 'object' && user?.email
+      ? user.email
+      : 'tarun.teja@snrnest.local';
+
+  const defaultDossier: StaffOnboardingDossier = {
+    employeeId: 'emp-tarun-01',
+    employeeCode: 'EMP-HYD-PP-105',
+    storeId: 'store-dev-01',
+    storeName: 'Development Store',
+    firstName: resolvedName.split(' ')[0] || 'Tarun',
+    lastName: resolvedName.split(' ').slice(1).join(' ') || 'Teja',
+    fullName: resolvedName,
+    dob: '1998-05-12',
+    gender: 'Male',
+    maritalStatus: 'Single',
+    phone: '9876543210',
+    email: resolvedEmail,
+    emergencyContact: {
+      name: 'Suresh Teja',
+      relationship: 'Father',
+      phone: '9876543219',
+    },
+    designation: 'picker_packer',
+    dateOfJoining: '2024-05-01',
+    previousEmployment: {
+      companyName: 'Fulfillment Logistics India',
+      designation: 'Fulfillment Associate',
+      payslipsUploaded: { month1: true, month2: true, month3: true },
+      offerLetterUploaded: true,
+    },
+    kycDocuments: {
+      aadharNumber: 'XXXX-XXXX-4819',
+      aadharUploaded: true,
+      panNumber: 'ABCDE4819F',
+      panUploaded: true,
+      otherDocsUploaded: true,
+    },
+    bankDetails: {
+      accountHolderName: resolvedName,
+      bankName: 'HDFC Bank',
+      branchName: 'Madhapur Branch, Hyderabad',
+      accountNumber: '50100492819283',
+      ifscCode: 'HDFC0001234',
+      passbookUploaded: true,
+      passbookFileName: 'passbook_tarunteja.pdf',
+    },
+    salary: SALARY_TEMPLATES.picker_packer,
+    status: 'active',
+    createdAt: '2024-05-01T09:00:00Z',
+  };
+
+  saveOnboardingDossier(defaultDossier);
+  return defaultDossier;
+}
+
+export function updateEmployeeBankDetails(
+  idOrCode: string,
+  updatedBank: StaffOnboardingDossier['bankDetails'],
+): StaffOnboardingDossier {
+  const list = getOnboardingDossiers();
+  let found = list.find((d) => d.employeeId === idOrCode || d.employeeCode === idOrCode);
+  
+  if (!found) {
+    found = getCurrentEmployeeDossier(idOrCode);
+  }
+
+  found.bankDetails = {
+    ...found.bankDetails,
+    ...updatedBank,
+  };
+
+  saveOnboardingDossier(found);
+  return found;
+}
+
