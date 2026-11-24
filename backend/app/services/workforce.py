@@ -99,10 +99,73 @@ class EmployeeService:
             )
 
         now = datetime.now(UTC)
+        user_id = payload.user_id
+        login_email: str | None = None
+        temporary_password: str | None = None
+
+        if payload.email:
+            from app.services.auth import hash_password
+
+            email_clean = str(payload.email).strip().lower()
+            login_email = email_clean
+            clean_code = payload.employee_code.strip().upper()
+            temporary_password = f"SNR@{clean_code}"
+
+            user = self.db.scalar(select(User).where(User.email == email_clean))
+            assigned_role = (
+                "store_admin"
+                if payload.role in {"store_manager", "assistant_store_manager", "store_admin"}
+                else "employee"
+            )
+
+            if user:
+                user_id = user.id
+                existing_ra = self.db.scalar(
+                    select(RoleAssignment).where(
+                        RoleAssignment.user_id == user.id,
+                        RoleAssignment.role == assigned_role,
+                        RoleAssignment.organization_id == organization_id,
+                        RoleAssignment.store_id == payload.home_store_id,
+                    )
+                )
+                if not existing_ra:
+                    ra = RoleAssignment(
+                        user_id=user.id,
+                        role=assigned_role,
+                        organization_id=organization_id,
+                        store_id=payload.home_store_id,
+                        active=True,
+                        created_at=now,
+                    )
+                    self.db.add(ra)
+            else:
+                user = User(
+                    email=email_clean,
+                    display_name=payload.display_name.strip(),
+                    password_hash=hash_password(temporary_password),
+                    status="active",
+                    token_version=1,
+                    created_at=now,
+                    updated_at=now,
+                )
+                self.db.add(user)
+                self.db.flush()
+                user_id = user.id
+
+                ra = RoleAssignment(
+                    user_id=user.id,
+                    role=assigned_role,
+                    organization_id=organization_id,
+                    store_id=payload.home_store_id,
+                    active=True,
+                    created_at=now,
+                )
+                self.db.add(ra)
+
         employee = Employee(
             organization_id=organization_id,
             home_store_id=payload.home_store_id,
-            user_id=payload.user_id,
+            user_id=user_id,
             employee_code=payload.employee_code,
             display_name=payload.display_name,
             status=payload.status,
@@ -112,6 +175,9 @@ class EmployeeService:
         self.db.add(employee)
         self.db.commit()
         self.db.refresh(employee)
+
+        employee.login_email = login_email
+        employee.temporary_password = temporary_password
         return employee
 
     def update_employee(self, employee_id: UUID, payload: EmployeeUpdate, scope: Scope) -> Employee:

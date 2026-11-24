@@ -14,6 +14,8 @@ class EmployeeCreate(BaseModel):
     user_id: UUID | None = None
     hire_date: date
     status: Literal["active", "deactivated"] = "active"
+    email: EmailStr | None = None
+    role: str | None = None
 
 
 class EmployeeUpdate(BaseModel):
@@ -35,6 +37,8 @@ class EmployeeOut(BaseModel):
     status: str
     hire_date: date
     exit_date: date | None
+    login_email: str | None = None
+    temporary_password: str | None = None
 
 
 class EmployeeListOut(BaseModel):

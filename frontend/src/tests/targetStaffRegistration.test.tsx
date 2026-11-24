@@ -66,6 +66,8 @@ describe('TargetStaffRegistrationWizard Component', () => {
       status: 'active',
       hire_date: '2026-11-23',
       exit_date: null,
+      login_email: 'anil.kumar@example.com',
+      temporary_password: 'SNR@EMP-BLR-01-PP-501',
     });
   });
 
@@ -189,9 +191,13 @@ describe('TargetStaffRegistrationWizard Component', () => {
           display_name: 'Anil Kumar',
           home_store_id: 'store-1',
           status: 'active',
+          email: 'anil.kumar@snr.com',
         }),
       );
       expect(screen.getByText(/Staff Registration Successful/i)).toBeInTheDocument();
+      expect(screen.getByText(/Portal Login Credentials Generated/i)).toBeInTheDocument();
+      expect(screen.getByText(/SNR@EMP-BLR-01-PP-501/i)).toBeInTheDocument();
+      expect(screen.getByText(/Copy Onboarding Slip/i)).toBeInTheDocument();
     });
   });
 });

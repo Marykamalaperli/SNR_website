@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, delete
+from sqlalchemy import create_engine, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -347,3 +347,64 @@ def test_shift_assignment_database_constraints(seeded_workforce):
         db.add(invalid_assignment)
         with pytest.raises(IntegrityError):
             db.commit()
+
+
+def test_employee_registration_auto_provisions_user_account(seeded_workforce):
+    engine, org, store1, _store2, admin_user, _emp_user, _emp_record = seeded_workforce
+    settings = Settings(
+        app_env="test",
+        database_url=DATABASE_URL,
+        session_secret="test-session-secret-at-least-32-bytes-long",
+        qr_signing_secret="test-qr-signing-secret-at-least-32-bytes",
+    )
+    app = create_app(settings)
+
+    with TestClient(app, base_url="http://testserver") as client:
+        # Login as store admin
+        login_res = client.post(
+            "/api/v1/auth/login",
+            json={"email": admin_user.email, "password": "admin-password-1234"},
+            headers={"Origin": ORIGIN},
+        )
+        assert login_res.status_code == 200
+
+        # Register employee with email & role
+        create_res = client.post(
+            f"/api/v1/employees?organization_id={org.id}",
+            json={
+                "employee_code": "EMP-AUTO-777",
+                "display_name": "Karthik Raja",
+                "home_store_id": str(store1.id),
+                "hire_date": "2026-11-24",
+                "status": "active",
+                "email": "karthik.raja@example.org",
+                "role": "store_manager",
+            },
+        )
+        assert create_res.status_code == 201
+        data = create_res.json()
+        assert data["employee_code"] == "EMP-AUTO-777"
+        assert data["login_email"] == "karthik.raja@example.org"
+        assert data["temporary_password"] == "SNR@EMP-AUTO-777"
+        assert data["user_id"] is not None
+
+        # Verify that the newly registered employee can log in immediately with the temporary password
+        emp_login = client.post(
+            "/api/v1/auth/login",
+            json={"email": "karthik.raja@example.org", "password": "SNR@EMP-AUTO-777"},
+            headers={"Origin": ORIGIN},
+        )
+        assert emp_login.status_code == 200
+        assert emp_login.json()["status"] == "authenticated"
+
+        # Verify database user and role assignment
+        with Session(engine) as db:
+            new_user = db.scalar(select(User).where(User.email == "karthik.raja@example.org"))
+            assert new_user is not None
+            assert new_user.display_name == "Karthik Raja"
+            assert new_user.status == "active"
+
+            ra = db.scalar(select(RoleAssignment).where(RoleAssignment.user_id == new_user.id))
+            assert ra is not None
+            assert ra.role == "store_admin"
+            assert ra.store_id == store1.id

@@ -10,6 +10,8 @@ export interface Employee {
   status: 'active' | 'deactivated';
   hire_date: string;
   exit_date: string | null;
+  login_email?: string | null;
+  temporary_password?: string | null;
 }
 
 export interface EmployeeListResponse {
@@ -56,6 +58,8 @@ export interface CreateEmployeePayload {
   user_id?: string | null;
   hire_date: string;
   status?: 'active' | 'deactivated';
+  email?: string;
+  role?: string;
 }
 
 export interface CreateShiftPayload {

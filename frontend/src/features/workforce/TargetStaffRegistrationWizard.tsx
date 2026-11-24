@@ -10,11 +10,13 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  Copy,
   CreditCard,
   FileCheck,
   FileText,
   FileUp,
   Image as ImageIcon,
+  Key,
   LocateFixed,
   Lock,
   Mail,
@@ -86,7 +88,11 @@ export default function TargetStaffRegistrationWizard({
     name: string;
     role: string;
     storeName: string;
+    loginEmail: string;
+    temporaryPassword: string;
   } | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedAll, setCopiedAll] = useState(false);
 
   // =========================================================================
   // STEP 1: PERSONAL DETAILS & LIVE PHOTO
@@ -440,7 +446,12 @@ export default function TargetStaffRegistrationWizard({
         home_store_id: selectedStoreId,
         hire_date: dateOfJoining,
         status: 'active',
+        email: email.trim().toLowerCase(),
+        role: designation,
       });
+
+      const tempPassword = created.temporary_password || `SNR@${employeeCode.trim().toUpperCase()}`;
+      const loginEmail = created.login_email || email.trim().toLowerCase();
 
       // 2. Persist rich onboarding dossier (KYC, Bank, Photo, Role, Salary)
       const dossier: any = {
@@ -515,6 +526,8 @@ export default function TargetStaffRegistrationWizard({
         name: fullName,
         role: STORE_ROLE_DEFINITIONS[designation]?.label || designation,
         storeName,
+        loginEmail,
+        temporaryPassword: tempPassword,
       });
 
       if (onComplete) {
@@ -543,24 +556,86 @@ export default function TargetStaffRegistrationWizard({
           Employee record, photo dossier, KYC credentials, and salary structure have been securely provisioned.
         </p>
 
-        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.25rem', textAlign: 'left', marginBottom: '2rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.9rem' }}>
-            <div>
-              <span style={{ color: '#64748b', fontSize: '0.8rem', display: 'block' }}>Employee Name</span>
-              <strong>{successDossier.name}</strong>
+        {/* Official Credentials Handover Card */}
+        <div
+          style={{
+            background: '#f0f9ff',
+            border: '2px solid #0284c7',
+            borderRadius: '10px',
+            padding: '1.25rem',
+            textAlign: 'left',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ display: 'inline-flex', padding: '0.4rem', borderRadius: '6px', background: '#bae6fd', color: '#0369a1' }}>
+                <Key size={18} />
+              </span>
+              <div>
+                <strong style={{ fontSize: '0.95rem', color: '#0c4a6e' }}>Portal Login Credentials Generated</strong>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: '#0284c7' }}>Auto-provisioned login account for employee portal & mobile access</span>
+              </div>
             </div>
+            <StatusBadge tone="success">Ready for Handover</StatusBadge>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', background: '#ffffff', padding: '1rem', borderRadius: '8px', border: '1px solid #bae6fd' }}>
             <div>
-              <span style={{ color: '#64748b', fontSize: '0.8rem', display: 'block' }}>Employee Code</span>
-              <span style={{ fontWeight: 700, color: '#0284c7' }}>{successDossier.code}</span>
+              <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Login Username / Email</span>
+              <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{successDossier.loginEmail}</strong>
             </div>
+
             <div>
-              <span style={{ color: '#64748b', fontSize: '0.8rem', display: 'block' }}>Designation / Level</span>
-              <strong>{successDossier.role}</strong>
+              <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Initial Temporary Password</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
+                <code style={{ background: '#f1f5f9', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.95rem', fontWeight: 700, color: '#0369a1', border: '1px solid #cbd5e1' }}>
+                  {successDossier.temporaryPassword}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(successDossier.temporaryPassword);
+                    setCopiedKey(true);
+                    setTimeout(() => setCopiedKey(false), 2000);
+                  }}
+                  style={{ background: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', padding: '0.25rem 0.5rem', color: '#0369a1', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                >
+                  {copiedKey ? <Check size={12} /> : <Copy size={12} />}
+                  {copiedKey ? 'Copied' : 'Copy'}
+                </button>
+              </div>
             </div>
+
             <div>
-              <span style={{ color: '#64748b', fontSize: '0.8rem', display: 'block' }}>Assigned Store</span>
+              <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Employee Identification Code</span>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0284c7' }}>{successDossier.code}</span>
+            </div>
+
+            <div>
+              <span style={{ color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>Assigned Store</span>
               <strong>{successDossier.storeName}</strong>
             </div>
+          </div>
+
+          <div style={{ marginTop: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.775rem', color: '#475569' }}>
+              💡 Please share these credentials with the employee. They will be prompted to reset their password on first sign-in.
+            </span>
+
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const text = `SNR NEST Employee Login Credentials:\nEmployee: ${successDossier.name} (${successDossier.code})\nRole: ${successDossier.role}\nStore: ${successDossier.storeName}\nPortal URL: ${window.location.origin}/login\nUsername/Email: ${successDossier.loginEmail}\nTemporary Password: ${successDossier.temporaryPassword}\n(Please change your password upon first login)`;
+                navigator.clipboard.writeText(text);
+                setCopiedAll(true);
+                setTimeout(() => setCopiedAll(false), 2000);
+              }}
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+            >
+              {copiedAll ? <Check size={13} /> : <Copy size={13} />}
+              {copiedAll ? 'Credentials Copied!' : 'Copy Onboarding Slip'}
+            </Button>
           </div>
         </div>
 
