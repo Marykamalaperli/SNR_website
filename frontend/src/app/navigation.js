@@ -27,8 +27,6 @@ export const workspaces = {
     links: [
       ['', 'Dashboard', LayoutDashboard],
       ['attendance', 'My Attendance', Clock3],
-      ['attendance-qr', 'Attendance QR', QrCode],
-      ['security', 'Security · QR search', ShieldCheck],
       ['schedule', 'My Schedule', CalendarDays],
       ['corrections', 'Correction Requests', FilePenLine],
       ['documents', 'My Documents', FolderOpen],
