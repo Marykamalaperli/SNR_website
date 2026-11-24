@@ -92,7 +92,7 @@ it('signs in through the form and opens real account details without sample reco
   await user.type(screen.getByLabelText('Password'), 'test-password');
   await user.click(screen.getByRole('button', { name: 'Sign In' }));
   expect(await screen.findByRole('heading', { name: 'Welcome, Verified Person.' })).toBeVisible();
-  expect(await screen.findByText('Attendance is not ready')).toBeVisible();
+  expect(screen.getByRole('navigation', { name: 'Employee navigation' })).toBeVisible();
   expect(screen.queryByText('Design preview')).not.toBeInTheDocument();
   expect(client.auth.signInWithPassword).toHaveBeenCalledWith({
     email: membership.email,
