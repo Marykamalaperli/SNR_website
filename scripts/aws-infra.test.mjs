@@ -62,6 +62,19 @@ test("only CloudFront can read frontend objects", () => {
   assert.ok(statement.Condition.StringEquals["AWS:SourceArn"]);
 });
 
+test("frontend custom domain requires an ACM certificate and keeps TLS 1.2", () => {
+  const config =
+    template.Resources.FrontendDistribution.Properties.DistributionConfig;
+  assert.ok(template.Rules.CustomDomainRequiresCertificate);
+  assert.equal(config.Aliases["Fn::If"][0], "HasFrontendCustomDomain");
+  const customCertificate = config.ViewerCertificate["Fn::If"][1];
+  assert.deepEqual(customCertificate.AcmCertificateArn, {
+    Ref: "FrontendCertificateArn",
+  });
+  assert.equal(customCertificate.MinimumProtocolVersion, "TLSv1.2_2021");
+  assert.equal(customCertificate.SslSupportMethod, "sni-only");
+});
+
 test("private buckets do not receive retention deletion rules before approval", () => {
   for (const name of ["EvidenceBucket", "PayslipBucket", "BackupBucket"]) {
     const rules =
