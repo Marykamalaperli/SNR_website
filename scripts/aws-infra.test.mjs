@@ -106,6 +106,10 @@ test("production pilot uses temporary EC2 role credentials", () => {
   const role = pilot.Resources.ApplicationRole;
   assert.equal(profile.Type, "AWS::IAM::InstanceProfile");
   assert.equal(role.Type, "AWS::IAM::Role");
+  assert.deepEqual(role.Properties.ManagedPolicyArns, [
+    "arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier",
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+  ]);
   assert.equal(
     role.Properties.AssumeRolePolicyDocument.Statement[0].Principal.Service,
     "ec2.amazonaws.com",
