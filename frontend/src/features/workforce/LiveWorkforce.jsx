@@ -13,6 +13,7 @@ import LiveAttendance from '../attendance/LiveAttendance';
 import EmployeeSchedule from '../attendance/EmployeeSchedule';
 import SecurityCheckReport from '../attendance/SecurityCheckReport';
 import AttendanceQrPage from '../../pages/AttendanceQrPage';
+import TargetEmployeeDocuments from '../documents/TargetEmployeeDocuments';
 
 export default function LiveWorkforce({ role, base }) {
   const { pathname } = useLocation();
@@ -37,6 +38,7 @@ export default function LiveWorkforce({ role, base }) {
   }
   if (role === 'supervisor' && section === 'members') return <EmployeeDirectory />;
   if (role === 'employee' && section === 'profile') return <EmployeeProfile />;
+  if (role === 'employee' && section === 'documents') return <TargetEmployeeDocuments />;
   if (role === 'employee' && !section) return <LiveAttendance role={role} home />;
   if (role === 'employee' && section === 'schedule') return <EmployeeSchedule />;
   return <VerifiedWorkspace />;
